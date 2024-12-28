@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.noisevisionsoftware.fitapplication"
+    namespace = "com.noisevisionsoftware.szytadieta"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.noisevisionsoftware.fitapplication"
+        applicationId = "com.noisevisionsoftware.szytadieta"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
