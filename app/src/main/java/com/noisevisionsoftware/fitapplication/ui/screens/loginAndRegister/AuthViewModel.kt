@@ -41,12 +41,15 @@ class AuthViewModel @Inject constructor(
 
     private fun checkAuthState() {
         viewModelScope.launch {
-            authRepository.getCurrentUserData()
+            safeApiCall { authRepository.getCurrentUserData() }
                 .onSuccess { user ->
                     user?.let {
                         sessionManager.saveUserSession(it)
                         _authState.value = AuthState.Success(it)
                     }
+                }
+                .onFailure { throwable ->
+                    handleError(throwable)
                 }
         }
     }
@@ -65,12 +68,7 @@ class AuthViewModel @Inject constructor(
                         showSuccess("Zalogowano pomyślnie")
                     }
                     .onFailure { throwable ->
-                        val appException = when (throwable) {
-                            is Exception -> ErrorMapper.mapFirebaseAuthError(throwable)
-                            else -> AppException.UnknownException()
-                        }
-                        _authState.value = AuthState.Error(appException.message)
-                        showError(appException.message)
+                        handleError(throwable)
                     }
             } catch (e: AppException) {
                 _authState.value = AuthState.Error(e.message)
@@ -96,47 +94,28 @@ class AuthViewModel @Inject constructor(
                         showSuccess("Konto zostało utworzone")
                     }
                     .onFailure { throwable ->
-                        val appException = when (throwable) {
-                            is Exception -> ErrorMapper.mapFirebaseAuthError(throwable)
-                            else -> AppException.UnknownException()
-                        }
-                        _authState.value = AuthState.Error(appException.message)
-                        showError(appException.message)
+                        handleError(throwable)
                     }
             } catch (e: AppException) {
-                _authState.value = AuthState.Error(e.message)
-                showError(e.message)
+                handleError(e)
             }
         }
     }
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            try {
-                _authState.value = AuthState.Loading
-                safeApiCall { authRepository.getCurrentUserData() }
-                    .onSuccess { user ->
-                        user?.let {
-                            _authState.value = AuthState.Success(it)
-                        } ?: run {
-                            val exception =
-                                AppException.AuthException("Nie znaleziono danych użytkownika")
-                            _authState.value = AuthState.Error(exception.message)
-                            showError(exception.message)
-                        }
+            _authState.value = AuthState.Loading
+            safeApiCall { authRepository.getCurrentUserData() }
+                .onSuccess { user ->
+                    user?.let {
+                        _authState.value = AuthState.Success(it)
+                    } ?: run {
+                        handleError(AppException.AuthException("Nie znaleziono danych użytkownika"))
                     }
-                    .onFailure { throwable ->
-                        val appException = when (throwable) {
-                            is Exception -> ErrorMapper.mapFirebaseAuthError(throwable)
-                            else -> AppException.UnknownException()
-                        }
-                        _authState.value = AuthState.Error(appException.message)
-                        showError(appException.message)
-                    }
-            } catch (e: AppException) {
-                _authState.value = AuthState.Error(e.message)
-                showError(e.message)
-            }
+                }
+                .onFailure { throwable ->
+                    handleError(throwable)
+                }
         }
     }
 
@@ -154,16 +133,10 @@ class AuthViewModel @Inject constructor(
                         _authState.value = AuthState.Initial
                     }
                     .onFailure { throwable ->
-                        val appException = when (throwable) {
-                            is Exception -> ErrorMapper.mapFirebaseAuthError(throwable)
-                            else -> AppException.UnknownException()
-                        }
-                        showError(appException.message)
-                        _authState.value = AuthState.Error(appException.message)
+                        handleError(throwable)
                     }
             } catch (e: AppException) {
-                _authState.value = AuthState.Error(e.message)
-                showError(e.message)
+                handleError(e)
             }
         }
     }
@@ -182,5 +155,15 @@ class AuthViewModel @Inject constructor(
                     showError("Błąd podczas wylogowywania")
                 }
         }
+    }
+
+    private fun handleError(throwable: Throwable) {
+        val appException = when (throwable) {
+            is AppException -> throwable
+            is Exception -> ErrorMapper.mapFirebaseAuthError(throwable)
+            else -> AppException.UnknownException()
+        }
+        _authState.value = AuthState.Error(appException.message)
+        showError(appException.message)
     }
 }

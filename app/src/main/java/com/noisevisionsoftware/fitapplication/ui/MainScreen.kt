@@ -22,25 +22,16 @@ fun MainScreen(
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
     val authState by authViewModel.authState.collectAsState()
     val userSession by authViewModel.userSession.collectAsState(initial = null)
-    val uiEventFlow = authViewModel.uiEvent.collectAsState(initial = null)
 
-    LaunchedEffect(userSession) {
-        userSession?.let {
-            currentScreen = Screen.Dashboard
-        }
-    }
-
-    LaunchedEffect(authState) {
-        when (authState) {
-            is AuthViewModel.AuthState.Success -> {
+    LaunchedEffect(authState, userSession) {
+        when {
+            userSession != null || authState is AuthViewModel.AuthState.Success -> {
                 currentScreen = Screen.Dashboard
             }
 
-            is AuthViewModel.AuthState.LoggedOut -> {
+            authState is AuthViewModel.AuthState.LoggedOut -> {
                 currentScreen = Screen.Login
             }
-
-            else -> {}
         }
     }
 
@@ -74,7 +65,7 @@ fun MainScreen(
 
         is Screen.Dashboard -> {
             DashboardScreen(
-                onLogoutClick = {authViewModel.logout()},
+                onLogoutClick = { authViewModel.logout() },
                 onMealPlanClick = {},
                 onCaloriesTrackerClick = {},
                 onWaterTrackerClick = {},

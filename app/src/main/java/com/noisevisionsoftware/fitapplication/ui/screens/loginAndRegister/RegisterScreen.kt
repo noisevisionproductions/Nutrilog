@@ -27,7 +27,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +41,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.noisevisionsoftware.fitapplication.ui.common.AnimatedErrorDialog
-import com.noisevisionsoftware.fitapplication.ui.common.AnimatedSuccessDialog
-import com.noisevisionsoftware.fitapplication.ui.common.UiEvent
-import kotlinx.coroutines.delay
+import com.noisevisionsoftware.fitapplication.ui.common.UiEventHandler
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -61,21 +57,7 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var successMessage by remember { mutableStateOf<String?>(null) }
     val authState by viewModel.authState.collectAsState()
-    val uiEvent by viewModel.uiEvent.collectAsState()
-
-    LaunchedEffect(authState) {
-        when (authState) {
-            is AuthViewModel.AuthState.Success -> {
-                delay(1000)
-                onRegisterClick(nickname, email, password, confirmPassword)
-            }
-
-            else -> {}
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -190,7 +172,7 @@ fun RegisterScreen(
             }
 
             Button(
-                onClick = { viewModel.register(nickname, email, password, confirmPassword) },
+                onClick = { onRegisterClick(nickname, email, password, confirmPassword) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
@@ -274,21 +256,9 @@ fun RegisterScreen(
                 }
             }
         }
-
-        AnimatedErrorDialog(
-            message = (uiEvent as? UiEvent.ShowError)?.message,
-            onDismiss = { errorMessage = null },
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
-        )
-
-        AnimatedSuccessDialog(
-            message = (uiEvent as? UiEvent.ShowSuccess)?.message,
-            onDismiss = { successMessage = null },
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 16.dp)
+        UiEventHandler(
+            uiEvent = viewModel.uiEvent,
+            modifier = Modifier.align(Alignment.TopCenter),
         )
     }
 }

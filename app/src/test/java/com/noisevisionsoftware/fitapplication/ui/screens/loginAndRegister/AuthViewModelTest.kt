@@ -5,6 +5,8 @@ import com.google.common.truth.Truth.assertThat
 import com.noisevisionsoftware.fitapplication.HiltTestApplication_Application
 import com.noisevisionsoftware.fitapplication.MainDispatcherRule
 import com.noisevisionsoftware.fitapplication.domain.auth.AuthRepository
+import com.noisevisionsoftware.fitapplication.domain.auth.SessionManager
+import com.noisevisionsoftware.fitapplication.domain.exceptions.AppException
 import com.noisevisionsoftware.fitapplication.domain.model.User
 import com.noisevisionsoftware.fitapplication.domain.network.NetworkConnectivityManager
 import com.noisevisionsoftware.fitapplication.ui.common.UiEvent
@@ -15,10 +17,8 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -40,7 +40,8 @@ class AuthViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private lateinit var viewModel: AuthViewModel
-    private lateinit var repository: AuthRepository
+    private lateinit var authRepository: AuthRepository
+    private lateinit var sessionManager: SessionManager
     private lateinit var networkManager: NetworkConnectivityManager
 
     private val email = "test@example.com"
@@ -58,44 +59,27 @@ class AuthViewModelTest {
     fun setUp() {
         hiltRule.inject()
 
-        repository = mockk(relaxed = false)
+        authRepository = mockk(relaxed = false)
+        sessionManager = mockk(relaxed = false)
         networkManager = mockk(relaxed = true)
 
         coEvery { networkManager.isNetworkConnected } returns flowOf(true)
         every { networkManager.isCurrentlyConnected() } returns true
 
-        viewModel = AuthViewModel(repository, networkManager)
-    }
+        every { sessionManager.userSessionFlow } returns flowOf(null)
+        coEvery { sessionManager.saveUserSession(any()) } returns Unit
+        coEvery { sessionManager.clearSession() } returns Unit
 
-    @Test
-    fun login_ShouldUpdateStateToSuccess_WhenCredentialsAreValid() = runTest {
-        coEvery { repository.login(email, password) } returns Result.success(testUser)
+        coEvery { authRepository.getCurrentUserData() } returns Result.success(null)
 
-        val authStateJob = launch {
-            viewModel.authState.test {
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Loading)
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Success(testUser))
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        val uiEventJob = launch {
-            viewModel.uiEvent.test {
-                assertThat(awaitItem()).isEqualTo(UiEvent.ShowSuccess("Zalogowano pomyślnie"))
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        viewModel.login(email, password)
-
-        authStateJob.join()
-        uiEventJob.join()
+        viewModel = AuthViewModel(authRepository, sessionManager, networkManager)
     }
 
     @Test
     fun register_ShouldEmitError_WhenPasswordsDoesNotMatch() = runTest {
-        coEvery { repository.register(nickname, email, password) } returns Result.success(testUser)
+        coEvery { authRepository.register(nickname, email, password) } returns Result.success(
+            testUser
+        )
         val authStateJob = launch {
             viewModel.authState.test {
                 assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
@@ -108,12 +92,12 @@ class AuthViewModelTest {
         }
 
         authStateJob.join()
-        coVerify(exactly = 0) { repository.register(any(), any(), any()) }
+        coVerify(exactly = 0) { authRepository.register(any(), any(), any()) }
     }
 
     @Test
     fun getCurrentUser_ShouldUpdateStateToSuccess_WhenUserExists() = runTest {
-        coEvery { repository.getCurrentUserData() } returns Result.success(testUser)
+        coEvery { authRepository.getCurrentUserData() } returns Result.success(testUser)
 
         viewModel.authState.test {
             assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
@@ -127,84 +111,147 @@ class AuthViewModelTest {
     }
 
     @Test
-    fun register_ShouldEmitError_WhenFieldsAreEmpty() = runTest {
-        val authStateJob = launch {
-            viewModel.authState.test {
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
+    fun login_ShouldUpdateStateToSuccess_WhenCredentialsAreValid() = runTest {
+        coEvery { authRepository.login(email, password) } returns Result.success(testUser)
 
-                viewModel.register("", "", "", "")
+        viewModel.authState.test {
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
 
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Error("Wypełnij wszystkie pola"))
-                cancelAndIgnoreRemainingEvents()
-            }
+            viewModel.login(email, password)
+
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Loading)
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Success(testUser))
+            cancelAndIgnoreRemainingEvents()
         }
 
-        val uiEventJob = launch {
-            viewModel.uiEvent.test {
-                assertThat(awaitItem()).isEqualTo(UiEvent.ShowError("Wypełnij wszystkie pola"))
-                cancelAndIgnoreRemainingEvents()
-            }
+        coVerify {
+            authRepository.login(email, password)
+            sessionManager.saveUserSession(testUser)
         }
-
-        authStateJob.join()
-        uiEventJob.join()
     }
 
     @Test
-    fun resetPassword_ShouldEmitSuccessEvent_WhenEmailIsValid() = runTest {
-        coEvery { repository.resetPassword(email) } returns Result.success(Unit)
+    fun login_ShouldUpdateStateToError_WhenCredentialsAreInvalid() = runTest {
+        val errorMessage = "Nieprawidłowe dane logowania"
+        coEvery { authRepository.login(email, password) } returns Result.failure(
+            AppException.AuthException(errorMessage)
+        )
 
-        val authStateJob = launch {
-            viewModel.authState.test {
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
+        viewModel.authState.test {
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
 
-                viewModel.resetPassword(email)
+            viewModel.login(email, password)
 
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Loading)
-                assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
-                cancelAndIgnoreRemainingEvents()
-            }
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Loading)
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Error(errorMessage))
+            cancelAndIgnoreRemainingEvents()
         }
-
-        val uiEventJob = launch {
-            viewModel.uiEvent.test {
-                assertThat(awaitItem()).isEqualTo(
-                    UiEvent.ShowSuccess("Link do resetowania hasła został wysłany na podany adres email")
-                )
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-        authStateJob.join()
-        uiEventJob.join()
     }
 
     @Test
-    fun logout_ShouldCallRepository() = runTest {
-        coEvery { repository.logout() } returns Result.success(Unit)
+    fun register_ShouldUpdateStateToSuccess_WhenDataIsValid() = runTest {
+        coEvery { authRepository.register(nickname, email, password) } returns Result.success(
+            testUser
+        )
 
-        viewModel.logout()
+        viewModel.authState.test {
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
 
-        advanceUntilIdle()
+            viewModel.register(nickname, email, password, password)
 
-        coVerify(exactly = 1) { repository.logout() }
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Loading)
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Success(testUser))
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify {
+            authRepository.register(nickname, email, password)
+            sessionManager.saveUserSession(testUser)
+        }
     }
 
     @Test
-    fun logout_ShouldEmitErrorEvent_WhenLogoutFails() = runTest {
-        coEvery { repository.logout() } returns Result.failure(Exception("Test error"))
+    fun resetPassword_ShouldUpdateStateToInitial_WhenSuccessful() = runTest {
+        coEvery { authRepository.resetPassword(email) } returns Result.success(Unit)
 
-        coroutineScope {
-            val uiEventJob = launch {
-                viewModel.uiEvent.test {
-                    viewModel.logout()
-                    assertThat(awaitItem()).isEqualTo(UiEvent.ShowError("Błąd podczas wylogowywania"))
-                    cancelAndIgnoreRemainingEvents()
-                }
-            }
-            uiEventJob.join()
+        viewModel.authState.test {
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
+
+            viewModel.resetPassword(email)
+
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Loading)
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
+            cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 1) { repository.logout() }
+        coVerify { authRepository.resetPassword(email) }
+    }
+
+    @Test
+    fun resetPassword_ShouldUpdateStateToError_WhenEmailIsBlank() = runTest {
+        viewModel.authState.test {
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
+
+            viewModel.resetPassword("")
+
+            assertThat(awaitItem()).isEqualTo(
+                AuthViewModel.AuthState.Error("Wprowadź adres email")
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 0) { authRepository.resetPassword(any()) }
+    }
+
+    @Test
+    fun logout_ShouldUpdateStateToLoggedOut_WhenSuccessful() = runTest {
+        coEvery { authRepository.logout() } returns Result.success(Unit)
+
+        viewModel.authState.test {
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.Initial)
+
+            viewModel.logout()
+
+            assertThat(awaitItem()).isEqualTo(AuthViewModel.AuthState.LoggedOut)
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify {
+            sessionManager.clearSession()
+            authRepository.logout()
+        }
+    }
+
+    @Test
+    fun uiEvents_ShouldEmitSuccessMessage_WhenLoginIsSuccessful() = runTest {
+        coEvery { authRepository.login(email, password) } returns Result.success(testUser)
+
+        viewModel.uiEvent.test {
+            assertThat(awaitItem()).isNull()
+
+            viewModel.login(email, password)
+
+            val event = awaitItem()
+            assertThat(event).isInstanceOf(UiEvent.ShowSuccess::class.java)
+            assertThat((event as UiEvent.ShowSuccess).message).isEqualTo("Zalogowano pomyślnie")
+        }
+    }
+
+    @Test
+    fun uiEvents_ShouldEmitErrorMessage_WhenLoginFails() = runTest {
+        val errorMessage = "Nieprawidłowe dane logowania"
+        coEvery { authRepository.login(email, password) } returns Result.failure(
+            AppException.AuthException(errorMessage)
+        )
+
+        viewModel.uiEvent.test {
+            assertThat(awaitItem()).isNull()
+
+            viewModel.login(email, password)
+
+            val event = awaitItem()
+            assertThat(event).isInstanceOf(UiEvent.ShowError::class.java)
+            assertThat((event as UiEvent.ShowError).message).isEqualTo(errorMessage)
+        }
     }
 }

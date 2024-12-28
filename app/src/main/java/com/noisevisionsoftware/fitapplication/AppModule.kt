@@ -1,6 +1,8 @@
 package com.noisevisionsoftware.fitapplication
 
 import android.content.Context
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.noisevisionsoftware.fitapplication.domain.auth.AuthRepository
 import com.noisevisionsoftware.fitapplication.domain.auth.SessionManager
 import com.noisevisionsoftware.fitapplication.domain.network.NetworkConnectivityManager
@@ -17,8 +19,23 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthRepository(): AuthRepository {
-        return AuthRepository()
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        auth: FirebaseAuth,
+        firestore: FirebaseFirestore
+    ): AuthRepository {
+        return AuthRepository(auth, firestore)
     }
 
     @Provides

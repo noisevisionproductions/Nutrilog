@@ -47,7 +47,7 @@ class AuthRepositoryTest {
         every { FirebaseFirestore.getInstance() } returns firestore
         every { TextUtils.isEmpty(any()) } returns false
 
-        repository = AuthRepository()
+        repository = AuthRepository(auth, firestore)
     }
 
     @Test
