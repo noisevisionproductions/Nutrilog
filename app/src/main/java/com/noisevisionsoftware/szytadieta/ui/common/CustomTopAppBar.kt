@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,7 +27,14 @@ import androidx.compose.ui.unit.dp
 fun CustomTopAppBar(
     title: String,
     onBackClick: () -> Unit,
-    actions: @Composable RowScope.() -> Unit = {},
+    modifier: Modifier = Modifier,
+    showSearchIcon: Boolean = false,
+    showFilterIcon: Boolean = false,
+    showRefreshIcon: Boolean = false,
+    onSearchClick: () -> Unit = {},
+    onFilterClick: () -> Unit = {},
+    onRefreshClick: () -> Unit = {},
+    additionalActions: @Composable (RowScope.() -> Unit)? = null,
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(
         containerColor = MaterialTheme.colorScheme.surface,
         scrolledContainerColor = MaterialTheme.colorScheme.surface,
@@ -55,9 +65,38 @@ fun CustomTopAppBar(
                 )
             }
         },
-        actions = actions,
+        actions = {
+            if (showSearchIcon) {
+                IconButton(onClick = onSearchClick) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Wyszukaj",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            if (showFilterIcon) {
+                IconButton(onClick = onFilterClick) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filtruj",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            if (showRefreshIcon) {
+                IconButton(onClick = onRefreshClick) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Odśwież",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            additionalActions?.invoke(this)
+        },
         colors = colors,
-        modifier = Modifier.shadow(
+        modifier = modifier.shadow(
             elevation = 4.dp,
             spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
             ambientColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)

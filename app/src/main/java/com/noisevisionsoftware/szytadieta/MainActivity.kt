@@ -14,7 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SettingsManager
-import com.noisevisionsoftware.szytadieta.ui.MainScreen
+import com.noisevisionsoftware.szytadieta.ui.screens.MainScreen
 import com.noisevisionsoftware.szytadieta.ui.common.AlertHandler
 import com.noisevisionsoftware.szytadieta.ui.theme.FitApplicationTheme
 import dagger.hilt.android.AndroidEntryPoint

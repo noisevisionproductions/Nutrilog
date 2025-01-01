@@ -16,7 +16,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.WriteBatch
-import com.noisevisionsoftware.szytadieta.domain.model.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic

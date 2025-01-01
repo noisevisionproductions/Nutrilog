@@ -8,7 +8,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.noisevisionsoftware.szytadieta.MainDispatcherRule
-import com.noisevisionsoftware.szytadieta.domain.model.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.ExperimentalCoroutinesApi

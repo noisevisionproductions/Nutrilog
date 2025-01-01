@@ -23,12 +23,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Scale
-import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
@@ -56,6 +53,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -74,29 +72,7 @@ fun WeightScreen(
         topBar = {
             CustomTopAppBar(
                 title = "Historia wagi",
-                onBackClick = onBackClick,
-                actions = {
-                    // Możesz dodać przycisk do wyświetlania wykresu wagi
-                    IconButton(
-                        onClick = { /* Akcja wyświetlania wykresu */ }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ShowChart,
-                            contentDescription = "Wykres wagi",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    // Możesz dodać przycisk do filtrowania historii
-                    IconButton(
-                        onClick = { /* Akcja filtrowania */ }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Filtruj historię",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                onBackClick = onBackClick
             )
         },
         floatingActionButton = {
@@ -139,7 +115,7 @@ private fun AddWeightFAB(onClick: () -> Unit) {
 
 @Composable
 private fun WeightContent(
-    weightState: WeightViewModel.WeightState,
+    weightState: ViewModelState<List<BodyMeasurements>>,
     onDeleteClick: (String) -> Unit
 ) {
     AnimatedContent(
@@ -149,14 +125,13 @@ private fun WeightContent(
         }, label = ""
     ) { state ->
         when (state) {
-            WeightViewModel.WeightState.Loading -> WeightLoadingIndicator()
-            is WeightViewModel.WeightState.Success -> WeightList(
-                bodyMeasurements = state.bodyMeasurements,
+            is ViewModelState.Loading -> WeightLoadingIndicator()
+            is ViewModelState.Success -> WeightList(
+                bodyMeasurements = state.data,
                 onDeleteClick = onDeleteClick
             )
-
-            is WeightViewModel.WeightState.Error -> WeightError(state.exception.message)
-            WeightViewModel.WeightState.Initial -> Unit
+            is ViewModelState.Error -> WeightError(state.message)
+            ViewModelState.Initial -> Unit
         }
     }
 }

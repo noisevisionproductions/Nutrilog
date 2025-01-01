@@ -14,13 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -34,10 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomProgressIndicator
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
+import com.noisevisionsoftware.szytadieta.ui.screens.admin.ErrorMessage
 import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.components.AddMeasurementsDialog
-import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.components.EmptyMeasurementsList
 import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.components.MeasurementsList
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,28 +51,7 @@ fun BodyMeasurementsScreen(
         topBar = {
             CustomTopAppBar(
                 title = "Pomiary ciała",
-                onBackClick = onBackClick,
-                actions = {
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FilterList,
-                            contentDescription = "Filtruj",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.BarChart,
-                            contentDescription = "Statystyki",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+                onBackClick = onBackClick
             )
         },
         floatingActionButton = {
@@ -88,7 +65,7 @@ fun BodyMeasurementsScreen(
                 .padding(padding)
         ) {
             MeasurementsContent(
-                measurementsState = measurementsState,
+                state = measurementsState,
                 onDeleteClick = viewModel::deleteMeasurement
             )
 
@@ -128,11 +105,11 @@ private fun AddMeasurementsFAB(
 
 @Composable
 private fun MeasurementsContent(
-    measurementsState: BodyMeasurementsViewModel.MeasurementsState,
+    state: ViewModelState<List<BodyMeasurements>>,
     onDeleteClick: (String) -> Unit
 ) {
     AnimatedContent(
-        targetState = measurementsState,
+        targetState = state,
         transitionSpec = {
             (fadeIn(animationSpec = tween(300)) + slideInVertically(
                 animationSpec = tween(300),
@@ -145,9 +122,10 @@ private fun MeasurementsContent(
             )
         },
         label = "MeasurementsContentTransition"
-    ) { state ->
-        when (state) {
-            is BodyMeasurementsViewModel.MeasurementsState.Loading -> {
+    ) { currentState ->
+        when (currentState) {
+            is ViewModelState.Initial -> Unit
+            is ViewModelState.Loading -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -158,13 +136,13 @@ private fun MeasurementsContent(
                 }
             }
 
-            is BodyMeasurementsViewModel.MeasurementsState.Success ->
+            is ViewModelState.Success ->
                 MeasurementsList(
-                    measurements = state.measurements,
+                    measurements = currentState.data,
                     onDeleteClick = onDeleteClick
                 )
 
-            else -> EmptyMeasurementsList()
+            is ViewModelState.Error -> ErrorMessage(message = (state as ViewModelState.Error).message)
         }
     }
 }

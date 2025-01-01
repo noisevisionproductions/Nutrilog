@@ -5,8 +5,8 @@ import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
 import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.exceptions.ValidationManager
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
-import com.noisevisionsoftware.szytadieta.domain.model.Gender
-import com.noisevisionsoftware.szytadieta.domain.model.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.Gender
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel

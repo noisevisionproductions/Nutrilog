@@ -1,8 +1,8 @@
 package com.noisevisionsoftware.szytadieta.domain.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
-import com.noisevisionsoftware.szytadieta.domain.model.User
-import com.noisevisionsoftware.szytadieta.domain.model.UserRole
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 

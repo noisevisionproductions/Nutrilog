@@ -8,8 +8,8 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.noisevisionsoftware.szytadieta.MainDispatcherRule
-import com.noisevisionsoftware.szytadieta.domain.model.User
-import com.noisevisionsoftware.szytadieta.domain.model.UserRole
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi

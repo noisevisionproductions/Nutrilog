@@ -1,15 +1,15 @@
 package com.noisevisionsoftware.szytadieta.ui.screens.dashboard
 
-import androidx.lifecycle.viewModelScope
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
-import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
-import com.noisevisionsoftware.szytadieta.domain.model.UserRole
+import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
+import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -19,19 +19,19 @@ class DashboardViewModel @Inject constructor(
     alertManager: AlertManager
 ) : BaseViewModel(networkManager, alertManager) {
 
-    private val _userRole = MutableStateFlow<UserRole?>(null)
-    val userRole = _userRole.asStateFlow()
+    private val _userState = MutableStateFlow<ViewModelState<UserRole>>(ViewModelState.Initial)
+    val userRole = _userState.asStateFlow()
 
     init {
         loadUserRole()
     }
 
     private fun loadUserRole() {
-        viewModelScope.launch {
-            safeApiCall { authRepository.getCurrentUserData() }
-                .onSuccess { user ->
-                    _userRole.value = user?.role
-                }
+        handleOperation(_userState) {
+            authRepository.getCurrentUserData()
+                .getOrThrow()
+                ?.role
+                ?: throw AppException.AuthException("Nie można pobrać roli użytkownika")
         }
     }
 }

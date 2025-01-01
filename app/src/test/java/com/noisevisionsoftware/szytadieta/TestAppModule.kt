@@ -2,6 +2,9 @@ package com.noisevisionsoftware.szytadieta
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.noisevisionsoftware.szytadieta.di.FirebaseModule
+import com.noisevisionsoftware.szytadieta.di.ManagerModule
+import com.noisevisionsoftware.szytadieta.di.RepositoryModule
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SessionManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SettingsManager
@@ -20,7 +23,9 @@ import javax.inject.Singleton
 @Module
 @TestInstallIn(
     components = [SingletonComponent::class],
-    replaces = [AppModule::class]
+    replaces = [FirebaseModule::class,
+        RepositoryModule::class,
+        ManagerModule::class]
 )
 class TestAppModule {
 

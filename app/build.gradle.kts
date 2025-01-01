@@ -101,6 +101,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // Charts - Vico
+    implementation(libs.mpandroidchart)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

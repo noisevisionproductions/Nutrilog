@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.noisevisionsoftware.szytadieta.domain.state.AuthState
 
 @Composable
 fun ForgotPassword(
@@ -100,9 +101,9 @@ fun ForgotPassword(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                enabled = email.isNotBlank() && authState !is AuthViewModel.AuthState.Loading
+                enabled = email.isNotBlank() && authState !is AuthState.Loading
             ) {
-                if (authState is AuthViewModel.AuthState.Loading) {
+                if (authState is AuthState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary

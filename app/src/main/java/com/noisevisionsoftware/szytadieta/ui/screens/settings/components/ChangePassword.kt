@@ -28,10 +28,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
+import com.noisevisionsoftware.szytadieta.domain.exceptions.PasswordField
 import com.noisevisionsoftware.szytadieta.domain.exceptions.ValidationManager
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.screens.settings.SettingsViewModel
-import com.noisevisionsoftware.szytadieta.ui.screens.settings.data.PasswordField
-import com.noisevisionsoftware.szytadieta.ui.screens.settings.data.PasswordUpdateState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,28 +51,25 @@ fun ChangePasswordDialog(
     val passwordUpdateState by viewModel.passwordUpdateState.collectAsState()
 
     LaunchedEffect(passwordUpdateState) {
-        when (val state = passwordUpdateState) {
-            is PasswordUpdateState.Error -> {
-                when (state.field) {
-                    PasswordField.OLD_PASSWORD -> {
-                        oldPasswordError = state.message
-                    }
-
-                    PasswordField.NEW_PASSWORD -> {
-                        newPasswordError = state.message
-                    }
-
-                    null -> {
-                        newPasswordError = state.message
-                    }
+        when (passwordUpdateState) {
+            is ViewModelState.Error -> {
+                val error = (passwordUpdateState as ViewModelState.Error).message
+                when ((passwordUpdateState as ViewModelState.Error).field) {
+                    PasswordField.OLD_PASSWORD -> oldPasswordError = error
+                    PasswordField.NEW_PASSWORD -> newPasswordError = error
+                    null -> newPasswordError = error
                 }
             }
 
-            is PasswordUpdateState.Success -> {
+            is ViewModelState.Success -> {
                 onDismiss()
             }
 
-            else -> {}
+            ViewModelState.Initial, ViewModelState.Loading -> {
+                oldPasswordError = null
+                newPasswordError = null
+                confirmPasswordError = null
+            }
         }
     }
 
@@ -157,7 +154,7 @@ fun ChangePasswordDialog(
                 ) {
                     TextButton(
                         onClick = onDismiss,
-                        enabled = passwordUpdateState !is PasswordUpdateState.Loading
+                        enabled = passwordUpdateState !is ViewModelState.Loading
                     ) {
                         Text("Anuluj")
                     }
@@ -197,9 +194,9 @@ fun ChangePasswordDialog(
                                 onConfirm(oldPassword, newPassword)
                             }
                         },
-                        enabled = passwordUpdateState !is PasswordUpdateState.Loading
+                        enabled = passwordUpdateState !is ViewModelState.Loading
                     ) {
-                        if (passwordUpdateState is PasswordUpdateState.Loading) {
+                        if (passwordUpdateState is ViewModelState.Loading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(24.dp),
                                 strokeWidth = 2.dp

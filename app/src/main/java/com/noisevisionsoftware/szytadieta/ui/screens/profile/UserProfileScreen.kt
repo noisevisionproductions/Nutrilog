@@ -35,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomProgressIndicator
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
+import com.noisevisionsoftware.szytadieta.ui.screens.admin.ErrorMessage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,11 +65,9 @@ fun UserProfileScreen(
                 .padding(padding)
         ) {
             when (val state = profileState) {
-                is UserProfileViewModel.ProfileState.Loading -> {
-                    CustomProgressIndicator()
-                }
-
-                is UserProfileViewModel.ProfileState.Success -> {
+                is ViewModelState.Initial -> Unit
+                is ViewModelState.Loading -> CustomProgressIndicator()
+                is ViewModelState.Success -> {
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -81,26 +81,26 @@ fun UserProfileScreen(
                                 ProfileItem(
                                     icon = Icons.Default.Person,
                                     label = "Nick",
-                                    value = state.user.nickname
+                                    value = state.data.nickname
                                 )
                                 ProfileItem(
                                     icon = Icons.Default.Email,
                                     label = "Email",
-                                    value = state.user.email
+                                    value = state.data.email
                                 )
-                                if (state.user.birthDate != null) {
+                                if (state.data.birthDate != null) {
                                     ProfileItem(
                                         icon = Icons.Default.DateRange,
                                         label = "Data urodzenia",
                                         value = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                                            .format(Date(state.user.birthDate))
+                                            .format(Date(state.data.birthDate))
                                     )
                                 }
-                                if (state.user.gender != null) {
+                                if (state.data.gender != null) {
                                     ProfileItem(
                                         icon = Icons.Default.Face,
                                         label = "Płeć",
-                                        value = state.user.gender.displayName
+                                        value = state.data.gender.displayName
                                     )
                                 }
                             }
@@ -113,7 +113,7 @@ fun UserProfileScreen(
                                     icon = Icons.Default.CalendarToday,
                                     label = "Data dołączenia",
                                     value = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-                                        .format(Date(state.user.createdAt))
+                                        .format(Date(state.data.createdAt))
                                 )
                             }
                         )
@@ -132,18 +132,7 @@ fun UserProfileScreen(
                         }
                     }
                 }
-
-                is UserProfileViewModel.ProfileState.Error -> {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(16.dp)
-                    )
-                }
-
-                else -> Unit
+                is ViewModelState.Error -> ErrorMessage(message = state.message)
             }
         }
     }

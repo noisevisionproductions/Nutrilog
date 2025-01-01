@@ -1,4 +1,4 @@
-package com.noisevisionsoftware.szytadieta.ui.screens.admin.components
+package com.noisevisionsoftware.szytadieta.ui.screens.admin.userManagement
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -33,8 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.noisevisionsoftware.szytadieta.domain.model.User
-import com.noisevisionsoftware.szytadieta.domain.model.UserRole
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

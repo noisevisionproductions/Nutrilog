@@ -1,4 +1,4 @@
-package com.noisevisionsoftware.szytadieta.ui.screens.admin.components
+package com.noisevisionsoftware.szytadieta.ui.screens.admin.userManagement
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.noisevisionsoftware.szytadieta.domain.model.UserRole
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 
 @Composable
 fun RoleChip(

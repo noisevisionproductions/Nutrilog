@@ -7,6 +7,8 @@ androidxComposeBom = "2024.12.01"
 androidxComposeCompiler = "1.5.8"
 
 # Kotlin and KSP
+composeM3 = "2.0.0-beta.5"
+core = "2.0.0-beta.5"
 coreKtx = "1.6.1"
 datastorePreferences = "1.1.1"
 integrity = "1.4.0"
@@ -37,6 +39,7 @@ kotlinxCoroutinesTest = { version.ref = "coroutines" }
 kotlinxCoroutinesCore = { version.ref = "coroutines" }
 
 # Testing
+mpandroidchart = "v3.1.0"
 robolectric = "4.10.3"
 shadowsFramework = "4.11.1"
 testng = "7.10.2"
@@ -67,6 +70,8 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
+compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "composeM3" }
+core = { module = "com.patrykandpatrick.vico:core", version.ref = "core" }
 core-ktx = { module = "androidx.test:core-ktx", version.ref = "coreKtx" }
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version = "23.1.0" }
@@ -82,6 +87,7 @@ kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-c
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 kotlinx-coroutines-test-v1101 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTestVersion" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
+mpandroidchart = { module = "com.github.PhilJay:MPAndroidChart", version.ref = "mpandroidchart" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 shadows-framework = { module = "org.robolectric:shadows-framework", version.ref = "shadowsFramework" }
 testng = { group = "org.testng", name = "testng", version.ref = "testng" }

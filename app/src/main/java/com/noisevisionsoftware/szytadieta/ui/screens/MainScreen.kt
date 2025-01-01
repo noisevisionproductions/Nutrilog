@@ -1,16 +1,8 @@
-package com.noisevisionsoftware.szytadieta.ui
+package com.noisevisionsoftware.szytadieta.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -18,10 +10,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.noisevisionsoftware.szytadieta.domain.model.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.domain.state.AuthState
 import com.noisevisionsoftware.szytadieta.ui.navigation.Screen
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.AdminPanelScreen
 import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.BodyMeasurementsScreen
@@ -36,6 +28,7 @@ import com.noisevisionsoftware.szytadieta.ui.screens.profile.completeProfile.Com
 import com.noisevisionsoftware.szytadieta.ui.screens.settings.SettingsScreen
 import com.noisevisionsoftware.szytadieta.ui.screens.splash.SplashScreen
 import com.noisevisionsoftware.szytadieta.ui.screens.weight.WeightScreen
+import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen(
@@ -46,6 +39,12 @@ fun MainScreen(
     val authState by authViewModel.authState.collectAsState()
     val userSession by authViewModel.userSession.collectAsState(initial = null)
     val profileState by completeProfileViewModel.profileState.collectAsState()
+    var isInitialLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        delay(1500)
+        isInitialLoading = false
+    }
 
     LaunchedEffect(profileState) {
         if (profileState is CompleteProfileViewModel.CompleteProfileState.Success && !completeProfileViewModel.profileUpdateMessageShown) {
@@ -53,6 +52,7 @@ fun MainScreen(
             currentScreen = Screen.Dashboard
         }
     }
+
     HandleBackButton(
         currentScreen = currentScreen,
         userSession = userSession,
@@ -62,7 +62,7 @@ fun MainScreen(
 
     LaunchedEffect(authState, userSession) {
         when {
-            userSession != null || authState is AuthViewModel.AuthState.Success -> {
+            userSession != null || authState is AuthState.Success -> {
                 completeProfileViewModel.checkProfileCompletion().collect { isCompleted ->
                     currentScreen = if (!isCompleted) {
                         Screen.CompleteProfile
@@ -72,7 +72,7 @@ fun MainScreen(
                 }
             }
 
-            authState is AuthViewModel.AuthState.LoggedOut -> {
+            authState is AuthState.Logout -> {
                 currentScreen = Screen.Login
             }
         }
@@ -80,8 +80,7 @@ fun MainScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         when {
-            authState is AuthViewModel.AuthState.Initial ||
-                    authState is AuthViewModel.AuthState.InitialLoading -> {
+            isInitialLoading && authState is AuthState.Loading -> {
                 SplashScreen()
             }
 
@@ -165,8 +164,6 @@ fun MainScreen(
                 }
             }
         }
-
-        LoadingOverlay(isVisible = profileState is CompleteProfileViewModel.CompleteProfileState.Loading)
     }
 }
 
@@ -174,42 +171,28 @@ fun MainScreen(
 private fun HandleBackButton(
     currentScreen: Screen,
     userSession: User?,
-    authState: AuthViewModel.AuthState,
+    authState: AuthState<User>,
     onScreenChange: (Screen) -> Unit
 ) {
     BackHandler {
         when (currentScreen) {
             Screen.Dashboard -> {}
 
-            Screen.CompleteProfile, Screen.Weight, Screen.BodyMeasurements, Screen.AdminPanel, Screen.Profile, Screen.Settings -> {
+            Screen.CompleteProfile,
+            Screen.Weight,
+            Screen.BodyMeasurements,
+            Screen.Profile,
+            Screen.Settings -> {
                 onScreenChange(Screen.Dashboard)
             }
 
             else -> {
-                if (userSession != null || authState is AuthViewModel.AuthState.Success) {
+                if (userSession != null || authState is AuthState.Success) {
                     onScreenChange(Screen.Dashboard)
                 } else if (currentScreen !is Screen.Login) {
                     onScreenChange(Screen.Login)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun LoadingOverlay(isVisible: Boolean) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-        exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
         }
     }
 }

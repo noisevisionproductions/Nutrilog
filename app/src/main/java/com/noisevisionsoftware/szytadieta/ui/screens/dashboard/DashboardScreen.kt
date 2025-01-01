@@ -45,7 +45,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.noisevisionsoftware.szytadieta.domain.model.UserRole
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 
 @Composable
 fun DashboardScreen(
@@ -57,7 +58,7 @@ fun DashboardScreen(
     onProgressClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
 ) {
-    val userRole by viewModel.userRole.collectAsState()
+    val userState by viewModel.userRole.collectAsState()
 
     Box(
         modifier = Modifier
@@ -73,7 +74,7 @@ fun DashboardScreen(
                 onLogoutClick = onLogoutClick,
                 onAdminPanelClick = onAdminPanelClick,
                 onProfileClick = onProfileClick,
-                userRole = userRole
+                userState = userState
             )
 
             LazyVerticalGrid(
@@ -118,7 +119,7 @@ fun TopBar(
     onLogoutClick: () -> Unit,
     onAdminPanelClick: () -> Unit,
     onProfileClick: () -> Unit,
-    userRole: UserRole?,
+    userState: ViewModelState<UserRole>,
     modifier: Modifier = Modifier
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -149,7 +150,7 @@ fun TopBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
 
-            if (userRole == UserRole.ADMIN) {
+            if (userState is ViewModelState.Success && userState.data == UserRole.ADMIN) {
                 IconButton(onClick = { onAdminPanelClick() }) {
                     Icon(
                         imageVector = Icons.Default.AdminPanelSettings,

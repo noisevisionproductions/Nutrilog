@@ -6,15 +6,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -35,14 +34,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.noisevisionsoftware.szytadieta.domain.state.AuthState
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RegisterScreen(
     onRegisterClick: (String, String, String, String) -> Unit,
@@ -181,9 +185,9 @@ fun RegisterScreen(
                 ),
                 enabled = nickname.isNotBlank() && email.isNotBlank() &&
                         password.isNotBlank() && confirmPassword.isNotBlank() &&
-                        authState !is AuthViewModel.AuthState.Loading
+                        authState !is AuthState.Loading
             ) {
-                if (authState is AuthViewModel.AuthState.Loading) {
+                if (authState is AuthState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary
@@ -196,64 +200,126 @@ fun RegisterScreen(
                 }
             }
 
-            FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Text(
-                    text = "Tworząc konto, akceptujesz ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground
+            AcceptTerms(
+                onRegulationsClick = onRegulationsClick,
+                onPrivacyPolicyClick = onPrivacyPolicyClick
+            )
+
+            AlreadyHaveAccount(onLoginClick = onLoginClick)
+        }
+    }
+}
+
+@Composable
+private fun AcceptTerms(
+    onRegulationsClick: () -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {}
+) {
+    val annotatedText = buildAnnotatedString {
+        append("Tworząc konto, akceptujesz ")
+
+        pushStringAnnotation(
+            tag = "regulamin",
+            annotation = "regulamin"
+        )
+        withStyle(
+            style = SpanStyle(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            )
+        ) {
+            append("Regulamin")
+        }
+        pop()
+
+        append(" oraz ")
+
+        pushStringAnnotation(
+            tag = "polityka",
+            annotation = "polityka"
+        )
+        withStyle(
+            style = SpanStyle(
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium
+            )
+        ) {
+            append("Politykę prywatności")
+        }
+        pop()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = annotatedText,
+            style = MaterialTheme.typography.bodySmall.copy(
+                textAlign = TextAlign.Center
+            ),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button
+                ) { }
+        )
+
+        annotatedText.getStringAnnotations("regulamin", 0, annotatedText.length)
+            .firstOrNull()?.let {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(
+                            enabled = true,
+                            onClickLabel = "Regulamin",
+                            role = Role.Button,
+                            onClick = onRegulationsClick
+                        )
                 )
-                TextButton(
-                    onClick = onRegulationsClick,
-                    contentPadding = PaddingValues(horizontal = 4.dp)
-                ) {
-                    Text(
-                        text = "Regulamin",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Text(
-                    text = " oraz ",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                TextButton(
-                    onClick = onPrivacyPolicyClick,
-                    contentPadding = PaddingValues(horizontal = 4.dp)
-                ) {
-                    Text(
-                        text = "Politykę prywatności",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = "Masz już konto?",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+        annotatedText.getStringAnnotations("polityka", 0, annotatedText.length)
+            .firstOrNull()?.let {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable(
+                            enabled = true,
+                            onClickLabel = "Polityka prywatności",
+                            role = Role.Button,
+                            onClick = onPrivacyPolicyClick
+                        )
                 )
-                TextButton(onClick = onLoginClick) {
-                    Text(
-                        text = "Zaloguj się",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
+    }
+}
+
+@Composable
+private fun AlreadyHaveAccount(onLoginClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 16.dp, top = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Masz już konto?",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.width(1.dp))
+        TextButton(onClick = onLoginClick) {
+            Text(
+                text = "Zaloguj się",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

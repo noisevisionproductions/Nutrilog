@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.noisevisionsoftware.szytadieta.domain.model.Gender
+import com.noisevisionsoftware.szytadieta.domain.model.user.Gender
 
 @Composable
 fun CompleteProfileScreen(

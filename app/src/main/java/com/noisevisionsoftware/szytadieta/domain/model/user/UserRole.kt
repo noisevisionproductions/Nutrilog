@@ -1,4 +1,4 @@
-package com.noisevisionsoftware.szytadieta.domain.model
+package com.noisevisionsoftware.szytadieta.domain.model.user
 
 enum class UserRole {
     USER,

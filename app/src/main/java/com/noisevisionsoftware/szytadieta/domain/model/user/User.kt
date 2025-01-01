@@ -1,4 +1,4 @@
-package com.noisevisionsoftware.szytadieta.domain.model
+package com.noisevisionsoftware.szytadieta.domain.model.user
 
 import android.icu.util.Calendar
 

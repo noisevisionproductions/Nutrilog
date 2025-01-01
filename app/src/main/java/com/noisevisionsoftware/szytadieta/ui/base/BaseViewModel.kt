@@ -6,6 +6,7 @@ import com.noisevisionsoftware.szytadieta.domain.alert.Alert
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
+import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -62,6 +63,34 @@ abstract class BaseViewModel(
                 apiCall()
             } catch (e: Exception) {
                 Result.failure(e)
+            }
+        }
+    }
+
+    private fun <T> handleError(
+        throwable: Throwable,
+        stateFlow: MutableStateFlow<ViewModelState<T>>,
+        customErrorMessage: String? = null
+    ) {
+        val message = when (throwable) {
+            is AppException -> throwable.message
+            else -> customErrorMessage ?: "Wystąpił nieoczekiwany błąd"
+        }
+        stateFlow.value = ViewModelState.Error(message)
+        showError(message)
+    }
+
+    protected fun <T> handleOperation(
+        stateFlow: MutableStateFlow<ViewModelState<T>>,
+        operation: suspend () -> T
+    ) {
+        viewModelScope.launch {
+            try {
+                stateFlow.value = ViewModelState.Loading
+                val result = operation()
+                stateFlow.value = ViewModelState.Success(result)
+            } catch (e: Exception) {
+                handleError(e, stateFlow)
             }
         }
     }

@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.noisevisionsoftware.szytadieta.domain.state.AuthState
 
 @Composable
 fun LoginScreen(
@@ -135,9 +136,9 @@ fun LoginScreen(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ),
             enabled = email.isNotBlank() && password.isNotBlank() &&
-                    authState !is AuthViewModel.AuthState.Loading
+                    authState !is AuthState.Loading
         ) {
-            if (authState is AuthViewModel.AuthState.Loading) {
+            if (authState is AuthState.Loading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
                     color = MaterialTheme.colorScheme.onPrimary
