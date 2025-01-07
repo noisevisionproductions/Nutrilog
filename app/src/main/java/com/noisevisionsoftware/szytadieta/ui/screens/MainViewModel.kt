@@ -1,16 +1,37 @@
 package com.noisevisionsoftware.szytadieta.ui.screens
 
 import androidx.lifecycle.ViewModel
-import com.noisevisionsoftware.szytadieta.ui.navigation.DashboardScreen
+import androidx.lifecycle.viewModelScope
+import com.noisevisionsoftware.szytadieta.ui.base.AppEvent
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class MainViewModel @Inject constructor() : ViewModel() {
-    private val _currentScreen = MutableStateFlow<DashboardScreen>(DashboardScreen.Login)
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    private val eventBus: EventBus
+) : ViewModel() {
+
+    private val _currentScreen = MutableStateFlow<NavigationDestination>(NavigationDestination.UnauthenticatedDestination.Login)
     val currentScreen = _currentScreen.asStateFlow()
 
-    fun updateScreen(screen: DashboardScreen) {
+    fun refreshAllScreens() {
+        viewModelScope.launch {
+            eventBus.emit(AppEvent.RefreshData)
+        }
+    }
+
+    fun clearAllScreens() {
+        viewModelScope.launch {
+            eventBus.emit(AppEvent.UserLoggedOut)
+        }
+    }
+
+    fun updateScreen(screen: NavigationDestination) {
         _currentScreen.value = screen
     }
 }

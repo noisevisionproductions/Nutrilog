@@ -35,11 +35,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.state.AuthState
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 
 @Composable
 fun ForgotPassword(
-    onBackToLogin: () -> Unit,
-    viewModel: AuthViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel(),
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -117,7 +118,7 @@ fun ForgotPassword(
             }
 
             TextButton(
-                onClick = onBackToLogin,
+                onClick = { onNavigate(NavigationDestination.UnauthenticatedDestination.Login) },
                 modifier = Modifier.padding(top = 8.dp)
             ) {
                 Text(

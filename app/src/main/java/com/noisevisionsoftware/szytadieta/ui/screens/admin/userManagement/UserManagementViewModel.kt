@@ -8,6 +8,7 @@ import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityMana
 import com.noisevisionsoftware.szytadieta.domain.repository.AdminRepository
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,8 +18,9 @@ import javax.inject.Inject
 class UserManagementViewModel @Inject constructor(
     private val adminRepository: AdminRepository,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _userState =
         MutableStateFlow<ViewModelState<SearchableData<User>>>(ViewModelState.Initial)
@@ -68,5 +70,9 @@ class UserManagementViewModel @Inject constructor(
                 }
             )
         }
+    }
+
+    override fun onUserLoggedOut() {
+        _userState.value = ViewModelState.Initial
     }
 }

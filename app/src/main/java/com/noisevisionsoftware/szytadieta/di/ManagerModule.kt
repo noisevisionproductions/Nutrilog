@@ -6,6 +6,7 @@ import com.noisevisionsoftware.szytadieta.domain.localPreferences.PreferencesMan
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SessionManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SettingsManager
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -25,8 +26,9 @@ object ManagerModule {
     @Provides
     @Singleton
     fun provideSessionManager(
-        @ApplicationContext context: Context
-    ): SessionManager = SessionManager(context)
+        @ApplicationContext context: Context,
+        eventBus: EventBus
+    ): SessionManager = SessionManager(context, eventBus)
 
     @Provides
     @Singleton

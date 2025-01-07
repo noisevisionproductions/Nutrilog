@@ -3,6 +3,7 @@ package com.noisevisionsoftware.szytadieta.domain.repository
 import android.icu.util.Calendar
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.toObject
 import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
 import com.noisevisionsoftware.szytadieta.domain.model.MeasurementType
 import kotlinx.coroutines.tasks.await
@@ -76,16 +77,19 @@ class BodyMeasurementRepository @Inject constructor(
         Result.failure(e)
     }
 
-    suspend fun getLatestMeasurements(userId: String): Result<BodyMeasurements?> = try {
+    suspend fun getLatestMeasurements(
+        userId: String,
+        limit: Int = 7
+    ): Result<List<BodyMeasurements>> = try {
         val snapshot = firestore.collection(measurementsCollection)
             .whereEqualTo("userId", userId)
             .whereEqualTo("measurementType", MeasurementType.FULL_BODY)
             .orderBy("date", Query.Direction.DESCENDING)
-            .limit(1)
+            .limit(limit.toLong())
             .get()
             .await()
 
-        Result.success(snapshot.documents.firstOrNull()?.toObject(BodyMeasurements::class.java))
+        Result.success(snapshot.documents.mapNotNull { it.toObject(BodyMeasurements::class.java) })
     } catch (e: Exception) {
         Result.failure(e)
     }

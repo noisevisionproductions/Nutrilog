@@ -11,7 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -23,6 +25,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,24 +40,33 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.state.AuthState
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (String, String) -> Unit,
-    onRegistrationClick: () -> Unit,
-    onForgotPasswordClick: () -> Unit = {},
-    viewModel: AuthViewModel = hiltViewModel()
+    viewModel: AuthViewModel = hiltViewModel(),
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
     val authState by viewModel.authState.collectAsState()
 
+    LaunchedEffect(authState) {
+        when(authState) {
+            is AuthState.Success -> {
+                onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
+            }
+            else -> Unit
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(24.dp)
+            .verticalScroll(rememberScrollState())
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -127,7 +139,7 @@ fun LoginScreen(
         }
 
         Button(
-            onClick = { onLoginClick(email, password) },
+            onClick = { viewModel.login(email, password) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
@@ -152,7 +164,7 @@ fun LoginScreen(
         }
 
         TextButton(
-            onClick = onForgotPasswordClick,
+            onClick = { onNavigate(NavigationDestination.UnauthenticatedDestination.ForgotPassword) },
             modifier = Modifier.padding(vertical = 8.dp)
         ) {
             Text(
@@ -174,7 +186,7 @@ fun LoginScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
-            TextButton(onClick = onRegistrationClick) {
+            TextButton(onClick = { onNavigate(NavigationDestination.UnauthenticatedDestination.Register) }) {
                 Text(
                     text = "Zarejestruj się",
                     style = MaterialTheme.typography.bodyMedium,

@@ -1,11 +1,11 @@
 package com.noisevisionsoftware.szytadieta.ui.screens.dashboard.components.shoppingListCard
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,11 +13,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,8 +61,8 @@ fun ShoppingListCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -68,21 +71,44 @@ fun ShoppingListCard(
             ) {
                 Text(
                     text = "Lista zakupów",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.secondary
-                )
+                Box(
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
-            Text(
-                text = "Tydzień: ${viewModel.getFormattedWeekDates()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarToday,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Tydzień: ${viewModel.getFormattedWeekDates()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
 
             when (shoppingList) {
                 is ViewModelState.Success -> {
@@ -94,32 +120,20 @@ fun ShoppingListCard(
                     }
                 }
 
-                is ViewModelState.Loading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
-
-                else -> Unit
+                is ViewModelState.Loading -> LoadingContent()
+                else -> EmptyShoppingList()
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "Zobacz pełną listę",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondaryContainer
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
@@ -138,42 +152,121 @@ private fun ShoppingListPreview(
     remainingItems: ViewModelState<Int>
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        shoppingList.categories.take(2).forEach { category ->
-            Text(
-                text = "• ${category.name} (${category.products.size})",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-        }
-
-        if (shoppingList.categories.size > 2) {
-            Text(
-                text = "i ${shoppingList.categories.size - 2} więcej kategorii...",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-            )
-        }
-
         if (remainingItems is ViewModelState.Success) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Pozostało do kupienia: ${remainingItems.data} produktów",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.secondary
-            )
+            val totalItems = shoppingList.categories.sumOf { it.products.size }
+            val remainingCount = remainingItems.data
+            val progress = 1f - (remainingCount.toFloat() / totalItems.toFloat())
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Postęp zakupów",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        text = "${((progress) * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    progress = { progress },
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f)
+                )
+
+                Text(
+                    text = "Pozostało: $remainingCount z $totalItems produktów",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            shoppingList.categories.take(2).forEach { category ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f),
+                            RoundedCornerShape(6.dp)
+                        )
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        text = "${category.products.size}",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+
+            if (shoppingList.categories.size > 2) {
+                Text(
+                    text = "i ${shoppingList.categories.size - 2} więcej kategorii...",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun EmptyShoppingList() {
-    Text(
-        text = "Brak listy zakupów na ten tydzień",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-    )
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Brak listy zakupów",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+        Text(
+            text = "Lista stworzy się automatycznie po przydzieleniu diety",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+        )
+    }
+}
+
+@Composable
+private fun LoadingContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(32.dp),
+            color = MaterialTheme.colorScheme.secondary
+        )
+    }
 }

@@ -12,6 +12,7 @@ import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityMana
 import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +25,9 @@ class SettingsViewModel @Inject constructor(
     private val settingsManager: SettingsManager,
     private val sessionManager: SessionManager,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _settingsState =
         MutableStateFlow<ViewModelState<SettingsData>>(ViewModelState.Initial)
@@ -108,4 +110,9 @@ class SettingsViewModel @Inject constructor(
     data class PasswordUpdateData(
         val field: PasswordField? = null
     )
+
+    override fun onUserLoggedOut() {
+        _settingsState.value = ViewModelState.Initial
+        _passwordUpdateState.value = ViewModelState.Initial
+    }
 }

@@ -6,18 +6,26 @@ data class BodyMeasurements(
     val id: String = UUID.randomUUID().toString(),
     val userId: String = "",
     val date: Long = System.currentTimeMillis(),
-    val neck: Double = 0.0,
-    val biceps: Double = 0.0,
-    val chest: Double = 0.0,
-    val waist: Double = 0.0,
-    val hips: Double = 0.0,
-    val thigh: Double = 0.0,
-    val calf: Double = 0.0,
-    val weight: Double = 0.0,
+    val height: Int = 0,
+    val weight: Int = 0,
+    val neck: Int = 0,
+    val biceps: Int = 0,
+    val chest: Int = 0,
+    val waist: Int = 0,
+    val belt: Int = 0,
+    val hips: Int = 0,
+    val thigh: Int = 0,
+    val calf: Int = 0,
     val note: String = "",
     val weekNumber: Int = 0,
-    val measurementType: MeasurementType = MeasurementType.WEIGHT_ONLY
+    val measurementType: MeasurementType = MeasurementType.WEIGHT_ONLY,
+    val sourceType: MeasurementSourceType = MeasurementSourceType.APP
 )
+
+enum class MeasurementSourceType {
+    APP,
+    GOOGLE_SHEET
+}
 
 enum class MeasurementType {
     WEIGHT_ONLY,

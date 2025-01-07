@@ -3,7 +3,6 @@ package com.noisevisionsoftware.szytadieta.domain.repository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
-import com.noisevisionsoftware.szytadieta.domain.model.MeasurementType
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,17 +47,17 @@ class WeightRepository @Inject constructor(
         Result.failure(e)
     }
 
-    suspend fun getLatestWeight(userId: String): Result<BodyMeasurements?> = try {
-        val snapshot = firestore.collection(weightsCollection)
-            .whereEqualTo("userId", userId)
-            .whereEqualTo("measurementType", MeasurementType.WEIGHT_ONLY)
-            .orderBy("date", Query.Direction.DESCENDING)
-            .limit(1)
-            .get()
-            .await()
+    suspend fun getLatestWeights(userId: String, limit: Int = 7): Result<List<BodyMeasurements>> =
+        try {
+            val snapshot = firestore.collection(weightsCollection)
+                .whereEqualTo("userId", userId)
+                .orderBy("date", Query.Direction.DESCENDING)
+                .limit(limit.toLong())
+                .get()
+                .await()
 
-        Result.success(snapshot.documents.firstOrNull()?.toObject(BodyMeasurements::class.java))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
+            Result.success(snapshot.documents.mapNotNull { it.toObject(BodyMeasurements::class.java) })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 }

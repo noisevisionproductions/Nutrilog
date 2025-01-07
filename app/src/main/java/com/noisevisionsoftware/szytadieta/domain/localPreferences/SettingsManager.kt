@@ -25,7 +25,7 @@ class SettingsManager @Inject constructor(
     }
 
     val isDarkMode: Flow<Boolean> = dataStore.data.map { preferences ->
-        preferences[IS_DARK_MODE_KEY] ?: false
+        preferences[IS_DARK_MODE_KEY] ?: true
     }
 
     suspend fun setDarkMode(enabled: Boolean) {

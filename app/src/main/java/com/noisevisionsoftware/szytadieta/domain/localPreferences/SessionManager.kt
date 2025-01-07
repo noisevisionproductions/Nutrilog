@@ -7,9 +7,15 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.ui.base.AppEvent
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,9 +23,26 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 @Singleton
 class SessionManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val eventBus: EventBus
 ) {
     private val dataStore = context.dataStore
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    init {
+        observeEvents()
+    }
+
+    private fun observeEvents() {
+        scope.launch {
+            eventBus.events.collect { event ->
+                when (event) {
+                    is AppEvent.UserLoggedOut -> clearSession()
+                    else -> Unit
+                }
+            }
+        }
+    }
 
     companion object {
         private val USER_ID_KEY = stringPreferencesKey("user_id")

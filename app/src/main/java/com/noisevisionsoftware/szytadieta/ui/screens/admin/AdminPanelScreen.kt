@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.fileUpload.FileUploadScreen
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.fileUpload.FileUploadViewModel
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.userManagement.UserManagementScreen
@@ -55,7 +56,7 @@ fun AdminPanelScreen(
     statisticsViewModel: StatisticsViewModel = hiltViewModel(),
     fileUploadViewModel: FileUploadViewModel = hiltViewModel(),
     userManagementViewModel: UserManagementViewModel = hiltViewModel(),
-    onBackClick: () -> Unit
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     var currentScreen by remember { mutableStateOf<AdminScreen>(AdminScreen.Dashboard) }
     var showSearchBar by remember { mutableStateOf(false) }
@@ -64,7 +65,7 @@ fun AdminPanelScreen(
         if (currentScreen != AdminScreen.Dashboard) {
             currentScreen = AdminScreen.Dashboard
         } else {
-            onBackClick()
+            onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
         }
     }
 
@@ -72,7 +73,7 @@ fun AdminPanelScreen(
         adminViewModel.checkAdminState()
             .onFailure {
                 adminViewModel.showError("Brak uprawnień administratora")
-                onBackClick()
+                onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
             }
     }
 
@@ -96,7 +97,7 @@ fun AdminPanelScreen(
                 },
                 onBackClick = {
                     if (currentScreen == AdminScreen.Dashboard) {
-                        onBackClick()
+                        onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
                     } else {
                         currentScreen = AdminScreen.Dashboard
                     }

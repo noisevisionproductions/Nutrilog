@@ -1,8 +1,21 @@
 package com.noisevisionsoftware.szytadieta.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,7 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
 import com.noisevisionsoftware.szytadieta.domain.state.AuthState
-import com.noisevisionsoftware.szytadieta.ui.navigation.DashboardScreen
+import com.noisevisionsoftware.szytadieta.ui.navigation.BottomNavItem
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.AdminPanelScreen
 import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.BodyMeasurementsScreen
 import com.noisevisionsoftware.szytadieta.ui.screens.dashboard.DashboardScreen
@@ -38,162 +52,105 @@ fun MainScreen(
     authViewModel: AuthViewModel = hiltViewModel(),
     completeProfileViewModel: CompleteProfileViewModel = hiltViewModel()
 ) {
-    val currentDashboardScreen by mainViewModel.currentScreen.collectAsState()
     val authState by authViewModel.authState.collectAsState()
     val userSession by authViewModel.userSession.collectAsState(initial = null)
-    val profileState by completeProfileViewModel.profileState.collectAsState()
     var isInitialLoading by remember { mutableStateOf(true) }
+    val currentScreen by mainViewModel.currentScreen.collectAsState()
+    val isProfileCompleted by completeProfileViewModel.checkProfileCompletion()
+        .collectAsState(initial = true)
 
     LaunchedEffect(Unit) {
         delay(1500)
         isInitialLoading = false
     }
 
-    LaunchedEffect(profileState) {
-        if (profileState is CompleteProfileViewModel.CompleteProfileState.Success && !completeProfileViewModel.profileUpdateMessageShown) {
-            completeProfileViewModel.profileUpdateMessageShown = true
-            mainViewModel.updateScreen(DashboardScreen.Dashboard)
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                mainViewModel.refreshAllScreens()
+            }
+
+            is AuthState.Logout -> {
+                mainViewModel.clearAllScreens()
+                mainViewModel.updateScreen(NavigationDestination.UnauthenticatedDestination.Login)
+            }
+
+            else -> {}
         }
     }
-
-    HandleBackButton(
-        currentDashboardScreen = currentDashboardScreen,
-        userSession = userSession,
-        authState = authState,
-        onScreenChange = mainViewModel::updateScreen
-    )
 
     LaunchedEffect(authState, userSession) {
         when {
             userSession != null || authState is AuthState.Success -> {
-                completeProfileViewModel.checkProfileCompletion().collect { isCompleted ->
-                    mainViewModel.updateScreen(
-                        if (!isCompleted) DashboardScreen.CompleteProfile
-                        else DashboardScreen.Dashboard
-                    )
+                if (!isProfileCompleted) {
+                    mainViewModel.updateScreen(NavigationDestination.AuthenticatedDestination.CompleteProfile)
+                } else {
+                    mainViewModel.updateScreen(NavigationDestination.AuthenticatedDestination.Dashboard)
                 }
             }
 
             authState is AuthState.Logout -> {
-                mainViewModel.updateScreen(DashboardScreen.Login)
+                mainViewModel.updateScreen(NavigationDestination.UnauthenticatedDestination.Login)
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            isInitialLoading && authState is AuthState.Loading -> {
-                SplashScreen()
+    when {
+        isInitialLoading && authState is AuthState.Loading -> SplashScreen()
+
+        currentScreen is NavigationDestination.UnauthenticatedDestination -> {
+            UnauthenticatedContent(
+                currentScreen = currentScreen as NavigationDestination.UnauthenticatedDestination,
+                onNavigate = mainViewModel::updateScreen
+            )
+        }
+
+        currentScreen is NavigationDestination.AuthenticatedDestination -> {
+            AuthenticatedContent(
+                currentScreen = currentScreen as NavigationDestination.AuthenticatedDestination,
+                authViewModel = authViewModel,
+                onNavigate = mainViewModel::updateScreen
+            )
+        }
+    }
+
+    HandleBackButton(
+        currentScreen = currentScreen,
+        userSession = userSession,
+        authState = authState,
+        onNavigate = mainViewModel::updateScreen
+    )
+}
+
+@Composable
+private fun HandleBackButton(
+    currentScreen: NavigationDestination,
+    userSession: User?,
+    authState: AuthState<User>,
+    onNavigate: (NavigationDestination) -> Unit = {}
+) {
+    BackHandler {
+        when (currentScreen) {
+            NavigationDestination.AuthenticatedDestination.Dashboard -> {}
+
+            NavigationDestination.AuthenticatedDestination.Settings -> {
+                onNavigate(NavigationDestination.AuthenticatedDestination.Profile)
+            }
+
+            NavigationDestination.AuthenticatedDestination.CompleteProfile,
+            NavigationDestination.AuthenticatedDestination.Weight,
+            NavigationDestination.AuthenticatedDestination.BodyMeasurements,
+            NavigationDestination.AuthenticatedDestination.Profile,
+            NavigationDestination.AuthenticatedDestination.MealPlan,
+            NavigationDestination.AuthenticatedDestination.ShoppingList -> {
+                onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
             }
 
             else -> {
-                when (currentDashboardScreen) {
-                    DashboardScreen.AdminPanel -> {
-                        AdminPanelScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) }
-                        )
-                    }
-
-                    DashboardScreen.Profile -> {
-                        UserProfileScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) }
-                        )
-                    }
-
-                    DashboardScreen.Settings -> {
-                        SettingsScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) },
-                            onLogout = { mainViewModel.updateScreen(DashboardScreen.Login) }
-                        )
-                    }
-
-                    DashboardScreen.Login -> {
-                        LoginScreen(
-                            onLoginClick = { email, password ->
-                                authViewModel.login(email, password)
-                            },
-                            onRegistrationClick = {
-                                mainViewModel.updateScreen(DashboardScreen.Register)
-                            },
-                            onForgotPasswordClick = {
-                                mainViewModel.updateScreen(DashboardScreen.ForgotPassword)
-                            }
-                        )
-                    }
-
-                    DashboardScreen.Register -> {
-                        RegisterScreen(
-                            onRegisterClick = { nickname, email, password, confirmPassword ->
-                                authViewModel.register(nickname, email, password, confirmPassword)
-                            },
-                            onLoginClick = {
-                                mainViewModel.updateScreen(DashboardScreen.Login)
-                            },
-                            onRegulationsClick = { },
-                            onPrivacyPolicyClick = { }
-                        )
-                    }
-
-                    DashboardScreen.ForgotPassword -> {
-                        ForgotPassword(
-                            onBackToLogin = {
-                                mainViewModel.updateScreen(DashboardScreen.Login)
-                            }
-                        )
-                    }
-
-                    DashboardScreen.CompleteProfile -> {
-                        CompleteProfileScreen(
-                            onSkip = {
-                                mainViewModel.updateScreen(DashboardScreen.Dashboard)
-                            },
-                            isLoading = profileState is CompleteProfileViewModel.CompleteProfileState.Loading
-                        )
-                    }
-
-                    DashboardScreen.Dashboard -> {
-                        DashboardScreen(
-                            onLogoutClick = { authViewModel.logout() },
-                            onBodyMeasurementsClick = {
-                                mainViewModel.updateScreen(DashboardScreen.BodyMeasurements)
-
-                            },
-                            onAdminPanelClick = {
-                                mainViewModel.updateScreen(DashboardScreen.AdminPanel)
-                            },
-                            onProgressClick = {
-                                mainViewModel.updateScreen(DashboardScreen.Weight)
-                            },
-                            onSettingsClick = { mainViewModel.updateScreen(DashboardScreen.Settings) },
-                            onProfileClick = { mainViewModel.updateScreen(DashboardScreen.Profile) },
-                            onMealPlanClick = { mainViewModel.updateScreen(DashboardScreen.MealPlan) },
-                            onShoppingListClick = { mainViewModel.updateScreen(DashboardScreen.ShoppingList) }
-                        )
-                    }
-
-                    DashboardScreen.Weight -> {
-                        WeightScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) }
-                        )
-                    }
-
-                    DashboardScreen.BodyMeasurements -> {
-                        BodyMeasurementsScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) }
-                        )
-                    }
-
-                    DashboardScreen.MealPlan -> {
-                        MealPlanScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) }
-                        )
-                    }
-
-                    DashboardScreen.ShoppingList -> {
-                        ShoppingListScreen(
-                            onBackClick = { mainViewModel.updateScreen(DashboardScreen.Dashboard) }
-                        )
-                    }
+                if (userSession != null || authState is AuthState.Success) {
+                    onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
+                } else if (currentScreen !is NavigationDestination.UnauthenticatedDestination.Login) {
+                    onNavigate(NavigationDestination.UnauthenticatedDestination.Login)
                 }
             }
         }
@@ -201,33 +158,116 @@ fun MainScreen(
 }
 
 @Composable
-private fun HandleBackButton(
-    currentDashboardScreen: DashboardScreen,
-    userSession: User?,
-    authState: AuthState<User>,
-    onScreenChange: (DashboardScreen) -> Unit
+private fun AuthenticatedContent(
+    currentScreen: NavigationDestination.AuthenticatedDestination,
+    authViewModel: AuthViewModel,
+    onNavigate: (NavigationDestination) -> Unit
 ) {
-    BackHandler {
-        when (currentDashboardScreen) {
-            DashboardScreen.Dashboard -> {}
+    Scaffold(
+        bottomBar = {
+            AppBottomNavigation(
+                currentScreen = currentScreen,
+                onNavigate = onNavigate
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            AnimatedContent(
+                targetState = currentScreen,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(500)) togetherWith
+                            fadeOut(animationSpec = tween(500))
+                }, label = "Fade In/Out Animation"
+            ) { screen ->
+                when (screen) {
+                    NavigationDestination.AuthenticatedDestination.Dashboard ->
+                        DashboardScreen(
+                            onNavigate = onNavigate
+                        )
 
-            DashboardScreen.CompleteProfile,
-            DashboardScreen.Weight,
-            DashboardScreen.BodyMeasurements,
-            DashboardScreen.Profile,
-            DashboardScreen.MealPlan,
-            DashboardScreen.ShoppingList,
-            DashboardScreen.Settings -> {
-                onScreenChange(DashboardScreen.Dashboard)
-            }
+                    NavigationDestination.AuthenticatedDestination.CompleteProfile ->
+                        CompleteProfileScreen(onNavigate = onNavigate)
 
-            else -> {
-                if (userSession != null || authState is AuthState.Success) {
-                    onScreenChange(DashboardScreen.Dashboard)
-                } else if (currentDashboardScreen !is DashboardScreen.Login) {
-                    onScreenChange(DashboardScreen.Login)
+                    NavigationDestination.AuthenticatedDestination.Profile ->
+                        UserProfileScreen(
+                            onNavigate = onNavigate,
+                            onLogoutClick = { authViewModel.logout() }
+                        )
+
+                    NavigationDestination.AuthenticatedDestination.AdminPanel -> {
+                        LaunchedEffect(Unit) {
+                            val hasAccess = authViewModel.checkAdminAccess()
+                            if (!hasAccess) {
+                                onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
+                            }
+                        }
+                        AdminPanelScreen(onNavigate = onNavigate)
+                    }
+
+                    NavigationDestination.AuthenticatedDestination.BodyMeasurements ->
+                        BodyMeasurementsScreen(onNavigate = onNavigate)
+
+                    NavigationDestination.AuthenticatedDestination.MealPlan ->
+                        MealPlanScreen(onNavigate = onNavigate)
+
+                    NavigationDestination.AuthenticatedDestination.Settings ->
+                        SettingsScreen(
+                            onNavigate = onNavigate,
+                            onLogout = { authViewModel.logout() }
+                        )
+
+                    NavigationDestination.AuthenticatedDestination.ShoppingList ->
+                        ShoppingListScreen(onNavigate = onNavigate)
+
+                    NavigationDestination.AuthenticatedDestination.Weight ->
+                        WeightScreen(onNavigate = onNavigate)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun UnauthenticatedContent(
+    currentScreen: NavigationDestination.UnauthenticatedDestination,
+    onNavigate: (NavigationDestination) -> Unit
+) {
+    when (currentScreen) {
+        NavigationDestination.UnauthenticatedDestination.Login ->
+            LoginScreen(onNavigate = onNavigate)
+
+        NavigationDestination.UnauthenticatedDestination.Register ->
+            RegisterScreen(onNavigate = onNavigate)
+
+        NavigationDestination.UnauthenticatedDestination.ForgotPassword ->
+            ForgotPassword(onNavigate = onNavigate)
+    }
+}
+
+@Composable
+private fun AppBottomNavigation(
+    currentScreen: NavigationDestination.AuthenticatedDestination,
+    onNavigate: (NavigationDestination) -> Unit
+) {
+    NavigationBar {
+        BottomNavItem.items.forEach { item ->
+            NavigationBarItem(
+                icon = { Icon(item.icon, contentDescription = item.title) },
+                label = { Text(item.title) },
+                selected = currentScreen == item.route,
+                onClick = { onNavigate(item.route) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                    indicatorColor = MaterialTheme.colorScheme.surface,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
         }
     }
 }

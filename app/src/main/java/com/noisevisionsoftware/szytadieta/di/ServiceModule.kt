@@ -9,6 +9,7 @@ import com.noisevisionsoftware.szytadieta.domain.service.excelParser.ShoppingLis
 import com.noisevisionsoftware.szytadieta.domain.service.dietService.DietService
 import com.noisevisionsoftware.szytadieta.domain.service.dietService.FileMetadataService
 import com.noisevisionsoftware.szytadieta.domain.service.dietService.StorageService
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -62,4 +63,8 @@ object ServiceModule {
     fun provideShoppingListSheetParser(): ShoppingListSheetParser {
         return ShoppingListSheetParser()
     }
+
+    @Provides
+    @Singleton
+    fun provideEventBus(): EventBus = EventBus()
 }

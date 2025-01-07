@@ -37,6 +37,7 @@ import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomErrorMessage
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
 import com.noisevisionsoftware.szytadieta.ui.common.LoadingOverlay
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import com.noisevisionsoftware.szytadieta.ui.screens.mealPlan.components.DayHeader
 import com.noisevisionsoftware.szytadieta.ui.screens.mealPlan.components.DayMeals
 import com.noisevisionsoftware.szytadieta.ui.screens.mealPlan.components.NoMealPlanMessage
@@ -48,7 +49,7 @@ import java.util.Locale
 @Composable
 fun MealPlanScreen(
     viewModel: MealPlanViewModel = hiltViewModel(),
-    onBackClick: () -> Unit
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     val mealPlanState by viewModel.mealPlanState.collectAsState()
     val hasAnyMealPlans by viewModel.hasAnyMealPlans.collectAsState()
@@ -61,7 +62,7 @@ fun MealPlanScreen(
     ) {
         CustomTopAppBar(
             title = "Plan posiłków",
-            onBackClick = onBackClick,
+            onBackClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard) },
             showRefreshIcon = true,
             onRefreshClick = { viewModel.refreshMealPlan() }
         )

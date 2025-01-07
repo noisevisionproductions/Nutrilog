@@ -5,15 +5,17 @@ import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
 class AdminPanelViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    eventBus: EventBus,
     networkManager: NetworkConnectivityManager,
     alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     suspend fun checkAdminState(): Result<Boolean> =
         authRepository.getCurrentUserData().map { user ->

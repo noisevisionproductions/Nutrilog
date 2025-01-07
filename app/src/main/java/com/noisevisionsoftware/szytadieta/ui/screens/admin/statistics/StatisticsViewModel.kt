@@ -6,6 +6,7 @@ import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityMana
 import com.noisevisionsoftware.szytadieta.domain.repository.StatisticsRepository
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,8 +16,9 @@ import javax.inject.Inject
 class StatisticsViewModel @Inject constructor(
     private val statisticsRepository: StatisticsRepository,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _statisticsState =
         MutableStateFlow<ViewModelState<AppStatistics>>(ViewModelState.Initial)
@@ -27,5 +29,9 @@ class StatisticsViewModel @Inject constructor(
             statisticsRepository.getStatistics()
                 .getOrThrow()
         }
+    }
+
+    override fun onUserLoggedOut() {
+        _statisticsState.value = ViewModelState.Initial
     }
 }

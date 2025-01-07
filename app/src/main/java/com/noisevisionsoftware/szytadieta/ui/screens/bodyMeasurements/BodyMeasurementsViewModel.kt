@@ -11,6 +11,7 @@ import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.repository.BodyMeasurementRepository
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,8 +22,9 @@ class BodyMeasurementsViewModel @Inject constructor(
     private val bodyMeasurementsRepository: BodyMeasurementRepository,
     private val authRepository: AuthRepository,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _measurementsState =
         MutableStateFlow<ViewModelState<List<BodyMeasurements>>>(ViewModelState.Initial)
@@ -89,5 +91,9 @@ class BodyMeasurementsViewModel @Inject constructor(
     private fun getCurrentUserOrThrow(): FirebaseUser {
         return authRepository.getCurrentUser()
             ?: throw AppException.AuthException("Użytkownik nie jest zalogowany")
+    }
+
+    override fun onUserLoggedOut() {
+        _measurementsState.value = ViewModelState.Initial
     }
 }

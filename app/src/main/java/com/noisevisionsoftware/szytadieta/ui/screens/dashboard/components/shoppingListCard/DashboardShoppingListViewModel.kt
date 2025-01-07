@@ -10,6 +10,7 @@ import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.repository.dietRepository.ShoppingListRepository
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +27,9 @@ class DashboardShoppingListViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val preferencesManager: PreferencesManager,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _weeklyShoppingList =
         MutableStateFlow<ViewModelState<ShoppingList?>>(ViewModelState.Initial)
@@ -124,5 +126,10 @@ class DashboardShoppingListViewModel @Inject constructor(
         } finally {
             _isRefreshingShoppingList.value = false
         }
+    }
+
+    override fun onUserLoggedOut() {
+        _weeklyShoppingList.value = ViewModelState.Initial
+        _remainingItems.value = ViewModelState.Initial
     }
 }

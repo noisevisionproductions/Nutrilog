@@ -13,13 +13,33 @@ import kotlinx.coroutines.launch
 
 abstract class BaseViewModel(
     private val networkManager: NetworkConnectivityManager,
-    private val alertManager: AlertManager
+    private val alertManager: AlertManager,
+    protected val eventBus: EventBus
 ) : ViewModel() {
 
     private val _isNetworkAvailable = MutableStateFlow(true)
 
     init {
         observeNetworkConnection()
+        observeEvents()
+    }
+
+    private fun observeEvents() {
+        viewModelScope.launch {
+            eventBus.events.collect { event ->
+                when (event) {
+                    is AppEvent.UserLoggedOut -> onUserLoggedOut()
+                    is AppEvent.RefreshData -> onRefreshData()
+                }
+            }
+        }
+    }
+
+    protected open fun onUserLoggedOut() {
+
+    }
+
+    protected open fun onRefreshData() {
     }
 
     private fun observeNetworkConnection() {

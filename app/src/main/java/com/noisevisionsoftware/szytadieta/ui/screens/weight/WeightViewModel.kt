@@ -10,6 +10,7 @@ import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.repository.WeightRepository
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,8 +21,9 @@ class WeightViewModel @Inject constructor(
     private val weightRepository: WeightRepository,
     private val authRepository: AuthRepository,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _weightState =
         MutableStateFlow<ViewModelState<List<BodyMeasurements>>>(ViewModelState.Initial)
@@ -31,7 +33,7 @@ class WeightViewModel @Inject constructor(
         loadWeights()
     }
 
-    fun addWeight(weight: Double, note: String = "") {
+    fun addWeight(weight: Int, note: String = "") {
         if (weight <= 0) {
             _weightState.value = ViewModelState.Error("Waga musi być większa niż 0")
             return
@@ -100,5 +102,10 @@ class WeightViewModel @Inject constructor(
     private fun getCurrentUserOrThrow(): FirebaseUser {
         return authRepository.getCurrentUser()
             ?: throw AppException.AuthException("Użytkownik nie jest zalogowany")
+    }
+
+    override fun onUserLoggedOut() {
+        super.onUserLoggedOut()
+        _weightState.value = ViewModelState.Initial
     }
 }

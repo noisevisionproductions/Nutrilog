@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Person
@@ -135,6 +136,11 @@ private fun UserCard(
                             "dd.MM.yyyy HH:mm",
                             Locale.getDefault()
                         ).format(Date(user.createdAt))
+                    )
+                    UserInfoRow(
+                        icon = Icons.Default.Cake,
+                        label = "Wiek:",
+                        value = "${user.storedAge ?: 0}"
                     )
                     UserInfoRow(
                         icon = Icons.Default.Person,

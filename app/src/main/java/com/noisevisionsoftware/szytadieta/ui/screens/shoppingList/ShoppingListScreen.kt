@@ -19,6 +19,7 @@ import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomErrorMessage
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
 import com.noisevisionsoftware.szytadieta.ui.common.LoadingOverlay
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import com.noisevisionsoftware.szytadieta.ui.screens.shoppingList.components.CategorySelector
 import com.noisevisionsoftware.szytadieta.ui.screens.shoppingList.components.NoShoppingListAvailable
 import com.noisevisionsoftware.szytadieta.ui.screens.shoppingList.components.ProductList
@@ -28,7 +29,7 @@ import com.noisevisionsoftware.szytadieta.ui.screens.shoppingList.components.Wee
 @Composable
 fun ShoppingListScreen(
     viewModel: ShoppingListViewModel = hiltViewModel(),
-    onBackClick: () -> Unit
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     val shoppingListState by viewModel.shoppingListState.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
@@ -43,7 +44,7 @@ fun ShoppingListScreen(
     ) {
         CustomTopAppBar(
             title = "Lista zakupów",
-            onBackClick = onBackClick,
+            onBackClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard) },
             showRefreshIcon = true,
             onRefreshClick = {
                 viewModel.loadAvailableWeeks()
@@ -51,29 +52,32 @@ fun ShoppingListScreen(
             }
         )
 
-        when {
-            shoppingListState is ViewModelState.Error -> CustomErrorMessage(
+        when (shoppingListState) {
+            is ViewModelState.Initial,
+            is ViewModelState.Loading -> LoadingOverlay()
+
+            is ViewModelState.Error -> CustomErrorMessage(
                 message = (shoppingListState as ViewModelState.Error).message
             )
 
-            shoppingListState is ViewModelState.Loading -> LoadingOverlay()
-
-            availableWeeks.isEmpty() -> NoShoppingListAvailable()
-
-            shoppingListState is ViewModelState.Success -> {
-                ShoppingListContent(
-                    shoppingList = (shoppingListState as ViewModelState.Success<ShoppingList>).data,
-                    selectedCategory = selectedCategory,
-                    availableWeeks = availableWeeks,
-                    selectedWeek = selectedWeek,
-                    onWeekSelected = { viewModel.selectWeek(it) },
-                    onCategorySelected = { viewModel.selectedCategory(it) },
-                    getFormattedWeekDate = { viewModel.getFormattedWeekDate(it) },
-                    checkedProducts = checkedProducts,
-                    onProductCheckedChange = { productName, _ ->
-                        viewModel.toggleProductCheck(productName)
-                    }
-                )
+            is ViewModelState.Success -> {
+                if (availableWeeks.isEmpty()) {
+                    NoShoppingListAvailable()
+                } else {
+                    ShoppingListContent(
+                        shoppingList = (shoppingListState as ViewModelState.Success<ShoppingList>).data,
+                        selectedCategory = selectedCategory,
+                        availableWeeks = availableWeeks,
+                        selectedWeek = selectedWeek,
+                        onWeekSelected = { viewModel.selectWeek(it) },
+                        onCategorySelected = { viewModel.selectedCategory(it) },
+                        getFormattedWeekDate = { viewModel.getFormattedWeekDate(it) },
+                        checkedProducts = checkedProducts,
+                        onProductCheckedChange = { productName, _ ->
+                            viewModel.toggleProductCheck(productName)
+                        }
+                    )
+                }
             }
         }
     }

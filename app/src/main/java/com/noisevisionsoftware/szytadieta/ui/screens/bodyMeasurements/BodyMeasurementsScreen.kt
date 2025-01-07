@@ -34,6 +34,7 @@ import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomProgressIndicator
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.ErrorMessage
 import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.components.AddMeasurementsDialog
 import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.components.MeasurementsList
@@ -42,7 +43,7 @@ import com.noisevisionsoftware.szytadieta.ui.screens.bodyMeasurements.components
 @Composable
 fun BodyMeasurementsScreen(
     viewModel: BodyMeasurementsViewModel = hiltViewModel(),
-    onBackClick: () -> Unit
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     val measurementsState by viewModel.measurementsState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -51,7 +52,9 @@ fun BodyMeasurementsScreen(
         topBar = {
             CustomTopAppBar(
                 title = "Pomiary ciała",
-                onBackClick = onBackClick
+                onBackClick = {
+                    onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard)
+                }
             )
         },
         floatingActionButton = {
@@ -161,19 +164,19 @@ data class MeasurementsInputState(
     fun isValid(): Boolean {
         val measurements = listOf(neck, biceps, chest, waist, hips, thigh, calf, weight)
         return measurements.all {
-            it.isNotBlank() && it.toDoubleOrNull()?.let { value -> value > 0 } == true
+            it.isNotBlank() && it.toIntOrNull()?.let { value -> value > 0 } == true
         }
     }
 
     fun toBodyMeasurements() = BodyMeasurements(
-        neck = neck.toDoubleOrNull() ?: 0.0,
-        biceps = biceps.toDoubleOrNull() ?: 0.0,
-        chest = chest.toDoubleOrNull() ?: 0.0,
-        waist = waist.toDoubleOrNull() ?: 0.0,
-        hips = hips.toDoubleOrNull() ?: 0.0,
-        thigh = thigh.toDoubleOrNull() ?: 0.0,
-        calf = calf.toDoubleOrNull() ?: 0.0,
-        weight = weight.toDoubleOrNull() ?: 0.0,
+        neck = neck.toIntOrNull() ?: 0,
+        biceps = biceps.toIntOrNull() ?: 0,
+        chest = chest.toIntOrNull() ?: 0,
+        waist = waist.toIntOrNull() ?: 0,
+        hips = hips.toIntOrNull() ?: 0,
+        thigh = thigh.toIntOrNull() ?: 0,
+        calf = calf.toIntOrNull() ?: 0,
+        weight = weight.toIntOrNull() ?: 0,
         note = note
     )
 }

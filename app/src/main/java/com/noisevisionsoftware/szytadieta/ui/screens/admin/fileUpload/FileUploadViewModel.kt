@@ -15,6 +15,7 @@ import com.noisevisionsoftware.szytadieta.domain.state.file.UploadResult
 import com.noisevisionsoftware.szytadieta.domain.state.file.UploadResultStatus
 import com.noisevisionsoftware.szytadieta.domain.state.file.UploadStage
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,8 +27,9 @@ class FileUploadViewModel @Inject constructor(
     private val fileRepository: FileRepository,
     private val adminRepository: AdminRepository,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _uploadState = MutableStateFlow<FileUploadState>(FileUploadState.Initial)
     val uploadState = _uploadState.asStateFlow()
@@ -205,5 +207,10 @@ class FileUploadViewModel @Inject constructor(
         _selectedUsers.value = emptySet()
         uploadResults.clear()
         loadUsers()
+    }
+
+    override fun onUserLoggedOut() {
+        _userState.value = ViewModelState.Initial
+        _uploadState.value = FileUploadState.Initial
     }
 }

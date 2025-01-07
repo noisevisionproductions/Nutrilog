@@ -7,10 +7,13 @@ import com.noisevisionsoftware.szytadieta.domain.exceptions.FirebaseErrorMapper
 import com.noisevisionsoftware.szytadieta.domain.exceptions.ValidationManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SessionManager
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.UserRole
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
 import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.state.AuthState
+import com.noisevisionsoftware.szytadieta.ui.base.AppEvent
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +26,9 @@ class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sessionManager: SessionManager,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _authState = MutableStateFlow<AuthState<User>>(AuthState.Initial)
     val authState = _authState.asStateFlow()
@@ -82,7 +86,8 @@ class AuthViewModel @Inject constructor(
                 ValidationManager.validateNickname(nickname).getOrThrow()
                 ValidationManager.validateEmail(email).getOrThrow()
                 ValidationManager.validatePassword(password).getOrThrow()
-                ValidationManager.validatePasswordConfirmation(password, confirmPassword).getOrThrow()
+                ValidationManager.validatePasswordConfirmation(password, confirmPassword)
+                    .getOrThrow()
 
                 val result = authRepository.register(nickname, email, password)
                 result.onSuccess { user ->
@@ -120,14 +125,23 @@ class AuthViewModel @Inject constructor(
     fun logout() {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
-            safeApiCall {
+            try {
                 sessionManager.clearSession()
-                authRepository.logout()
-            }.onSuccess {
+                authRepository.logout().getOrThrow()
+                eventBus.emit(AppEvent.UserLoggedOut)
                 _authState.value = AuthState.Logout
-            }.onFailure {
+            } catch (e: Exception) {
                 showError("Błąd podczas wylogowywania")
             }
+        }
+    }
+
+    suspend fun checkAdminAccess(): Boolean {
+        return try {
+            val user = getCurrentUser()
+            user.role == UserRole.ADMIN
+        } catch (e: Exception) {
+            false
         }
     }
 

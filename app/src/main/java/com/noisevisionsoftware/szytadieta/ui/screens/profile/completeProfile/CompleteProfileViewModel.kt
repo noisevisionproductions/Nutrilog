@@ -2,13 +2,14 @@ package com.noisevisionsoftware.szytadieta.ui.screens.profile.completeProfile
 
 import androidx.lifecycle.viewModelScope
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
-import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
-import com.noisevisionsoftware.szytadieta.domain.exceptions.ValidationManager
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
+import com.noisevisionsoftware.szytadieta.domain.exceptions.ValidationManager
 import com.noisevisionsoftware.szytadieta.domain.model.user.Gender
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
+import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.ui.base.BaseViewModel
+import com.noisevisionsoftware.szytadieta.ui.base.EventBus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,8 +22,9 @@ import javax.inject.Inject
 class CompleteProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     networkManager: NetworkConnectivityManager,
-    alertManager: AlertManager
-) : BaseViewModel(networkManager, alertManager) {
+    alertManager: AlertManager,
+    eventBus: EventBus
+) : BaseViewModel(networkManager, alertManager, eventBus) {
 
     private val _completeProfileState =
         MutableStateFlow<CompleteProfileState>(CompleteProfileState.Initial)
@@ -37,14 +39,12 @@ class CompleteProfileViewModel @Inject constructor(
 
     private var tempBirthDate: Long? = null
     private var tempGender: Gender? = null
-    var profileUpdateMessageShown = false
 
     fun checkProfileCompletion(): Flow<Boolean> = flow {
         authRepository.getCurrentUserData()
             .onSuccess { user ->
                 val isCompleted = user?.let {
-                    val completed = it.profileCompleted && it.birthDate != null && it.gender != null
-                    completed
+                    it.profileCompleted && it.birthDate != null && it.gender != null
                 } ?: false
                 emit(isCompleted)
             }
@@ -111,5 +111,13 @@ class CompleteProfileViewModel @Inject constructor(
         }
         _completeProfileState.value = CompleteProfileState.Error(appException.message)
         showError(appException.message)
+    }
+
+    override fun onUserLoggedOut() {
+        _completeProfileState.value = CompleteProfileState.Initial
+    }
+
+    override fun onRefreshData() {
+        checkProfileCompletion()
     }
 }

@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
 import com.noisevisionsoftware.szytadieta.ui.common.LoadingIndicator
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import com.noisevisionsoftware.szytadieta.ui.screens.admin.ErrorMessage
 import com.noisevisionsoftware.szytadieta.ui.screens.settings.components.ChangePasswordDialog
 import com.noisevisionsoftware.szytadieta.ui.screens.settings.components.DeleteAccountDialog
@@ -43,7 +44,7 @@ import com.noisevisionsoftware.szytadieta.ui.screens.settings.components.Setting
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
-    onBackClick: () -> Unit,
+    onNavigate: (NavigationDestination) -> Unit,
     onLogout: () -> Unit
 ) {
     var showChangePasswordDialog by remember { mutableStateOf(false) }
@@ -74,7 +75,7 @@ fun SettingsScreen(
         topBar = {
             CustomTopAppBar(
                 title = "Ustawienia",
-                onBackClick = onBackClick
+                onBackClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Profile) }
             )
         }
     ) { padding ->

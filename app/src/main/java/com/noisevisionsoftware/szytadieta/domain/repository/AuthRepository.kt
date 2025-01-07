@@ -1,11 +1,17 @@
 package com.noisevisionsoftware.szytadieta.domain.repository
 
+import android.icu.util.Calendar
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
+import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.MeasurementSourceType
+import com.noisevisionsoftware.szytadieta.domain.model.MeasurementType
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
+import com.noisevisionsoftware.szytadieta.domain.model.user.pending.PendingUser
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -14,15 +20,61 @@ class AuthRepository @Inject constructor(
     private val firestore: FirebaseFirestore
 ) {
     suspend fun register(nickname: String, email: String, password: String): Result<User> = try {
+        val pendingUserSnapshot = firestore.collection("pendingUsers")
+            .document(email)
+            .get()
+            .await()
+
         val authResult = auth.createUserWithEmailAndPassword(email, password).await()
 
         authResult.user?.let { firebaseUser ->
-            val user = User(
+            var user = User(
                 id = firebaseUser.uid,
                 email = email,
                 nickname = nickname,
                 createdAt = System.currentTimeMillis()
             )
+
+            if (pendingUserSnapshot.exists()) {
+                val pendingUser = pendingUserSnapshot.toObject<PendingUser>()
+                pendingUser?.let { pending ->
+                    user = user.copy(
+                        gender = pending.gender,
+                        storedAge = pending.age,
+                        profileCompleted = true
+                    )
+
+                    pending.measurements?.forEach { measurement ->
+                        val bodyMeasurement = BodyMeasurements(
+                            userId = user.id,
+                            date = measurement.date,
+                            height = measurement.height,
+                            weight = measurement.weight,
+                            neck = measurement.neck,
+                            biceps = measurement.biceps,
+                            chest = measurement.chest,
+                            waist = measurement.waist,
+                            belt = measurement.belt,
+                            hips = measurement.hips,
+                            thigh = measurement.thigh,
+                            calf = measurement.calf,
+                            measurementType = MeasurementType.FULL_BODY,
+                            sourceType = MeasurementSourceType.GOOGLE_SHEET,
+                            weekNumber = getWeekNumber(measurement.date)
+                        )
+
+                        firestore.collection("bodyMeasurements")
+                            .document(bodyMeasurement.id)
+                            .set(bodyMeasurement)
+                            .await()
+                    }
+
+                    firestore.collection("pendingUsers")
+                        .document(email)
+                        .delete()
+                        .await()
+                }
+            }
 
             firestore.collection("users")
                 .document(user.id)
@@ -150,5 +202,11 @@ class AuthRepository @Inject constructor(
             ?: throw AppException.AuthException("Użytkownik nie jest zalogowany")
 
         return action(currentUser.uid)
+    }
+
+    private fun getWeekNumber(timestamp: Long): Int {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = timestamp
+        return calendar.get(Calendar.WEEK_OF_YEAR)
     }
 }

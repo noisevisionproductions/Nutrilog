@@ -50,11 +50,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
+import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -63,7 +65,7 @@ import java.util.Locale
 @Composable
 fun WeightScreen(
     viewModel: WeightViewModel = hiltViewModel(),
-    onBackClick: () -> Unit
+    onNavigate: (NavigationDestination) -> Unit
 ) {
     val weightState by viewModel.weightState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -72,7 +74,7 @@ fun WeightScreen(
         topBar = {
             CustomTopAppBar(
                 title = "Historia wagi",
-                onBackClick = onBackClick
+                onBackClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard) }
             )
         },
         floatingActionButton = {
@@ -225,7 +227,7 @@ private fun WeightStats(bodyMeasurements: List<BodyMeasurements>) {
                 WeightStatItem(
                     title = "Średnia waga",
                     value = bodyMeasurements.takeIf { it.isNotEmpty() }
-                        ?.let { "%.1f kg".format(it.map { w -> w.weight }.average()) }
+                        ?.let { "${it.map { w -> w.weight }.average().toInt()} kg" }
                         ?: "-"
                 )
                 WeightStatItem(
@@ -239,8 +241,8 @@ private fun WeightStats(bodyMeasurements: List<BodyMeasurements>) {
                 val lastWeight = bodyMeasurements.first().weight
                 val difference = lastWeight - firstWeight
                 val differenceText = when {
-                    difference > 0 -> "+%.1f kg".format(difference)
-                    difference < 0 -> "%.1f kg".format(difference)
+                    difference > 0 -> "+$difference kg"
+                    difference < 0 -> "$difference kg"
                     else -> "0 kg"
                 }
 
@@ -288,6 +290,7 @@ private fun EmptyWeightList() {
         contentAlignment = Alignment.Center
     ) {
         Column(
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -300,13 +303,15 @@ private fun EmptyWeightList() {
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Brak pomiarów wagi",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Dodaj swój pierwszy pomiar używając przycisku poniżej",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -423,7 +428,7 @@ private fun WeightItem(
 @Composable
 private fun AddWeightDialog(
     onDismiss: () -> Unit,
-    onConfirm: (Double, String) -> Unit
+    onConfirm: (Int, String) -> Unit
 ) {
     var weightText by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
@@ -490,7 +495,7 @@ private fun AddWeightDialog(
                     TextButton(
                         onClick = {
                             try {
-                                val weight = weightText.replace(",", ".").toDouble()
+                                val weight = weightText.toInt()
                                 if (weight > 0) {
                                     onConfirm(weight, note)
                                 } else {

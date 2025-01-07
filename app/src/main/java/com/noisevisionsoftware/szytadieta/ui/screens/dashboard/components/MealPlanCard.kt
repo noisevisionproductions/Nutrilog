@@ -1,15 +1,20 @@
 package com.noisevisionsoftware.szytadieta.ui.screens.dashboard.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.RestaurantMenu
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,8 +50,8 @@ fun MealPlanCard(
     ) {
         Column(
             modifier = Modifier
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -55,14 +60,26 @@ fun MealPlanCard(
             ) {
                 Text(
                     text = "Plan posiłków",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
-                Icon(
-                    imageVector = Icons.Default.RestaurantMenu,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary
-                )
+                Box(
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f),
+                            RoundedCornerShape(12.dp)
+                        )
+                        .padding(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.RestaurantMenu,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
 
             TodayMealsPreview(
@@ -76,77 +93,206 @@ fun MealPlanCard(
 private fun TodayMealsPreview(
     todayMeals: ViewModelState<List<Meal>>
 ) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        when (todayMeals) {
-            is ViewModelState.Success -> {
-                if (todayMeals.data.isNotEmpty()) {
-                    val nextMeal = findNextMeal(todayMeals.data)
+    when (todayMeals) {
+        is ViewModelState.Success -> {
+            if (todayMeals.data.isNotEmpty()) {
+                val nextMeal = findNextMeal(todayMeals.data)
 
-                    Text(
-                        text = "Następny posiłek:",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
-                    )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
 
-                    Text(
-                        text = nextMeal.name.displayName,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    MealsProgress(
+                        meals = todayMeals.data,
+                        currentMeal = nextMeal
                     )
 
-                    Text(
-                        text = nextMeal.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
-                    )
-                } else {
-                    Text(
-                        text = "Brak zaplanowanych posiłków na dziś",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "Następny posiłek:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+
+                        Text(
+                            text = nextMeal.name.displayName,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+
+                        Text(
+                            text = nextMeal.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Zobacz pełny plan",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Default.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                 }
-            }
-
-            is ViewModelState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
-
-            else -> {
-                Text(
-                    text = "Sprwadź swój plan posiłków",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
+            } else {
+                EmptyMealsContent()
             }
         }
 
+        is ViewModelState.Loading -> LoadingContent()
+        else -> EmptyMealsContent()
+    }
+}
+
+@Composable
+private fun MealsProgress(
+    meals: List<Meal>,
+    currentMeal: Meal
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        meals.forEach { meal ->
+            MealProgressItem(
+                meal = meal,
+                isActive = meal == currentMeal,
+                isPast = isMealInPast(meal),
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MealProgressItem(
+    meal: Meal,
+    isActive: Boolean,
+    isPast: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(
+                    when {
+                        isActive -> MaterialTheme.colorScheme.tertiary
+                        isPast -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
+                        else -> MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f)
+                    },
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = meal.name.displayName.first().toString(),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = when {
+                    isActive -> MaterialTheme.colorScheme.onTertiary
+                    else -> MaterialTheme.colorScheme.onTertiaryContainer
+                }
+            )
+        }
+    }
+}
+
+private fun isMealInPast(meal: Meal): Boolean {
+    val calendar = Calendar.getInstance()
+    val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
+
+    return when (meal.name) {
+        MealType.BREAKFAST -> hourOfDay > 10
+        MealType.SECOND_BREAKFAST -> hourOfDay > 12
+        MealType.LUNCH -> hourOfDay > 16
+        MealType.SNACK -> hourOfDay > 18
+        MealType.DINNER -> hourOfDay >= 23
+    }
+}
+
+@Composable
+private fun EmptyMealsContent() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "Brak zaplanowanych posiłków",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onTertiaryContainer
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Zobacz pełny plan",
+                text = "Kliknij, aby wypróbować nasze diety",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.tertiary
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
             )
             Icon(
-                imageVector = Icons.AutoMirrored.Default.ArrowForward,
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.tertiary
+                tint = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
             )
         }
+
+    }
+}
+
+@Composable
+private fun LoadingContent() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier.size(32.dp),
+            color = MaterialTheme.colorScheme.tertiary
+        )
     }
 }
 
