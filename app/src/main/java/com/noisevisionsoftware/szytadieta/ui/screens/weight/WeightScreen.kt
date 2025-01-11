@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material3.AlertDialogDefaults
@@ -53,15 +54,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.MeasurementSourceType
 import com.noisevisionsoftware.szytadieta.domain.state.ViewModelState
+import com.noisevisionsoftware.szytadieta.ui.common.ConfirmAlertDialog
 import com.noisevisionsoftware.szytadieta.ui.common.CustomTopAppBar
 import com.noisevisionsoftware.szytadieta.ui.navigation.NavigationDestination
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeightScreen(
     viewModel: WeightViewModel = hiltViewModel(),
@@ -74,7 +76,9 @@ fun WeightScreen(
         topBar = {
             CustomTopAppBar(
                 title = "Historia wagi",
-                onBackClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard) }
+                onBackClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Dashboard) },
+                showRefreshIcon = true,
+                onRefreshClick = { viewModel.loadWeights() }
             )
         },
         floatingActionButton = {
@@ -132,6 +136,7 @@ private fun WeightContent(
                 bodyMeasurements = state.data,
                 onDeleteClick = onDeleteClick
             )
+
             is ViewModelState.Error -> WeightError(state.message)
             ViewModelState.Initial -> Unit
         }
@@ -177,6 +182,24 @@ private fun WeightList(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, bottom = 8.dp)
+                ) {
+                    Text(
+                        text = "Historia pomiarów wagi",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Twoje wcześniejsze pomiary oraz ich statystyki",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             item {
                 WeightStats(bodyMeasurements = bodyMeasurements)
             }
@@ -247,7 +270,7 @@ private fun WeightStats(bodyMeasurements: List<BodyMeasurements>) {
                 }
 
                 Text(
-                    text = "Zmiana: $differenceText",
+                    text = "Zmiana po pierwszym pomiarze: $differenceText",
                     style = MaterialTheme.typography.bodyMedium,
                     color = when {
                         difference > 0 -> MaterialTheme.colorScheme.error
@@ -317,8 +340,6 @@ private fun EmptyWeightList() {
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WeightItem(
     bodyMeasurements: BodyMeasurements,
@@ -341,17 +362,16 @@ private fun WeightItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(
-                    text = "${bodyMeasurements.weight} kg",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                WeightHeader(
+                    weight = bodyMeasurements.weight,
+                    sourceType = bodyMeasurements.sourceType
                 )
-                Text(
-                    text = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
-                        .format(Date(bodyMeasurements.date)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                WeightDateTime(
+                    date = bodyMeasurements.date,
+                    sourceType = bodyMeasurements.sourceType
                 )
                 if (bodyMeasurements.note.isNotBlank()) {
                     Text(
@@ -375,51 +395,67 @@ private fun WeightItem(
     }
 
     if (showDeleteDialog) {
-        BasicAlertDialog(
-            onDismissRequest = { showDeleteDialog = false }
-        ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-                shape = MaterialTheme.shapes.large,
-                tonalElevation = AlertDialogDefaults.TonalElevation
-            ) {
-                Column(
-                    modifier = Modifier
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    Text(
-                        text = "Potwierdź usunięcie",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Text(
-                        text = "Czy na pewno chcesz usunąć ten wpis?",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = { showDeleteDialog = false }
-                        ) {
-                            Text("Anuluj")
-                        }
-                        TextButton(
-                            onClick = {
-                                onDeleteClick()
-                                showDeleteDialog = false
-                            }
-                        ) {
-                            Text("Usuń")
-                        }
-                    }
-                }
-            }
+        ConfirmAlertDialog(
+            onConfirm = { onDeleteClick() },
+            onDismiss = { showDeleteDialog = false },
+            title = "Potwierdź usunięcie wagi",
+            message = "Czy na pewno chcesz usunąć ten wpis?",
+            confirmActionText = "Usuń",
+            dismissActionText = "Anuluj"
+        )
+    }
+}
+
+@Composable
+private fun WeightHeader(
+    weight: Int,
+    sourceType: MeasurementSourceType,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        Text(
+            text = "$weight kg",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (sourceType == MeasurementSourceType.GOOGLE_SHEET) {
+            Icon(
+                imageVector = Icons.Default.CloudDone,
+                contentDescription = "Dane z Google Sheets",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeightDateTime(
+    date: Long,
+    sourceType: MeasurementSourceType,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        Text(
+            text = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+                .format(Date(date)),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (sourceType == MeasurementSourceType.GOOGLE_SHEET) {
+            Text(
+                text = "Google Sheets",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+            )
         }
     }
 }

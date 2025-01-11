@@ -1,11 +1,12 @@
 package com.noisevisionsoftware.szytadieta.ui.screens.dashboard
 
 import android.icu.util.Calendar
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SessionManager
-import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.BodyMeasurements
 import com.noisevisionsoftware.szytadieta.domain.model.dietPlan.Meal
 import com.noisevisionsoftware.szytadieta.domain.model.dietPlan.WeekDay
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
@@ -22,7 +23,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 @HiltViewModel
@@ -64,6 +67,7 @@ class DashboardViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
+    private val _isActive = MutableStateFlow(false)
 
     init {
         loadUserRole()
@@ -74,17 +78,36 @@ class DashboardViewModel @Inject constructor(
         observeUserSession()
     }
 
+    fun setActive(active: Boolean) {
+        _isActive.value = active
+    }
+
+    init {
+        viewModelScope.launch {
+            _isActive.collect { isActive ->
+                if (isActive) {
+                    refreshDashboardData()
+                }
+            }
+        }
+    }
+
     fun refreshDashboardData() {
         viewModelScope.launch {
             _isRefreshing.value = true
             try {
-                coroutineScope {
-                    launch { loadUserRole() }
-                    launch { loadUserData() }
-                    launch { loadLatestWeight() }
-                    launch { loadLatestMeasurements() }
-                    launch { loadTodayMeals() }
+                supervisorScope {
+                    val jobs = listOf(
+                        launch { loadUserRole() },
+                        launch { loadUserData() },
+                        launch { loadLatestWeight() },
+                        launch { loadLatestMeasurements() },
+                        launch { loadTodayMeals() }
+                    )
+                    jobs.joinAll()
                 }
+            } catch (e: Exception) {
+                showError(e.message ?: "Wystąpił błąd podczas odświeżania danych")
             } finally {
                 _isRefreshing.value = false
             }
@@ -122,14 +145,24 @@ class DashboardViewModel @Inject constructor(
 
     private fun loadLatestWeight() {
         handleOperation(_latestWeight) {
-            authRepository.withAuthenticatedUser { userId ->
-                weightRepository.getLatestWeights(userId, 7).getOrNull()?.firstOrNull()
+            try {
+                authRepository.withAuthenticatedUser { userId ->
+                    weightRepository.getLatestWeights(userId, 7).getOrNull()?.firstOrNull()
+                }
+            } catch (e: Exception) {
+                Log.e("DashboardViewModel", "Error loading latest weight", e)
+                throw e
             }
         }
 
         handleOperation(_weightHistory) {
-            authRepository.withAuthenticatedUser { userId ->
-                weightRepository.getLatestWeights(userId, 7).getOrNull() ?: emptyList()
+            try {
+                authRepository.withAuthenticatedUser { userId ->
+                    weightRepository.getLatestWeights(userId, 7).getOrNull() ?: emptyList()
+                }
+            } catch (e: Exception) {
+                Log.e("DashboardViewModel", "Error loading weight history", e)
+                throw e
             }
         }
     }

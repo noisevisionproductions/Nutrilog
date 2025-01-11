@@ -1,10 +1,9 @@
 package com.noisevisionsoftware.szytadieta.ui.screens.weight
 
-import com.google.firebase.auth.FirebaseUser
 import com.noisevisionsoftware.szytadieta.domain.alert.AlertManager
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
-import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
-import com.noisevisionsoftware.szytadieta.domain.model.MeasurementType
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.MeasurementType
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
 import com.noisevisionsoftware.szytadieta.domain.repository.AuthRepository
 import com.noisevisionsoftware.szytadieta.domain.repository.WeightRepository
@@ -18,8 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class WeightViewModel @Inject constructor(
-    private val weightRepository: WeightRepository,
     private val authRepository: AuthRepository,
+    private val weightRepository: WeightRepository,
     networkManager: NetworkConnectivityManager,
     alertManager: AlertManager,
     eventBus: EventBus
@@ -40,27 +39,27 @@ class WeightViewModel @Inject constructor(
         }
 
         handleOperation(_weightState) {
-            val currentUser = getCurrentUserOrThrow()
+            authRepository.withAuthenticatedUser { userId ->
+                val bodyMeasurementsEntry = BodyMeasurements(
+                    userId = userId,
+                    weight = weight,
+                    note = note,
+                    measurementType = MeasurementType.WEIGHT_ONLY
+                )
 
-            val bodyMeasurementsEntry = BodyMeasurements(
-                userId = currentUser.uid,
-                weight = weight,
-                note = note,
-                measurementType = MeasurementType.WEIGHT_ONLY
-            )
+                safeApiCall { weightRepository.addWeight(bodyMeasurementsEntry) }
+                    .onSuccess {
+                        showSuccess("Pomyślnie dodano wagę")
+                        loadWeights()
+                    }
+                    .onFailure { throwable ->
+                        throw AppException.UnknownException(
+                            throwable.message ?: "Błąd podczas dodawania wagi"
+                        )
+                    }
 
-            safeApiCall { weightRepository.addWeight(bodyMeasurementsEntry) }
-                .onSuccess {
-                    showSuccess("Pomyślnie dodano wagę")
-                    loadWeights()
-                }
-                .onFailure { throwable ->
-                    throw AppException.UnknownException(
-                        throwable.message ?: "Błąd podczas dodawania wagi"
-                    )
-                }
-
-            loadWeightsData()
+                loadWeightsData()
+            }
         }
     }
 
@@ -81,27 +80,24 @@ class WeightViewModel @Inject constructor(
         }
     }
 
-    private fun loadWeights() {
+    fun loadWeights() {
         handleOperation(_weightState) {
             loadWeightsData()
         }
     }
 
     private suspend fun loadWeightsData(): List<BodyMeasurements> {
-        val currentUser = getCurrentUserOrThrow()
-
         return safeApiCall {
-            weightRepository.getUserWeights(currentUser.uid)
-                .map { measurements ->
-                    measurements.filter { it.measurementType == MeasurementType.WEIGHT_ONLY }
-                }
-        }
-            .getOrThrow()
-    }
-
-    private fun getCurrentUserOrThrow(): FirebaseUser {
-        return authRepository.getCurrentUser()
-            ?: throw AppException.AuthException("Użytkownik nie jest zalogowany")
+            authRepository.withAuthenticatedUser { userId ->
+                weightRepository.getUserWeights(userId)
+                    .map { measurements ->
+                        measurements.filter {
+                            it.measurementType == MeasurementType.FULL_BODY ||
+                                    it.measurementType == MeasurementType.WEIGHT_ONLY
+                        }
+                    }
+            }
+        }.getOrThrow()
     }
 
     override fun onUserLoggedOut() {

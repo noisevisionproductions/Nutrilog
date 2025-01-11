@@ -36,8 +36,8 @@ object RepositoryModule {
     @Provides
     @Singleton
     fun provideWeightRepository(
-        firestore: FirebaseFirestore
-    ): WeightRepository = WeightRepository(firestore)
+        bodyMeasurementRepository: BodyMeasurementRepository
+    ): WeightRepository = WeightRepository(bodyMeasurementRepository)
 
     @Provides
     @Singleton
@@ -67,6 +67,7 @@ object RepositoryModule {
         dietService: DietService,
         excelValidationService: ExcelValidationService,
         excelParserService: ExcelParserService,
+        shoppingListRepository: ShoppingListRepository,
         @ApplicationContext appContext: Context
     ): FileRepository {
         return FileRepository(
@@ -75,6 +76,7 @@ object RepositoryModule {
             dietService,
             excelValidationService,
             excelParserService,
+            shoppingListRepository,
             appContext
         )
     }

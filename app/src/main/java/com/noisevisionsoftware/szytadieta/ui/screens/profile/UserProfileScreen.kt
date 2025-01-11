@@ -147,13 +147,13 @@ private fun ProfileScreenPage(
                     ProfileItem(
                         icon = Icons.Default.DateRange,
                         label = "Data urodzenia",
-                        value = formatDate(state.data.birthDate)
+                        value = "${state.data.storedAge}"
                     )
                 } else {
                     ProfileItem(
                         icon = Icons.Default.DateRange,
                         label = "Wiek",
-                        value = "${state.data.storedAge}"
+                        value = "Nie podano"
                     )
                 }
                 if (state.data.gender != null) {

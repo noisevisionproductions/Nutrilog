@@ -7,9 +7,9 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
-import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
-import com.noisevisionsoftware.szytadieta.domain.model.MeasurementSourceType
-import com.noisevisionsoftware.szytadieta.domain.model.MeasurementType
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.MeasurementSourceType
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.MeasurementType
 import com.noisevisionsoftware.szytadieta.domain.model.user.User
 import com.noisevisionsoftware.szytadieta.domain.model.user.pending.PendingUser
 import com.noisevisionsoftware.szytadieta.utils.DateUtils
@@ -42,6 +42,7 @@ class AuthRepository @Inject constructor(
                     user = user.copy(
                         gender = pending.gender,
                         storedAge = pending.age,
+                        firstAndLastName = pending.firstAndLastName,
                         profileCompleted = true
                     )
 

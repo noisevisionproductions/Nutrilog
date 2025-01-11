@@ -3,8 +3,8 @@ package com.noisevisionsoftware.szytadieta.ui.screens.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -12,6 +12,7 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -45,6 +46,11 @@ fun DashboardScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(Unit) {
+        viewModel.refreshDashboardData()
+        shoppingListViewModel.refreshShoppingList()
+    }
+
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isRefreshing,
         onRefresh = {
@@ -65,9 +71,14 @@ fun DashboardScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                top = 24.dp,
+                bottom = 24.dp
+            )
         ) {
             item {
                 TopBar(
@@ -98,18 +109,18 @@ fun DashboardScreen(
             }
 
             item {
-                WeightCard(
-                    latestWeight = latestWeight,
-                    weightHistory = weightHistory,
-                    onClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Weight) }
-                )
-            }
-
-            item {
                 MeasurementsCard(
                     latestMeasurements = latestMeasurements,
                     onClick = { onNavigate(NavigationDestination.AuthenticatedDestination.BodyMeasurements) },
                     measurementsHistory = measurementsHistory
+                )
+            }
+
+            item {
+                WeightCard(
+                    latestWeight = latestWeight,
+                    weightHistory = weightHistory,
+                    onClick = { onNavigate(NavigationDestination.AuthenticatedDestination.Weight) }
                 )
             }
         }

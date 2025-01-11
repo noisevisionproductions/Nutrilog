@@ -11,5 +11,4 @@ data class Diet(
     val startDate: Long = DateUtils.getCurrentLocalDate(),
     val endDate: Long = DateUtils.getLocalDatePlusDays(7),
     val weeklyPlan: List<DayPlan> = emptyList(),
-    val shoppingList: ShoppingList? = null
 )

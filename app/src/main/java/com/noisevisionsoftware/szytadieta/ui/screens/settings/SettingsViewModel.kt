@@ -6,6 +6,7 @@ import com.noisevisionsoftware.szytadieta.domain.exceptions.AppException
 import com.noisevisionsoftware.szytadieta.domain.exceptions.FirebaseErrorMapper
 import com.noisevisionsoftware.szytadieta.domain.exceptions.PasswordField
 import com.noisevisionsoftware.szytadieta.domain.exceptions.ValidationManager
+import com.noisevisionsoftware.szytadieta.domain.localPreferences.PreferencesManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SessionManager
 import com.noisevisionsoftware.szytadieta.domain.localPreferences.SettingsManager
 import com.noisevisionsoftware.szytadieta.domain.network.NetworkConnectivityManager
@@ -26,6 +27,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsManager: SettingsManager,
     private val sessionManager: SessionManager,
     private val appVersionUtils: AppVersionUtils,
+    private val preferencesManager: PreferencesManager,
     networkManager: NetworkConnectivityManager,
     alertManager: AlertManager,
     eventBus: EventBus
@@ -79,17 +81,21 @@ class SettingsViewModel @Inject constructor(
 
     fun deleteAccount() {
         handleOperation(_settingsState) {
-            safeApiCall { authRepository.deleteAccount() }
-                .getOrThrow()
+            authRepository.withAuthenticatedUser { userId ->
 
-            sessionManager.clearSession()
-            settingsManager.clearSettings()
-            showSuccess("Konto zostało usunięte")
+                safeApiCall { authRepository.deleteAccount() }
+                    .getOrThrow()
 
-            SettingsData(
-                isAccountDeleted = true,
-                appVersion = appVersionUtils.getAppVersion()
-            )
+                sessionManager.clearSession()
+                settingsManager.clearSettings()
+                preferencesManager.clearAllUserData(userId = userId)
+                showSuccess("Konto zostało usunięte")
+
+                SettingsData(
+                    isAccountDeleted = true,
+                    appVersion = appVersionUtils.getAppVersion()
+                )
+            }
         }
     }
 

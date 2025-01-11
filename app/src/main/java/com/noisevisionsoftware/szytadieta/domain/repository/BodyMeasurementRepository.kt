@@ -3,8 +3,8 @@ package com.noisevisionsoftware.szytadieta.domain.repository
 import android.icu.util.Calendar
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
-import com.noisevisionsoftware.szytadieta.domain.model.MeasurementType
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.MeasurementType
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
@@ -27,7 +27,8 @@ class BodyMeasurementRepository @Inject constructor(
     suspend fun getMeasurementsHistory(
         userId: String,
         startDate: Long? = null,
-        endDate: Long? = null
+        endDate: Long? = null,
+        limit: Long = 50
     ): Result<List<BodyMeasurements>> = try {
         var query = firestore.collection(measurementsCollection)
             .whereEqualTo("userId", userId)
@@ -40,6 +41,7 @@ class BodyMeasurementRepository @Inject constructor(
 
         val snapshot = query
             .orderBy("date", Query.Direction.DESCENDING)
+            .limit(limit)
             .get()
             .await()
 

@@ -10,7 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.noisevisionsoftware.szytadieta.MainDispatcherRule
-import com.noisevisionsoftware.szytadieta.domain.model.BodyMeasurements
+import com.noisevisionsoftware.szytadieta.domain.model.measurements.BodyMeasurements
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
