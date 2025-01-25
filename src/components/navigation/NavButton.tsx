@@ -1,5 +1,6 @@
 import {LucideIcon} from "lucide-react";
 import React from "react";
+import {cn} from "../../utils/cs";
 
 interface NavButtonProps {
     icon: LucideIcon;
@@ -7,6 +8,7 @@ interface NavButtonProps {
     isActive: boolean;
     onClick: () => void;
     className?: string;
+    isCollapsed?: boolean;
 }
 
 const NavButton: React.FC<NavButtonProps> = ({
@@ -14,19 +16,29 @@ const NavButton: React.FC<NavButtonProps> = ({
                                                  label,
                                                  isActive,
                                                  onClick,
-                                                 className = ''
+                                                 className = '',
+                                                 isCollapsed = false
                                              }) => {
     return (
         <button
             onClick={onClick}
-            className={`
-                flex items-center w-full p-4 transition-colors
-                ${isActive ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}
-                ${className}
-            `}
+            className={cn(
+                "w-full flex items-center px-4 py-3 transition-all duration-200",
+                "hover:bg-gray-50",
+                isActive && "bg-blue-50 text-blue-600",
+                isCollapsed ? "justify-center" : "justify-start",
+                className
+            )}
         >
-            <Icon className="w-5 h-5 mr-3"/>
-            {label}
+            <Icon className={cn(
+                "w-5 h-5",
+                isCollapsed ? "mr-0" : "mr-3"
+            )}/>
+            {!isCollapsed && (
+                <span className="transition-opacity duration-200">
+                    {label}
+                </span>
+            )}
         </button>
     );
 };

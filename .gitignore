@@ -46,3 +46,46 @@ Thumbs.db
 
 # Others (np. pliki zależne od projektu)
 *.gz
+# Dependencje
+node_modules
+.pnp
+.pnp.js
+
+# Produkcyjny build
+dist
+dist-ssr
+*.local
+
+# Logi
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cache
+.cache
+.temp
+.vite
+
+# Środowisko
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Firebase
+firebase-debug.log*
+ui-debug.log*
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System
+*.pem
+
+# Testy
+coverage

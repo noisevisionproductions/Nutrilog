@@ -13,16 +13,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                                                      activeTab,
                                                      onTabChange
                                                  }) => {
-    const handleLogout = () => {
-        console.log('Logout clicked');
-    };
-
     return (
         <div className="flex h-screen bg-gray-100">
             <Sidebar
                 activeTab={activeTab}
                 onTabChange={onTabChange}
-                onLogout={handleLogout}
             />
             <main className="flex-1 p-8 overflow-auto">
                 {children}

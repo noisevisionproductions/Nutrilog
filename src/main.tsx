@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import App from './App'
 
-// Style
 import './index.css'
 
 const queryClient = new QueryClient({

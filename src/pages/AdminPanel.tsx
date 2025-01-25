@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import AdminLayout from '../components/layout/AdminLayout';
-import { TabName } from '../types/navigation';
+import {TabName} from '../types/navigation';
 import ExcelUpload from "../components/upload/ExcelUpload";
+import UsersManagement from "../components/users/UsersManagement";
+import DietManagement from "../components/diet/DietManagement";
 
 const AdminPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabName>('upload');
@@ -12,20 +14,18 @@ const AdminPanel: React.FC = () => {
                 return (
                     <div>
                         <h2 className="text-2xl font-bold mb-4">Upload Plików Excel</h2>
-                        <ExcelUpload />
+                        <ExcelUpload/>
                     </div>
                 );
             case 'data':
                 return (
                     <div>
-                        <h2 className="text-2xl font-bold mb-4">Zarządzanie Danymi</h2>
-{/*
-                        <DataManagement />
-*/}
+                        <h2 className="text-2xl font-bold mb-4">Zarządzanie Dietami</h2>
+                        <DietManagement/>
                     </div>
                 );
             case 'users':
-                return <h2 className="text-2xl font-bold mb-4">Użytkownicy</h2>;
+                return <UsersManagement/>
             case 'settings':
                 return <h2 className="text-2xl font-bold mb-4">Ustawienia</h2>;
             default:

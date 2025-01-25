@@ -1,80 +1,154 @@
 import React, {useState} from "react";
-import {Upload} from "lucide-react";
+import {User} from "../../types/user";
+import {toast} from "sonner";
+import UserSelector from "./UserSelector";
+import FileUploadZone from "./FileUploadZone";
+import {ExcelParserService} from "../../services/ExcelParserService";
+import {FirebaseService} from "../../services/FirebaseService";
+import {Timestamp} from 'firebase/firestore';
+import {ExcelValidationService} from "../../services/ExcelValidationService";
+import ValidationErrors from "./ValidationErrors";
+
+interface ValidationError {
+    row: number;
+    column: string;
+    message: string;
+    type?: 'warning' | 'error';
+}
 
 const ExcelUpload: React.FC = () => {
-    const [isDragging, setIsDragging] = useState<boolean>(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [file, setFile] = useState<File | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+    const [validationWarnings, setValidationWarnings] = useState<ValidationError[]>([]);
 
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>): void => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
+    const handleFileSelect = async (file: File | null) => {
+        setFile(null);
+        setValidationErrors([]);
+        setValidationWarnings([]);
 
-    const handleDragLeave = (): void => {
-        setIsDragging(false);
-    };
+        if (!selectedUser) {
+            toast.error('Najpierw wybierz użytkownika');
+            return;
+        }
 
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
-        e.preventDefault();
-        setIsDragging(false);
+        if (file) {
+            const validationResult = await ExcelValidationService.validateDietExcel(file, selectedUser.id);
 
-        const files = e.dataTransfer.files;
-        if (files.length) {
-            handleFile(files[0]);
+            if (!validationResult.isValid) {
+                setValidationErrors(validationResult.errors);
+                setValidationWarnings(validationResult.warnings || []);
+            } else {
+                setFile(file);
+                if (validationResult.warnings?.length > 0) {
+                    setValidationWarnings(validationResult.warnings);
+                }
+            }
         }
     };
 
-    const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        if (e.target.files?.length) {
-            handleFile(e.target.files[0]);
+    const handleUpload = async () => {
+        if (!selectedUser || !file) {
+            toast.error('Wybierz użytkownika i plik przed wysłaniem');
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            const parsedData = await ExcelParserService.parseDietExcel(file);
+
+            const fileUrl = await FirebaseService.uploadExcelFile(file, selectedUser.id);
+
+            const recipeIds = await Promise.all(
+                parsedData.flatMap(day =>
+                    day.meals.map(meal =>
+                        FirebaseService.saveRecipe({
+                            name: meal.name,
+                            instructions: meal.instructions,
+                            nutritionalValues: meal.nutritionalValues
+                        })
+                    )
+                )
+            );
+
+            await FirebaseService.saveDiet({
+                userId: selectedUser.id,
+                createdAt: Timestamp.fromDate(new Date()),
+                updatedAt: Timestamp.fromDate(new Date()),
+                days: parsedData.map(day => ({
+                    date: day.date,
+                    meals: day.meals.map((meal, index) => ({
+                        recipeId: recipeIds[index],
+                        mealType: meal.mealType,
+                        time: meal.time,
+                        ingredients: meal.ingredients
+                    }))
+                })),
+                metadata: {
+                    totalDays: parsedData.length,
+                    fileName: file.name,
+                    fileUrl
+                }
+            });
+
+            toast.success('Dieta została pomyślnie zapisana');
+            setFile(null);
+            setValidationErrors([]);
+            setValidationWarnings([]);
+        } catch (error) {
+            console.error('Error saving diet:', error);
+            toast.error('Wystąpił błąd podczas zapisywania diety');
+        } finally {
+            setIsProcessing(false);
         }
     };
 
-    const handleFile = (file: File): void => {
-        const validTypes = [
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-excel'
-        ];
-
-        if (validTypes.includes(file.type)) {
-            setFile(file);
-        } else {
-            alert('Proszę wybrać plik Excel');
-        }
+    const handleErrorsClose = () => {
+        setValidationErrors([]);
+        setValidationWarnings([]);
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
-
-            <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center
-                    ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}
-                    ${file ? 'bg-green-50' : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-            >
-                <Upload className="w-12 h-12 mx-auto mb-4 text-gray-400"/>
-
-                <p className="mb-4 text-gray-600">
-                    {file
-                        ? `Wybrany plik: ${file.name}`
-                        : 'Przeciągnij i upuść plik Excel lub kliknij, aby wybrać'}
-                </p>
-
-                <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    className="hidden"
-                    id="fileInput"
-                    onChange={handleFileInput}
+        <div className="space-y-8">
+            {(validationErrors.length > 0 || validationWarnings.length > 0) && (
+                <ValidationErrors
+                    errors={validationErrors}
+                    warnings={validationWarnings}
+                    onClose={handleErrorsClose}
+                    onProceed={validationErrors.length === 0 ? handleUpload : undefined}
                 />
+            )}
 
-                <label
-                    htmlFor="fileInput"
-                    className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer">
-                    Wybierz plik
-                </label>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Wybierz użytkownika</h3>
+                <UserSelector
+                    selectedUser={selectedUser}
+                    onUserSelect={setSelectedUser}
+                />
+            </div>
+
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+                <h3 className="text-lg font-medium mb-4">Upload pliku Excel</h3>
+                <FileUploadZone
+                    file={file}
+                    onFileSelect={handleFileSelect}
+                    disabled={!selectedUser}
+                />
+            </div>
+
+            <div className="flex justify-end">
+                <button
+                    onClick={handleUpload}
+                    disabled={!selectedUser || !file || validationErrors.length > 0 || isProcessing}
+                    className={`px-4 py-2 rounded-lg ${
+                        !selectedUser || !file || validationErrors.length > 0 || isProcessing
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                >
+                    {isProcessing ? 'Przetwarzanie...' : 'Wyślij'}
+                </button>
             </div>
         </div>
     );

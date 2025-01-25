@@ -1,6 +1,7 @@
 {
   "hosting": {
-    "public": "y",
+    "target": "admin-panel-firebase-hosting",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
