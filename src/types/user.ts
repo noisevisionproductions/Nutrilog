@@ -18,4 +18,5 @@ export interface User {
     storedAge: number;
     profileCompleted: boolean;
     role: UserRole;
+    note?: string;
 }

@@ -1,15 +1,15 @@
 import React, {useState, useEffect} from 'react';
 import {collection, getDocs} from 'firebase/firestore';
 import {db} from '../../config/firebase';
-import {Diet} from '../../types/diet';
 import {User} from '../../types/user';
 import DietView from './DietView';
 import {toast} from 'sonner';
-import DietEditModal from "./dietEdit/DietEditModal";
+import DietEditModal from "./edit/DietEditModal";
 import LoadingSpinner from "../common/LoadingSpinner";
 import DietCard from "./DietCard";
 import useUsers from "../../hooks/useUsers";
 import DietFilter from "./DietFilter";
+import {Diet} from "../../types";
 
 interface DietWithUser extends Diet {
     userEmail?: string;

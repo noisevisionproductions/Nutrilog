@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import ValidationMessage from './ValidationMessage';
-import {MealType} from "../../../../types/diet";
 import {getMealTypeLabel} from "../../../../utils/mealTypeUtils";
+import {MealType} from "../../../../types";
 
 interface MealsConfigValidatorProps {
     mealTimes: { [key: string]: string };

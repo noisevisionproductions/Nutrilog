@@ -1,13 +1,18 @@
 import React from 'react';
 import {User, Gender, UserRole} from '../../types/user';
 import {calculateAge} from '../../utils/dateFormatters';
+import {db} from "../../config/firebase";
+import {doc, updateDoc} from "firebase/firestore";
+import {toast} from "sonner";
+import UserNote from "./UserNote";
 
 interface UsersListProps {
     users: User[];
     onUserSelect: (user: User) => void;
+    onUpdate: () => Promise<void>;
 }
 
-const UsersList: React.FC<UsersListProps> = ({users, onUserSelect}) => {
+const UsersList: React.FC<UsersListProps> = ({users, onUserSelect, onUpdate}) => {
     const getGenderLabel = (gender: Gender | null) => {
         switch (gender) {
             case Gender.MALE:
@@ -16,6 +21,19 @@ const UsersList: React.FC<UsersListProps> = ({users, onUserSelect}) => {
                 return 'Kobieta';
             default:
                 return 'Nie podano';
+        }
+    };
+
+    const handleNoteSave = async (userId: string, note: string) => {
+        try {
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {note});
+            await onUpdate();
+            toast.success('Notatka została zaktualizowana')
+        } catch (error) {
+            console.error('Error updating note:', error);
+            toast.error('Błąd podczas aktualizacji notatki');
+            throw error;
         }
     };
 
@@ -38,6 +56,9 @@ const UsersList: React.FC<UsersListProps> = ({users, onUserSelect}) => {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Rola
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Notatka
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Akcje
@@ -82,6 +103,12 @@ const UsersList: React.FC<UsersListProps> = ({users, onUserSelect}) => {
                                 }`}>
                                     {user.role === UserRole.ADMIN ? 'Admin' : 'Użytkownik'}
                                 </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            <UserNote
+                                note={user.note}
+                                onSave={(note) => handleNoteSave(user.id, note)}
+                            />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <button

@@ -1,5 +1,5 @@
-import {DietTemplate, MealType} from '../types/diet';
 import {Timestamp} from "firebase/firestore";
+import {DietTemplate, MealType} from "../types";
 
 export const getMealTypeLabel = (mealType: MealType): string => {
     const labels: Record<MealType, string> = {

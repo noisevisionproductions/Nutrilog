@@ -35,25 +35,30 @@ export const formatTimestamp = (timestamp: number | Date | Timestamp) => {
     });
 };
 
-export const formatDateForDateInput = (date: string | Timestamp): string => {
-    let dateObject: Date;
-
-    if (date instanceof Timestamp) {
-        dateObject = date.toDate();
-    } else {
-        const [day, month, year] = date.split('-').map(Number);
-        dateObject = new Date(year, month - 1, day);
+export const convertTimestampToMillis = (timestamp: any): number | null => {
+    if (!timestamp) return null;
+    if (timestamp instanceof Timestamp) {
+        return timestamp.toMillis();
     }
-
-    return dateObject.toISOString().split('T')[0];
+    if (typeof timestamp === 'number') {
+        return timestamp;
+    }
+    if (timestamp?.toMillis && typeof timestamp.toMillis === 'function') {
+        return timestamp.toMillis();
+    }
+    return null;
 };
 
-export const formatDateFromInput = (dateString: string): string => {
-    if (!dateString) return '';
+export const dateToString = (timestamp: Timestamp) => {
+    const date = timestamp.toDate();
+    return date.toISOString().split('T')[0];
+};
 
+export const stringToTimestamp = (dateString: string) => {
     const date = new Date(dateString);
-    return `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    return Timestamp.fromDate(date);
 };
+
 
 export const calculateAge = (birthDate: number | null): number => {
     if (!birthDate) return 0;

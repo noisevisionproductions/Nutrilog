@@ -1,7 +1,7 @@
 import React from "react";
-import {DietTemplate, MealType} from "../../../types/diet";
 import {getMealTypeLabel} from "../../../utils/mealTypeUtils";
-import {Timestamp} from "firebase/firestore";
+import {DietTemplate, MealType} from "../../../types";
+import {dateToString, stringToTimestamp} from "../../../utils/dateFormatters";
 
 interface DietTemplateConfigProps {
     template: DietTemplate;
@@ -25,16 +25,6 @@ const DietTemplateConfig: React.FC<DietTemplateConfigProps> = ({
                                                                    template,
                                                                    onTemplateChange
                                                                }) => {
-    const dateToString = (timestamp: Timestamp) => {
-        const date = timestamp.toDate();
-        return date.toISOString().split('T')[0];
-    };
-
-    const stringToTimestamp = (dateString: string) => {
-        const date = new Date(dateString);
-        return Timestamp.fromDate(date);
-    };
-
     const handleMealsPerDayChange = (value: number) => {
         const newTemplate = {...template, mealsPerDay: value};
         const mealTimes: { [key: string]: string } = {};

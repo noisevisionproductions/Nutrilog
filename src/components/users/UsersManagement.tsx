@@ -39,6 +39,7 @@ const UsersManagement: React.FC = () => {
                 <UsersList
                     users={users}
                     onUserSelect={setSelectedUser}
+                    onUpdate={fetchUsers}
                 />
             )}
 

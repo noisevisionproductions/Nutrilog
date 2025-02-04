@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
-import {ShoppingList} from "../types/diet";
 import {collection, getDocs, query, where} from "firebase/firestore";
 import {db} from "../config/firebase";
+import {ShoppingList, ShoppingListV1, ShoppingListV2} from "../types";
 
 export const useShoppingList = (dietId: string) => {
     const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
@@ -19,10 +19,22 @@ export const useShoppingList = (dietId: string) => {
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
                     const doc = querySnapshot.docs[0];
-                    setShoppingList({
-                        id: doc.id,
-                        ...doc.data()
-                    } as ShoppingList);
+                    const data = doc.data();
+
+                    if (data.version === 2) {
+                        setShoppingList({
+                            id: doc.id,
+                            ...data
+                        } as ShoppingListV2);
+                    } else {
+                        setShoppingList({
+                            id: doc.id,
+                            ...data,
+                            version: 1
+                        } as ShoppingListV1);
+                    }
+                } else {
+                    setShoppingList(null);
                 }
             } catch (err) {
                 setError(err as Error);
@@ -32,9 +44,24 @@ export const useShoppingList = (dietId: string) => {
         };
 
         if (dietId) {
-            fetchShoppingList().catch();
+            setLoading(true);
+            setError(null);
+            fetchShoppingList().catch((err) => {
+                console.error('Error in fetchShoppingList:', err);
+                setError(err as Error);
+                setLoading(false);
+            });
         }
     }, [dietId]);
 
-    return {shoppingList, loading, error};
+    const isVersion2 = (list: ShoppingList | null): list is ShoppingListV2 => {
+        return list?.version === 2;
+    };
+
+    return {
+        shoppingList,
+        loading,
+        error,
+        isVersion2
+    };
 };

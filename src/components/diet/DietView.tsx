@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from "react";
-import {Diet, MealType, Recipe} from "../../types/diet";
 import {toast} from "sonner";
 import {
     Sheet,
@@ -13,17 +12,17 @@ import {useShoppingList} from "../../hooks/useShoppingList";
 import {doc, getDoc} from "firebase/firestore";
 import {db} from "../../config/firebase";
 import {formatDate, formatTimestamp} from "../../utils/dateFormatters";
+import {Diet, MealType, Recipe} from  "../../types";
 
 interface DietViewProps {
     diet: Diet;
     onClose: () => void;
 }
 
-const DietView: React.FC<DietViewProps> = ({ diet, onClose }) => {
+const DietView: React.FC<DietViewProps> = ({diet, onClose}) => {
     const [recipes, setRecipes] = useState<{ [key: string]: Recipe }>({});
     const [loading, setLoading] = useState(true);
-    const { shoppingList, loading: shoppingListLoading } =
-        useShoppingList(diet.id);
+    const {shoppingList, loading: shoppingListLoading} = useShoppingList(diet.id);
 
     useEffect(() => {
         const fetchRecipes = async () => {
@@ -94,9 +93,28 @@ const DietView: React.FC<DietViewProps> = ({ diet, onClose }) => {
                     </div>
                 </div>
                 <ul className="list-disc list-inside space-y-1">
-                    {shoppingList.items.map((item, index) => (
-                        <li key={index} className="text-gray-700">{item.name}</li>
-                    ))}
+                    {shoppingList.version === 2 ? (
+                        // Nowy format (V2)
+                        shoppingList.items.map((item: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined, index: React.Key | null | undefined) => (
+                            <li key={index} className="text-gray-700">{item}</li>
+                        ))
+                    ) : (
+                        // Stary format (V1)
+                        shoppingList.items.map((item: { name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; recipes: any[]; }, index: React.Key | null | undefined) => (
+                            <li key={index} className="text-gray-700">
+                                <span>{item.name}</span>
+                                {item.recipes && item.recipes.length > 0 && (
+                                    <div className="ml-6 text-sm text-gray-500">
+                                        {item.recipes.map((recipe, recipeIndex) => (
+                                            <div key={recipeIndex}>
+                                                Dzień {recipe.dayIndex + 1}: {recipe.recipeName} ({getMealTypeLabel(recipe.mealType)}, {recipe.mealTime})
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </li>
+                        ))
+                    )}
                 </ul>
             </div>
         );
@@ -203,7 +221,7 @@ const DietView: React.FC<DietViewProps> = ({ diet, onClose }) => {
                             onClick={onClose}
                             className="text-gray-400 hover:text-gray-500"
                         >
-                            <X className="h-6 w-6" />
+                            <X className="h-6 w-6"/>
                         </button>
                     </div>
                 </SheetHeader>

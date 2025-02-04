@@ -1,6 +1,6 @@
-import {DietTemplate, MealType, ParsedDietData, ParsedMeal} from "../types/diet";
 import {read, utils, WorkBook} from 'xlsx';
 import {Timestamp} from "firebase/firestore";
+import {DietTemplate, MealType, ParsedDietData, ParsedMeal} from "../types";
 
 export interface ParsedDay {
     date: Timestamp;
@@ -10,6 +10,7 @@ export interface ParsedDay {
 interface ParsedExcelResult {
     meals: ParsedMeal[];
     totalMeals: number;
+    shoppingList: string[]
 }
 
 export class ExcelParserService {
@@ -27,47 +28,22 @@ export class ExcelParserService {
         };
     }
 
-    private static parseIngredients(value: string): string[] {
-        // Usuń kropki z końca każdego składnika
-        const cleanValue = value.split(',')
-            .map(item => item.trim().replace(/\.$/, ''))
-            .join(',');
+    private static extractShoppingItems(jsonData: string[][]): string[] {
+        const allItems = new Set<string>;
 
-        const ingredients: string[] = [];
-        const parts = cleanValue.split(',');
-        let currentIngredient = '';
+        for (const row of jsonData) {
+            if (row[3]?.trim()) {}
+            const items = row[3]
+                .split(',')
+                .map(item => item.trim().replace(/\.$/, ''))
+                .filter(item => item.length > 0);
 
-        for (const part of parts) {
-            const trimmedPart = part.trim();
-
-            // Jeśli obecny składnik jest pusty, zacznij nowy
-            if (!currentIngredient) {
-                currentIngredient = trimmedPart;
-                continue;
-            }
-
-            // Sprawdź, czy ostatnie 5 znaków obecnego składnika zawiera przecinek
-            const lastFiveChars = currentIngredient.slice(-5);
-            if (lastFiveChars.includes(',')) {
-                // Jeśli tak, dodaj kolejną część do obecnego składnika
-                currentIngredient += ', ' + trimmedPart;
-            } else {
-                // Jeśli nie, zapisz obecny składnik i zacznij nowy
-                ingredients.push(currentIngredient);
-                currentIngredient = trimmedPart;
-            }
+            items.forEach(item => allItems.add(item));
         }
 
-        // Dodaj ostatni składnik
-        if (currentIngredient) {
-            ingredients.push(currentIngredient);
-        }
-
-        // Filtruj puste składniki i usuń kropki z końca
-        return ingredients
-            .filter(item => item.length > 0)
-            .map(item => item.trim().replace(/\.$/, ''));
+        return Array.from(allItems);
     }
+
 
     static async parseDietExcel(file: File): Promise<ParsedExcelResult> {
         try {
@@ -80,18 +56,17 @@ export class ExcelParserService {
                 defval: ''
             }) as string[][];
 
+            const shoppingList = this.extractShoppingItems(jsonData);
 
-            // Pomijamy wiersz nagłówkowy
             const meals: ParsedMeal[] = [];
             for (let i = 1; i < jsonData.length; i++) {
                 const row = jsonData[i];
-                // Pomijamy puste wiersze lub te, które mają tylko notatkę
-                if (!row[1]) continue; // Sprawdzamy kolumnę B (nazwa), nie A (notatki)
+                if (!row[1]) continue;
 
                 meals.push({
                     name: row[1].trim(),             // Kolumna B: Nazwa
                     instructions: row[2].trim(),      // Kolumna C: Sposób przygotowania
-                    ingredients: this.parseIngredients(row[3]), // Kolumna D: Lista składników
+                    ingredients: [], // Kolumna D: Lista składników
                     nutritionalValues: this.parseNutritionalValues(row[4]), // Kolumna E: Wartości odżywcze (opcjonalne)
                     mealType: MealType.BREAKFAST,    // Tymczasowo, zostanie zaktualizowane przez szablon
                     time: ''                         // Tymczasowo, zostanie zaktualizowane przez szablon
@@ -100,7 +75,8 @@ export class ExcelParserService {
 
             return {
                 meals,
-                totalMeals: meals.length
+                totalMeals: meals.length,
+                shoppingList
             };
         } catch (error) {
             console.error('Error parsing Excel file:', error);
@@ -128,21 +104,58 @@ export class ExcelParserService {
                 };
             });
 
-            const parsedDay: ParsedDay = {
+            days.push({
                 date: Timestamp.fromDate(currentDate),
                 meals: dayMeals
-            };
-
-            days.push(parsedDay);
+            });
         }
-
-        const shoppingList = Array.from(new Set(
-            parsedExcel.meals.flatMap(meal => meal.ingredients)
-        ));
 
         return {
             days,
-            shoppingList
+            shoppingList: parsedExcel.shoppingList
         };
     }
+
+
+    /*  private static parseIngredients(value: string): string[] {
+          // Usuń kropki z końca każdego składnika
+          const cleanValue = value.split(',')
+              .map(item => item.trim().replace(/\.$/, ''))
+              .join(',');
+
+          const ingredients: string[] = [];
+          const parts = cleanValue.split(',');
+          let currentIngredient = '';
+
+          for (const part of parts) {
+              const trimmedPart = part.trim();
+
+              // Jeśli obecny składnik jest pusty, zacznij nowy
+              if (!currentIngredient) {
+                  currentIngredient = trimmedPart;
+                  continue;
+              }
+
+              // Sprawdź, czy ostatnie 5 znaków obecnego składnika zawiera przecinek
+              const lastFiveChars = currentIngredient.slice(-5);
+              if (lastFiveChars.includes(',')) {
+                  // Jeśli tak, dodaj kolejną część do obecnego składnika
+                  currentIngredient += ', ' + trimmedPart;
+              } else {
+                  // Jeśli nie, zapisz obecny składnik i zacznij nowy
+                  ingredients.push(currentIngredient);
+                  currentIngredient = trimmedPart;
+              }
+          }
+
+          // Dodaj ostatni składnik
+          if (currentIngredient) {
+              ingredients.push(currentIngredient);
+          }
+
+          // Filtruj puste składniki i usuń kropki z końca
+          return ingredients
+              .filter(item => item.length > 0)
+              .map(item => item.trim().replace(/\.$/, ''));
+      }*/
 }

@@ -6,7 +6,7 @@ import SearchInput from "../../common/SearchInput";
 
 interface UserSelectorProps {
     selectedUser: User | null,
-    onUserSelect: (user: User | null) => void;
+    onUserSelect: (user: User) => void;
 }
 
 const UserSelector: React.FC<UserSelectorProps> = ({selectedUser, onUserSelect}) => {
@@ -27,7 +27,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({selectedUser, onUserSelect})
             />
 
             <div className="border rounded-lg overflow-hidden">
-                <div className="max-h-[400px] overflow-y-auto">
+                <div className="max-h-[600px] overflow-y-auto">
                     <UserSelectorTable
                         users={filteredUsers}
                         selectedUser={selectedUser}

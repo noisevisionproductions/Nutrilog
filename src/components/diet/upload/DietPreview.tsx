@@ -1,7 +1,7 @@
-import React from "react";
-import {ParsedDietData} from "../../../types/diet";
+import React, {useState} from "react";
 import {getMealTypeLabel} from "../../../utils/mealTypeUtils";
 import {formatDate} from "../../../utils/dateFormatters";
+import {ParsedDietData} from "../../../types";
 
 interface DietPreviewProps {
     parsedData: ParsedDietData;
@@ -16,6 +16,19 @@ const DietPreview: React.FC<DietPreviewProps> = ({
                                                      onCancel,
                                                      selectedUserEmail
                                                  }) => {
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleConfirm = async () => {
+        try {
+            setIsSaving(true);
+            await onConfirm()
+        } catch (error) {
+            console.error('Błąd podczas zapisywania diety:', error);
+        } finally {
+            setIsSaving(false)
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -79,15 +92,42 @@ const DietPreview: React.FC<DietPreviewProps> = ({
             <div className="flex justify-end space-x-4 pt-4">
                 <button
                     onClick={onCancel}
-                    className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                    className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Wróć do edycji
                 </button>
                 <button
-                    onClick={onConfirm}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    onClick={handleConfirm}
+                    disabled={isSaving}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                    Zapisz dietę
+                    {isSaving ? (
+                        <>
+                            <svg
+                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                            >
+                                <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                />
+                                <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                />
+                            </svg>
+                            <span>Zapisywanie...</span>
+                        </>
+                    ) : (
+                        "Zapisz dietę"
+                    )}
                 </button>
             </div>
         </div>

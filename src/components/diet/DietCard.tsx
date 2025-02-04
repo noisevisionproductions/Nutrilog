@@ -1,6 +1,6 @@
 import React from 'react';
-import {Diet} from '../../types/diet';
 import {formatTimestamp} from "../../utils/dateFormatters";
+import {Diet} from "../../types";
 
 interface DietCardProps {
     diet: Diet & { userEmail?: string };

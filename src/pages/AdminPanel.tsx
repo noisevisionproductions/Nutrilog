@@ -5,6 +5,7 @@ import ExcelUpload from "../components/diet/upload/ExcelUpload";
 import UsersManagement from "../components/users/UsersManagement";
 import DietManagement from "../components/diet/DietManagement";
 import StatsPanel from "../components/stats/StatsPanel";
+import DietGuide from "../components/guide/GuideSection";
 
 const AdminPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabName>('upload');
@@ -15,7 +16,7 @@ const AdminPanel: React.FC = () => {
                 return (
                     <div>
                         <h2 className="text-2xl font-bold mb-4">Upload Plików Excel</h2>
-                        <ExcelUpload/>
+                        <ExcelUpload onTabChange={setActiveTab}/>
                     </div>
                 );
             case 'data':
@@ -28,7 +29,9 @@ const AdminPanel: React.FC = () => {
             case 'users':
                 return <UsersManagement/>
             case 'stats':
-                return <StatsPanel />;
+                return <StatsPanel/>
+            case "guide":
+                return <DietGuide/>
             default:
                 return null;
         }

@@ -3,11 +3,12 @@ import {User} from "../../types/user";
 import LoadingSpinner from "../common/LoadingSpinner";
 import {useDietInfo} from "../../hooks/useDietInfo";
 import {formatDate} from "../../utils/dateFormatters";
+import {StickyNote} from "lucide-react";
 
 interface UserSelectorTableProps {
     users: User[];
     selectedUser: User | null;
-    onUserSelect: (user: User | null) => void;
+    onUserSelect: (user: User) => void;
     loading: boolean;
 }
 
@@ -18,7 +19,7 @@ const UserSelectorTable: React.FC<UserSelectorTableProps> = ({
                                                                  loading
                                                              }) => {
     const userIds = useMemo(() => users.map(user => user.id), [users]);
-    const { dietInfo, loading: dietLoading } = useDietInfo(userIds);
+    const {dietInfo, loading: dietLoading} = useDietInfo(userIds);
 
     if (loading || dietLoading) {
         return (
@@ -52,8 +53,21 @@ const UserSelectorTable: React.FC<UserSelectorTableProps> = ({
         );
     };
 
+    const renderNote = (note?: string) => {
+        if (!note) return null;
+
+        return (
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+                <StickyNote className="w-3 h-3"/>
+                <span className="truncate max-w-[200px]" title={note}>
+                    {note}
+                </span>
+            </div>
+        )
+    }
+
     return (
-        <div className="h-96 overflow-y-auto"> {/* Zwiększona wysokość kontenera */}
+        <div className="h-100 overflow-y-auto"> {/* Zwiększona wysokość kontenera */}
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
@@ -68,6 +82,9 @@ const UserSelectorTable: React.FC<UserSelectorTableProps> = ({
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status diety
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Notatka
                     </th>
                 </tr>
                 </thead>
@@ -109,6 +126,9 @@ const UserSelectorTable: React.FC<UserSelectorTableProps> = ({
                         </td>
                         <td className="px-4 py-2">
                             {renderDietStatus(user.id)}
+                        </td>
+                        <td className="px-4 py-2">
+                            {renderNote(user.note)}
                         </td>
                     </tr>
                 ))}

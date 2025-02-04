@@ -1,8 +1,8 @@
 import {useState, useEffect} from 'react';
-import {Diet, Recipe} from "../types/diet";
 import {doc, getDoc} from 'firebase/firestore';
 import {db} from '../config/firebase';
 import {toast} from 'sonner';
+import {Diet, Recipe} from "../types";
 
 export const useRecipes = (days: Diet['days']) => {
     const [recipes, setRecipes] = useState<{ [key: string]: Recipe }>({});

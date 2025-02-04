@@ -1,5 +1,5 @@
 import {TabName} from "../../types/navigation";
-import {BarChart3, ChevronLeft, ChevronRight, FileSpreadsheet, LogOut, Upload, Users} from "lucide-react";
+import {BarChart3, ChevronLeft, ChevronRight, FileSpreadsheet, HelpCircle, LogOut, Upload, Users} from "lucide-react";
 import NavButton from "./NavButton";
 import React, {useState} from "react";
 import {cn} from "../../utils/cs";
@@ -17,6 +17,7 @@ const navigationItems = [
     {id: 'data', label: 'Zarządzanie Dietami', icon: FileSpreadsheet},
     {id: 'users', label: 'Użytkownicy', icon: Users},
     {id: 'stats', label: 'Statystyki', icon: BarChart3},
+    {id: 'guide', label: 'Przewodnik', icon: HelpCircle}
 ] as const;
 
 const Sidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {

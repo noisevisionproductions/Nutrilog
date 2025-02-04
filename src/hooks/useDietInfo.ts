@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {collection, getDocs, query, Timestamp, where} from "firebase/firestore";
 import {db} from "../config/firebase";
-import {Diet} from "../types/diet";
+import {Diet} from "../types";
 
 interface DietInfo {
     hasDiet: boolean;

@@ -5,12 +5,14 @@ import UserSelector from "./UserSelector";
 import FileUploadZone from "./FileUploadZone";
 import {ExcelParserService} from "../../../services/ExcelParserService";
 import {FirebaseService} from "../../../services/FirebaseService";
-import {DietTemplate, MealType, ParsedDietData} from "../../../types/diet";
 import DietTemplateConfig from "./DietTemplateConfig";
 import DietPreview from "./DietPreview";
 import {Timestamp} from "firebase/firestore";
 import ValidationSection from "./validation/ValidationSection";
 import debounce from "lodash/debounce";
+import {HelpCircle} from "lucide-react";
+import {TabName} from "../../../types/navigation";
+import {DietTemplate, MealType, ParsedDietData} from "../../../types";
 
 interface ValidationState {
     isExcelStructureValid: boolean | null;
@@ -19,7 +21,11 @@ interface ValidationState {
     isMealsConfigValid: boolean;
 }
 
-const ExcelUpload: React.FC = () => {
+interface ExcelUploadProps {
+    onTabChange: (tab: TabName) => void;
+}
+
+const ExcelUpload: React.FC<ExcelUploadProps> = ({onTabChange}) => {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -159,7 +165,7 @@ const ExcelUpload: React.FC = () => {
             debounce((field: keyof ValidationState, value: boolean) => {
                 setValidationState(prev => {
                     if (prev[field] === value) return prev;
-                    return { ...prev, [field]: value };
+                    return {...prev, [field]: value};
                 });
             }, 300),
         []
@@ -202,7 +208,7 @@ const ExcelUpload: React.FC = () => {
             />
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium mb-4"> Wybierz użytkownika</h3>
+                <h3 className="text-lg font-medium mb-4"> Wybór użytkownika</h3>
                 <UserSelector
                     selectedUser={selectedUser}
                     onUserSelect={setSelectedUser}
@@ -211,6 +217,13 @@ const ExcelUpload: React.FC = () => {
 
             <div className="bg-white p-6 rounded-lg shadow-sm">
                 <h3 className="text-lg font-medium mb-4">Upload pliku Excel</h3>
+                <button
+                    onClick={() => onTabChange('guide')}
+                    className="text-blue-600 hover:text-blue-700 flex items-center gap-2"
+                >
+                    <HelpCircle className="w-4 h-4"/>
+                    Jak przygotować plik Excel?
+                </button>
                 <FileUploadZone
                     file={file}
                     onFileSelect={handleFileSelect}
@@ -228,7 +241,7 @@ const ExcelUpload: React.FC = () => {
                             : 'bg-blue-500 hover:bg-blue-600 text-white'
                     }`}
                 >
-                    {isProcessing ? 'Przetwarzanie...' : 'Wyślij'}
+                    {isProcessing ? 'Przetwarzanie...' : 'Podgląd diety przed wysłaniem'}
                 </button>
             </div>
         </div>

@@ -1,9 +1,9 @@
 import React from 'react';
-import { DietTemplate } from "../../../../types/diet";
 import ExcelStructureValidator from "./ExcelStructureValidator";
 import MealsPerDayValidator from "./MealsPerDayValidator";
 import DateValidator from "./DateValidator";
 import MealsConfigValidator from "./MealsConfigValidator";
+import {DietTemplate} from "../../../../types";
 
 interface ValidationSectionProps {
     file: File;

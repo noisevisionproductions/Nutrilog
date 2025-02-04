@@ -20,6 +20,7 @@ self.onmessage = async (e: MessageEvent) => {
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
         const errors = [];
         let validRows = 0;
+        let hasShoppingList = false;
 
         const isRowEmpty = (rowIndex: number) => {
             for (let col = 0; col <= 3; col++) {
@@ -31,6 +32,13 @@ self.onmessage = async (e: MessageEvent) => {
             return true;
         };
 
+        const hasShoppingListInRow = (rowIndex: number) => {
+            if (rowIndex === 0) return false;
+
+            const cell = worksheet[utils.encode_cell({ r: rowIndex, c: 3})];
+            return cell && cell.v !== undefined && cell.v.toString().trim() !== '';
+        };
+
         const range = utils.decode_range(worksheet['!ref'] || 'A1');
         let lastRow = 0;
 
@@ -38,6 +46,10 @@ self.onmessage = async (e: MessageEvent) => {
             if (!isRowEmpty(row)) {
                 lastRow = row;
                 validRows++;
+            }
+
+            if (hasShoppingListInRow(row)) {
+                hasShoppingList = true;
             }
 
             if (row % 1000 === 0) {
@@ -58,23 +70,26 @@ self.onmessage = async (e: MessageEvent) => {
 
             const name = getValue(1);
             const preparation = getValue(2);
-            const shoppingList = getValue(3);
 
-            if (!name && !preparation && !shoppingList) {
-                continue;
+            if (name || preparation) {
+                const rowErrors = [];
+                if (!name) rowErrors.push('brak nazwy posiłku');
+                if (!preparation) rowErrors.push('brak sposobu przygotowania');
+
+                if (rowErrors.length > 0) {
+                    errors.push({
+                        row: R + 1,
+                        errors: rowErrors
+                    });
+                }
             }
+        }
 
-            const rowErrors = [];
-            if (!name) rowErrors.push('brak nazwy posiłku');
-            if (!preparation) rowErrors.push('brak sposobu przygotowania');
-            if (!shoppingList) rowErrors.push('brak listy zakupów');
-
-            if (rowErrors.length > 0) {
-                errors.push({
-                    row: R + 1,
-                    errors: rowErrors
-                });
-            }
+        if (!hasShoppingList) {
+            errors.push({
+                row: 0,
+                errors: ['W pliku nie znaleziono żadnej listy zakupów (kolumna D)']
+            });
         }
 
         self.postMessage({
@@ -82,12 +97,13 @@ self.onmessage = async (e: MessageEvent) => {
             data: {
                 isValid: errors.length === 0,
                 totalRows: validRows,
+                hasShoppingList,
                 errors
             }
         } as ValidationMessage);
 
     } catch (error) {
-        let errorMessage = 'Nieznany błąd podczas przetwarzania pliku';
+        let errorMessage = `Nieznany błąd podczas przetwarzania pliku, ${error}`;
 
         if (error instanceof Error) {
             errorMessage = error.message;

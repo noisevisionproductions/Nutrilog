@@ -1,5 +1,5 @@
 import React from 'react';
-import { DayMeal } from '../../../types/diet';
+import {DayMeal} from "../../../types";
 
 interface DietMealEditorProps {
     meal: DayMeal;
