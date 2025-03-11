@@ -1,10 +1,12 @@
 package com.noisevisionsoftware.nutrilog.dto.response;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ErrorResponse {
     private String message;
     private long timestamp;

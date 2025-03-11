@@ -35,6 +35,7 @@ const AdminPanel: React.FC = () => {
                 );
             case "changelog":
                 return <Changelog/>
+            case "landing":
             default:
                 return null;
         }

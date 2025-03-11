@@ -105,5 +105,4 @@ public class ShoppingListService {
     public void refreshShoppingListCache() {
         log.debug("Odświeżenie cache list zakupów");
     }
-
 }

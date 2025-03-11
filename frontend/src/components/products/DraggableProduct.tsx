@@ -3,6 +3,8 @@ import {useDrag} from "react-dnd";
 import {Loader2, Package, Pencil, X} from "lucide-react";
 import {ParsedProduct} from "../../types/product";
 import CategorySuggestion from "./CategorySuggestion";
+import {useSuggestedCategoriesContext} from "../../contexts/SuggestedCategoriesContext";
+import {useProductCategories} from "../../hooks/shopping/useProductCategories";
 
 interface DraggableProductProps {
     product: ParsedProduct;
@@ -29,6 +31,21 @@ const DraggableProduct: React.FC<DraggableProductProps> = ({
     const [editedQuantity, setEditedQuantity] = useState<number>(product.quantity);
     const [editedUnit, setEditedUnit] = useState<string>(product.unit);
     const [editedName, setEditedName] = useState<string>(product.name);
+
+    // Dodaj dostęp do kontekstu sugestii kategorii
+    const { suggestionCache } = useSuggestedCategoriesContext();
+    const { categories } = useProductCategories();
+
+    // Pobierz sugerowaną kategorię z cache
+    const productKey = product.original || product.name;
+    const suggestedCategoryId = suggestionCache[productKey];
+
+    // Znajdź obiekt kategorii na podstawie ID
+    const suggestedCategory = suggestedCategoryId ?
+        categories.find(cat => cat.id === suggestedCategoryId) : null;
+
+    // Sprawdź, czy produkt ma sugestię kategorii
+    const hasSuggestion = !!suggestedCategory && !inCategory;
 
     useEffect(() => {
         setEditedQuantity(product.quantity);
@@ -163,7 +180,20 @@ const DraggableProduct: React.FC<DraggableProductProps> = ({
                 )}
             </div>
 
-            {!inCategory && (
+            {/* Wyświetl sugestię kategorii bezpośrednio, jeśli istnieje i produkt nie jest w kategorii */}
+            {hasSuggestion && (
+                <div
+                    className="mt-2 text-xs bg-blue-50 text-blue-600 p-2 rounded flex items-center justify-between cursor-pointer hover:bg-blue-100"
+                    onClick={() => onCategorize?.(product, suggestedCategoryId)}
+                >
+                    <span>Sugerowana kategoria: {suggestedCategory.name}</span>
+                    <button className="text-blue-700 hover:text-blue-800 font-medium ml-2 px-2 py-0.5 bg-blue-100 rounded">
+                        Użyj
+                    </button>
+                </div>
+            )}
+
+            {!inCategory && !hasSuggestion && (
                 <CategorySuggestion
                     product={product}
                     onSuggestionAccept={handleSuggestionAccept}

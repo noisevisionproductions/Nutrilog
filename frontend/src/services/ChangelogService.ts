@@ -1,5 +1,5 @@
 import api from "../config/axios";
-import { ChangelogEntry } from "../types/changeLog";
+import {ChangelogEntry} from "../types/changeLog";
 
 interface CreateChangelogEntryRequest {
     title: string;
@@ -12,7 +12,10 @@ export class ChangelogService {
 
     static async getAllEntries(): Promise<ChangelogEntry[]> {
         const response = await api.get(this.BASE_URL);
-        return response.data;
+        return response.data.map((entry: any) => ({
+            ...entry,
+            type: entry.typeString || entry.type.toLowerCase()
+        }));
     }
 
     static async createEntry(data: CreateChangelogEntryRequest): Promise<ChangelogEntry> {

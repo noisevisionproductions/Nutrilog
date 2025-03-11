@@ -101,10 +101,14 @@ class ShoppingListServiceTest {
         when(shoppingListRepository.findById(SAMPLE_ID))
                 .thenReturn(Optional.of(sampleShoppingList));
 
+        when(shoppingListRepository.save(any(ShoppingList.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
         // when
         ShoppingList result = shoppingListService.updateShoppingListItems(SAMPLE_ID, newItems);
 
         // then
+        assertThat(result).isNotNull();
         assertThat(result.getItems()).isEqualTo(newItems);
         verify(shoppingListRepository).save(sampleShoppingList);
     }

@@ -1,6 +1,5 @@
 package com.noisevisionsoftware.nutrilog.mapper.shopping;
 
-import com.google.cloud.Timestamp;
 import com.noisevisionsoftware.nutrilog.dto.request.shopping.CategorizedShoppingListItemRequest;
 import com.noisevisionsoftware.nutrilog.dto.request.shopping.ShoppingListItemRequest;
 import com.noisevisionsoftware.nutrilog.dto.request.shopping.ShoppingListRecipeReferenceRequest;
@@ -14,8 +13,6 @@ import com.noisevisionsoftware.nutrilog.model.shopping.ShoppingListRecipeReferen
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,20 +51,6 @@ public class ShoppingListMapper {
     }
 
     public CategorizedShoppingListItem toCategorizedShoppingListItem(CategorizedShoppingListItemRequest request) {
-        return CategorizedShoppingListItem.builder()
-                .name(request.getName())
-                .quantity(request.getQuantity())
-                .unit(request.getUnit())
-                .original(request.getOriginal())
-                .recipes(request.getRecipes() != null ?
-                        request.getRecipes().stream()
-                                .map(this::toShoppingListRecipeReference)
-                                .collect(Collectors.toList()) :
-                        null)
-                .build();
-    }
-
-    public CategorizedShoppingListItem toShoppingListItem(ShoppingListItemRequest request) {
         return CategorizedShoppingListItem.builder()
                 .name(request.getName())
                 .quantity(request.getQuantity())
@@ -143,12 +126,5 @@ public class ShoppingListMapper {
                 .mealType(reference.getMealType().name())
                 .mealTime(reference.getMealTime())
                 .build();
-    }
-
-    private LocalDateTime timestampToLocalDateTime(Timestamp timestamp) {
-        if (timestamp == null) return null;
-        return timestamp.toDate().toInstant()
-                .atZone(ZoneOffset.UTC)
-                .toLocalDateTime();
     }
 }

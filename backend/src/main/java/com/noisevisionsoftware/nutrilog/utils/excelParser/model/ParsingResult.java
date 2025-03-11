@@ -8,11 +8,13 @@ public class ParsingResult {
     private ParsedProduct product;
     private String error;
 
-    public ParsingResult(String error) {
-        this.error = error;
-    }
-
     public ParsingResult(ParsedProduct product) {
         this.product = product;
+        this.success = true;
+    }
+
+    public ParsingResult(ParsedProduct product, boolean success) {
+        this.product = product;
+        this.success = success;
     }
 }

@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {DndProvider} from "react-dnd";
 import {HTML5Backend} from "react-dnd-html5-backend";
 import {ParsedProduct} from "../../../../types/product";
@@ -7,6 +7,7 @@ import ProductCategorizationLayout from "../../../products/ProductCategorization
 import ParserGuide from "../../../products/ParserGuide";
 import LoadingSpinner from "../../../common/LoadingSpinner";
 import {Loader2} from "lucide-react";
+import {useSuggestedCategoriesContext} from "../../../../contexts/SuggestedCategoriesContext";
 
 interface CategorySectionProps {
     uncategorizedProducts: ParsedProduct[];
@@ -31,6 +32,13 @@ const CategorySection: React.FC<CategorySectionProps> = ({
                                                          }) => {
     const [isSaving, setIsSaving] = useState(false);
     const {categories, loading: loadingCategories} = useProductCategories();
+    const {refreshSuggestions} = useSuggestedCategoriesContext();
+
+    useEffect(() => {
+        if (uncategorizedProducts.length > 0) {
+            refreshSuggestions(uncategorizedProducts).catch(console.error);
+        }
+    }, [uncategorizedProducts, refreshSuggestions]);
 
     const handleComplete = async () => {
         if (uncategorizedProducts.length > 0) {

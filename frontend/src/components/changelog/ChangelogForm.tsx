@@ -1,5 +1,6 @@
 import React from "react";
 import {useForm} from 'react-hook-form';
+import {Bug, Lightbulb, Sparkles} from "lucide-react";
 
 interface ChangelogFormData {
     title: string;
@@ -13,7 +14,11 @@ interface ChangelogFormProps {
 }
 
 const ChangelogForm: React.FC<ChangelogFormProps> = ({onSubmit, isSubmitting}) => {
-    const {register, handleSubmit, reset, formState: {errors}} = useForm<ChangelogFormData>();
+    const {register, handleSubmit, reset, formState: {errors}} = useForm<ChangelogFormData>({
+        defaultValues: {
+            type: 'feature'
+        }
+    });
 
     const onFormSubmit = async (data: ChangelogFormData) => {
         await onSubmit(data);
@@ -29,7 +34,8 @@ const ChangelogForm: React.FC<ChangelogFormProps> = ({onSubmit, isSubmitting}) =
                 <input
                     type="text"
                     {...register('title', {required: 'Tytuł jest wymagany'})}
-                    className="mt-1 px-2 py-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Np. Dodano możliwość eksportu danych"
                 />
                 {errors.title && (
                     <p className="mt-1 text-sm text-red-600">
@@ -39,23 +45,50 @@ const ChangelogForm: React.FC<ChangelogFormProps> = ({onSubmit, isSubmitting}) =
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                     Typ zmiany
                 </label>
-                <select
-                    {...register('type', {required: 'Typ jest wymagany'})}
-                    className="mt-1 px-2 py-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                    <option value="feature">
-                        Nowa funkcja
-                    </option>
-                    <option value="fix">
-                        Poprawka
-                    </option>
-                    <option value="improvement">
-                        Ulepszenie
-                    </option>
-                </select>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <label
+                        className="relative border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50">
+                        <input
+                            type="radio"
+                            value="feature"
+                            {...register('type')}
+                            className="h-4 w-4 text-blue-600 border-gray-300"
+                        />
+                        <span className="flex items-center">
+                            <Sparkles className="w-5 h-5 text-blue-500 mr-2"/>
+                            <span>Nowa funkcja</span>
+                        </span>
+                    </label>
+                    <label
+                        className="relative border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50">
+                        <input
+                            type="radio"
+                            value="fix"
+                            {...register('type')}
+                            className="h-4 w-4 text-red-600 border-gray-300"
+                        />
+                        <span className="flex items-center">
+                            <Bug className="w-5 h-5 text-red-500 mr-2"/>
+                            <span>Poprawka</span>
+                        </span>
+                    </label>
+                    <label
+                        className="relative border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50">
+                        <input
+                            type="radio"
+                            value="improvement"
+                            {...register('type')}
+                            className="h-4 w-4 text-yellow-600 border-gray-300"
+                        />
+                        <span className="flex items-center">
+                            <Lightbulb className="w-5 h-5 text-yellow-500 mr-2"/>
+                            <span>Ulepszenie</span>
+                        </span>
+                    </label>
+                </div>
             </div>
 
             <div>
@@ -65,7 +98,8 @@ const ChangelogForm: React.FC<ChangelogFormProps> = ({onSubmit, isSubmitting}) =
                 <textarea
                     {...register('description', {required: 'Opis jest wymagany'})}
                     rows={6}
-                    className="mt-1 px-2 py-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 px-3 py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Szczegółowy opis wprowadzonej zmiany..."
                 />
                 {errors.description && (
                     <p className="mt-1 text-sm text-red-600">

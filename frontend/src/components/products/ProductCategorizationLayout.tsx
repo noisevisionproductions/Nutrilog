@@ -8,7 +8,7 @@ import CategoryDropZone from "./CategoryDropZone";
 import {Brain, Loader2} from "lucide-react";
 import {DroppableTabsTrigger} from "../ui/DroppableTabsTrigger";
 import {toast} from "sonner";
-import {DietCategorizationService} from "../../services/DietCategorizationService";
+import {useSuggestedCategoriesContext} from "../../contexts/SuggestedCategoriesContext";
 
 interface ProductCategorizationLayoutProps {
     categories: Category[];
@@ -33,6 +33,7 @@ const ProductCategorizationLayout: React.FC<ProductCategorizationLayoutProps> = 
         categories.length > 0 ? categories[0].id : ''
     );
     const [isAutoCategorizing, setIsAutoCategorizing] = useState<boolean>(false);
+    const { refreshSuggestions } = useSuggestedCategoriesContext();
 
     const handleProductCategorize = (product: ParsedProduct, categoryId: string) => {
         onProductDrop(categoryId, {
@@ -53,7 +54,7 @@ const ProductCategorizationLayout: React.FC<ProductCategorizationLayoutProps> = 
         setIsAutoCategorizing(true);
 
         try {
-            const suggestions = await DietCategorizationService.bulkSuggestCategories(uncategorizedProducts);
+            const suggestions = await refreshSuggestions(uncategorizedProducts);
 
             let categorizedCount = 0;
 

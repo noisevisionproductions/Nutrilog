@@ -1,6 +1,9 @@
 package integration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.noisevisionsoftware.nutrilog.NutrilogApplication;
+import com.noisevisionsoftware.nutrilog.dto.request.LoginRequest;
+import com.noisevisionsoftware.nutrilog.exception.AuthenticationException;
 import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import com.noisevisionsoftware.nutrilog.service.auth.AuthService;
 import org.junit.jupiter.api.Test;
@@ -33,8 +36,11 @@ class AuthenticationIntegrationTest {
     @MockBean
     private AuthService authService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Test
-    void login_WithValidToken_ShouldReturnFirebaseUser() throws Exception {
+    void login_WithValidCredentials_ShouldReturnUser() throws Exception {
         // Arrange
         FirebaseUser adminUser = FirebaseUser.builder()
                 .uid("test-uid")
@@ -42,12 +48,17 @@ class AuthenticationIntegrationTest {
                 .role("ADMIN")
                 .build();
 
-        when(authService.authenticateAdmin("valid-token")).thenReturn(adminUser);
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("admin@test.com");
+        loginRequest.setPassword("password123");
+
+        when(authService.authenticateAdmin(anyString())).thenReturn(adminUser);
 
         // Act & Assert
         mockMvc.perform(post("/api/auth/login")
                         .header("Authorization", "Bearer valid-token")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.uid").value("test-uid"))
@@ -56,25 +67,79 @@ class AuthenticationIntegrationTest {
     }
 
     @Test
-    void login_WithInvalidAuthHeaderFormat_ShouldReturnUnauthorized() throws Exception {
+    void login_WithInvalidAuthorizationHeader_ShouldReturnAuthorizationError() throws Exception {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("admin@test.com");
+        loginRequest.setPassword("password123");
+
+        // Act & Assert
         mockMvc.perform(post("/api/auth/login")
                         .header("Authorization", "InvalidFormat")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid authorization header format"));
     }
 
     @Test
-    void login_WithAuthenticationFailure_ShouldReturnUnauthorized() throws Exception {
-        when(authService.authenticateAdmin(anyString()))
-                .thenThrow(new RuntimeException("Authentication failed"));
+    void login_WithInvalidCredentials_ShouldReturnAuthenticationError() throws Exception {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("admin@test.com");
+        loginRequest.setPassword("wrong_password");
 
+        when(authService.authenticateAdmin(anyString()))
+                .thenThrow(new AuthenticationException("Authentication failed"));
+
+        // Act & Assert
         mockMvc.perform(post("/api/auth/login")
                         .header("Authorization", "Bearer invalid-token")
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
                 .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Authentication failed"));
+    }
+
+    @Test
+    void login_WithoutEmail_ShouldReturnValidationError() throws Exception {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setPassword("password123");
+        // Email is missing, which will cause validation error
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationResults[0].isValid").value(false))
+                .andExpect(jsonPath("$.validationResults[0].message").value("Email jest wymagany"))
+                .andExpect(jsonPath("$.validationResults[0].severity").value("ERROR"))
+                .andExpect(jsonPath("$.valid").value(false));
+    }
+
+    @Test
+    void login_WithInvalidEmailFormat_ShouldReturnValidationError() throws Exception {
+        // Arrange
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("invalid-format");
+        loginRequest.setPassword("password123");
+
+        // Act & Assert
+        mockMvc.perform(post("/api/auth/login")
+                        .header("Authorization", "Bearer valid-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validationResults[0].isValid").value(false))
+                .andExpect(jsonPath("$.validationResults[0].message").value("Nieprawidłowy format adresu email"))
+                .andExpect(jsonPath("$.validationResults[0].severity").value("ERROR"))
+                .andExpect(jsonPath("$.valid").value(false));
     }
 }

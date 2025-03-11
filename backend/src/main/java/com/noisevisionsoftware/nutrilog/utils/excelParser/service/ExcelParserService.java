@@ -253,7 +253,7 @@ public class ExcelParserService {
         return bestMatch;
     }
 
-    private double calculateSimilarity(String str1, String str2) {
+    double calculateSimilarity(String str1, String str2) {
         LevenshteinDistance levenshtein = LevenshteinDistance.getDefaultInstance();
         int distance = levenshtein.apply(str1.toLowerCase(), str2.toLowerCase());
 

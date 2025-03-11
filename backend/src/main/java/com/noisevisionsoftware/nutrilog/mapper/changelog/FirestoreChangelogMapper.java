@@ -34,7 +34,7 @@ public class FirestoreChangelogMapper {
         data.put("description", entry.getDescription());
         data.put("createdAt", entry.getCreatedAt());
         data.put("author", entry.getAuthor());
-        data.put("type", entry.getType().name());
+        data.put("type", entry.getType().name().toLowerCase());
         return data;
     }
 }

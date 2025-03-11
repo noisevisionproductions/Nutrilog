@@ -1,7 +1,6 @@
 import {onAuthStateChanged, signInWithEmailAndPassword, signOut, User as FirebaseUser} from 'firebase/auth';
-import {doc, getDoc} from 'firebase/firestore';
 import React, {createContext, useContext, useEffect, useState} from "react";
-import {auth, db} from '../config/firebase';
+import {auth} from '../config/firebase';
 import {User} from '../types/user';
 import api from "../config/axios";
 import axios from 'axios';
@@ -12,8 +11,8 @@ interface AuthContextType {
     loading: boolean;
     login: (email: string, password: string) => Promise<User>;
     logout: () => Promise<void>;
+    refreshUserData: () => Promise<void>;
 }
-
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -33,47 +32,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
     useEffect(() => {
         return onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
+
             if (user) {
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    setUserData(userDoc.data() as User);
+                try {
+                    await validateTokenAndSetUserData(user);
+                } catch (error) {
+                    console.error("Token validation failed:", error);
+                    await logout();
                 }
             } else {
                 setUserData(null);
             }
+
             setLoading(false);
         });
     }, []);
 
-/*
-    const refreshAuth = async () => {
-        const user = auth.currentUser;
-        if (!user) {
-            await logout();
-            return Promise.reject(new Error('Brak zalogowanego użytkownika'));
-        }
-
+    const validateTokenAndSetUserData = async (user: FirebaseUser) => {
         try {
             const token = await user.getIdToken(true);
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
 
-            if (!userDoc.exists()) {
-                await logout();
-                return Promise.reject(new Error('Nie znaleziono danych użytkownika'));
-            }
+            const response = await api.post('/auth/validate-token', {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-            const userData = userDoc.data() as User;
-            setUserData(userData);
-            return token;
+            setUserData(response.data as User);
         } catch (error) {
-            console.error('Błąd odświeżania autoryzacji:', error);
-            await logout();
-            return Promise.reject(error);
+            console.error("Error validating token:", error);
+            throw error;
         }
     };
-*/
 
-    const login = async (email: string, password: string) => {
+    const refreshUserData = async () => {
+        if (!currentUser) return;
+
+        try {
+            await validateTokenAndSetUserData(currentUser);
+        } catch (error) {
+            console.error("Error refreshing user data:", error);
+            await logout();
+            throw error;
+        }
+    };
+
+    const login = async (email: string, password: string): Promise<User> => {
         try {
             const credential = await signInWithEmailAndPassword(auth, email, password);
             const token = await credential.user.getIdToken(true);
@@ -88,21 +92,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
             );
 
             const userData = response.data as User;
-            if (userData.role !== 'ADMIN') {
-                await logout();
-                return Promise.reject(new Error('Brak uprawnień administratora'));
-            }
-
             setUserData(userData);
             return userData;
         } catch (error) {
             console.error('Błąd uwierzytelniania:', error);
+
             await logout();
 
             if (axios.isAxiosError(error)) {
-                return Promise.reject(new Error(error.response?.data?.message || 'Błąd uwierzytelniania'));
+                throw new Error(error.response?.data?.message || 'Błąd uwierzytelniania');
             }
-            return Promise.reject(error);
+            throw error;
         }
     };
 
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
             setCurrentUser(null);
             setUserData(null);
         } catch (error) {
-            console.error('Logout error:', error);
+            console.error('Błąd wylogowania:', error);
             throw error;
         }
     };
@@ -122,7 +122,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
         userData,
         loading,
         login,
-        logout
+        logout,
+        refreshUserData
     };
 
     return (

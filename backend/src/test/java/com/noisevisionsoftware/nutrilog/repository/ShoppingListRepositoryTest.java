@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -131,6 +132,7 @@ class ShoppingListRepositoryTest {
         // given
         ShoppingList shoppingList = createSampleShoppingList();
         shoppingList.setId(null);
+        ShoppingList expectedShoppingList = createSampleShoppingList(); // zakładamy, że będzie zwrócony
         Map<String, Object> firestoreMap = new HashMap<>();
 
         when(firestore.collection(anyString())).thenReturn(collectionReference);
@@ -141,12 +143,17 @@ class ShoppingListRepositoryTest {
         @SuppressWarnings("unchecked")
         ApiFuture<WriteResult> writeResultFuture = mock(ApiFuture.class);
         when(documentReference.set(firestoreMap)).thenReturn(writeResultFuture);
-        when(writeResultFuture.get()).thenReturn(mock(WriteResult.class));
+
+        // Dodanie mockowania dla get() po zapisie
+        when(documentReference.get()).thenReturn(documentSnapshotFuture);
+        when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
+        when(firestoreShoppingMapper.toShoppingList(documentSnapshot)).thenReturn(expectedShoppingList);
 
         // when
-        shoppingListRepository.save(shoppingList);
+        ShoppingList result = shoppingListRepository.save(shoppingList);
 
         // then
+        assertThat(result).isEqualTo(expectedShoppingList);
         verify(firestore).collection("shopping_lists");
         verify(documentReference).set(firestoreMap);
         assertThat(shoppingList.getId()).isEqualTo("new-id");
@@ -154,6 +161,35 @@ class ShoppingListRepositoryTest {
 
     @Test
     void save_WhenUpdateExistingShoppingList_ShouldUpdateSuccessfully() throws ExecutionException, InterruptedException {
+        // given
+        ShoppingList shoppingList = createSampleShoppingList();
+        ShoppingList expectedShoppingList = createSampleShoppingList(); // zakładamy, że będzie zwrócony
+        Map<String, Object> firestoreMap = new HashMap<>();
+
+        when(firestore.collection(anyString())).thenReturn(collectionReference);
+        when(collectionReference.document(shoppingList.getId())).thenReturn(documentReference);
+        when(firestoreShoppingMapper.toFirestoreMap(shoppingList)).thenReturn(firestoreMap);
+
+        @SuppressWarnings("unchecked")
+        ApiFuture<WriteResult> writeResultFuture = mock(ApiFuture.class);
+        when(documentReference.set(firestoreMap)).thenReturn(writeResultFuture);
+
+        // Dodanie mockowania dla get() po zapisie
+        when(documentReference.get()).thenReturn(documentSnapshotFuture);
+        when(documentSnapshotFuture.get()).thenReturn(documentSnapshot);
+        when(firestoreShoppingMapper.toShoppingList(documentSnapshot)).thenReturn(expectedShoppingList);
+
+        // when
+        ShoppingList result = shoppingListRepository.save(shoppingList);
+
+        // then
+        assertThat(result).isEqualTo(expectedShoppingList);
+        verify(firestore).collection("shopping_lists");
+        verify(documentReference).set(firestoreMap);
+    }
+
+    @Test
+    void save_WhenExceptionOccurs_ShouldThrowRuntimeException() throws ExecutionException, InterruptedException {
         // given
         ShoppingList shoppingList = createSampleShoppingList();
         Map<String, Object> firestoreMap = new HashMap<>();
@@ -165,14 +201,10 @@ class ShoppingListRepositoryTest {
         @SuppressWarnings("unchecked")
         ApiFuture<WriteResult> writeResultFuture = mock(ApiFuture.class);
         when(documentReference.set(firestoreMap)).thenReturn(writeResultFuture);
-        when(writeResultFuture.get()).thenReturn(mock(WriteResult.class));
+        when(writeResultFuture.get()).thenThrow(new InterruptedException("Test exception"));
 
-        // when
-        shoppingListRepository.save(shoppingList);
-
-        // then
-        verify(firestore).collection("shopping_lists");
-        verify(documentReference).set(firestoreMap);
+        // when, then
+        assertThrows(RuntimeException.class, () -> shoppingListRepository.save(shoppingList));
     }
 
     private ShoppingList createSampleShoppingList() {

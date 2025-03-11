@@ -11,8 +11,7 @@ interface DietPreviewStore {
     setFile: (file: File | null) => void;
     clearPreview: () => void;
 }
-
-export const useDietPreviewStore = create<DietPreviewStore>((set) => ({
+create<DietPreviewStore>((set) => ({
     previewData: null,
     selectedUser: null,
     file: null,

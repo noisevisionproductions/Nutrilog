@@ -20,7 +20,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
 import java.util.stream.Collectors;
 
 @Component
@@ -114,22 +113,5 @@ public class DietMapper {
                 .toInstant()
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
-    }
-
-    private Timestamp convertToFirebaseTimestamp(Object dateInput) {
-        try {
-            if (dateInput instanceof Timestamp) {
-                return (Timestamp) dateInput;
-            } else if (dateInput instanceof String dateStr) {
-                LocalDateTime dateTime = LocalDateTime.parse(dateStr);
-                return Timestamp.of(Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()));
-            } else {
-                log.warn("Nieobsługiwany typ daty: {}", dateInput.getClass().getName());
-                return Timestamp.now();
-            }
-        } catch (Exception e) {
-            log.error("Błąd konwersji daty: {}", e.getMessage(), e);
-            throw new IllegalArgumentException("Invalid date format: " + dateInput);
-        }
     }
 }

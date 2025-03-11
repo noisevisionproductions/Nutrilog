@@ -69,7 +69,6 @@ export class DietCategorizationService {
 
             const payload = {categorizedProducts: simplifiedProducts};
 
-            console.log('Wysyłane dane kategoryzacji:', payload);
             await api.post(`${this.API_URL}/update`, payload);
         } catch (error) {
             console.error('Błąd podczas aktualizacji kategorii:', error);

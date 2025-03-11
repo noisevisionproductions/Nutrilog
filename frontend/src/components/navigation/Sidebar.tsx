@@ -5,7 +5,7 @@ import {
     ChevronRight,
     ClipboardList,
     FileSpreadsheet,
-    HelpCircle,
+    HelpCircle, Home,
     LogOut,
     Upload,
     Users
@@ -46,6 +46,10 @@ const Sidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {
         } catch (error) {
             toast.error('Wystąpił błąd podczas wylogowywania');
         }
+    };
+
+    const handleGoToHomepage = () => {
+        navigate('/');
     };
 
     return (
@@ -90,8 +94,19 @@ const Sidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {
                 ))}
             </nav>
 
-            {/* Logout Button */}
-            <div className="p-4 border-t border-gray-200">
+            {/* Przyciski w dolnej części */}
+            <div className="p-4 border-t border-gray-200 space-y-2">
+                {/* Przycisk do strony głównej */}
+                <NavButton
+                    icon={Home}
+                    label="Strona główna"
+                    isActive={false}
+                    onClick={handleGoToHomepage}
+                    isCollapsed={isCollapsed}
+                    className="text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                />
+
+                {/* Przycisk wylogowania */}
                 <NavButton
                     icon={LogOut}
                     label="Wyloguj"

@@ -28,7 +28,8 @@ public class CacheConfig {
                 "categories",
                 "recipesCache",
                 "recipesBatchCache",
-                "shoppingListCache"
+                "shoppingListCache",
+                "categorizationCache"
         );
         cacheManager.setCaffeine(Caffeine.newBuilder()
                 .expireAfterWrite(15, TimeUnit.MINUTES)

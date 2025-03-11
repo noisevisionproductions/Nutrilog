@@ -76,7 +76,7 @@ class DietRepositoryTest {
     }
 
     @Test
-    void save_ShouldSaveDietSuccessfully() throws Exception {
+    void save_ShouldSaveDietSuccessfully() {
         // Arrange
         Map<String, Object> firestoreMap = new HashMap<>();
         when(firestore.collection(anyString())).thenReturn(collectionReference);
@@ -130,7 +130,7 @@ class DietRepositoryTest {
     }
 
     @Test
-    void delete_ShouldDeleteDietSuccessfully() throws Exception {
+    void delete_ShouldDeleteDietSuccessfully() {
         // Arrange
         when(firestore.collection(anyString())).thenReturn(collectionReference);
         when(collectionReference.document(TEST_ID)).thenReturn(documentReference);
@@ -183,7 +183,7 @@ class DietRepositoryTest {
     }
 
     @Test
-    void save_ShouldThrowRuntimeException_WhenSaveFails() throws Exception {
+    void save_ShouldThrowRuntimeException_WhenSaveFails() {
         // Arrange
         when(firestore.collection(anyString())).thenReturn(collectionReference);
         when(collectionReference.document()).thenReturn(documentReference);
@@ -207,5 +207,63 @@ class DietRepositoryTest {
 
         // Assert
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void update_ShouldUpdateDietSuccessfully() throws Exception {
+        // Arrange
+        Map<String, Object> firestoreMap = new HashMap<>();
+        when(firestore.collection(anyString())).thenReturn(collectionReference);
+        when(collectionReference.document(TEST_ID)).thenReturn(documentReference);
+        when(firestoreDietMapper.toFirestoreMap(any(Diet.class))).thenReturn(firestoreMap);
+        when(documentReference.update(firestoreMap)).thenReturn(writeFuture);
+
+        // Act
+        Diet updatedDiet = dietRepository.update(TEST_ID, testDiet);
+
+        // Assert
+        assertNotNull(updatedDiet);
+        assertEquals(TEST_ID, updatedDiet.getId());
+        verify(documentReference).update(firestoreMap);
+        verify(writeFuture).get();
+    }
+
+    @Test
+    void update_ShouldThrowRuntimeException_WhenUpdateFails() throws Exception {
+        // Arrange
+        Map<String, Object> firestoreMap = new HashMap<>();
+        when(firestore.collection(anyString())).thenReturn(collectionReference);
+        when(collectionReference.document(TEST_ID)).thenReturn(documentReference);
+        when(firestoreDietMapper.toFirestoreMap(any(Diet.class))).thenReturn(firestoreMap);
+        when(documentReference.update(firestoreMap)).thenReturn(writeFuture);
+        when(writeFuture.get()).thenThrow(new InterruptedException("Update failed"));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> dietRepository.update(TEST_ID, testDiet));
+    }
+
+    @Test
+    void update_ShouldSetIdOnReturnedDiet() {
+        // Arrange
+        Diet dietWithoutId = Diet.builder()
+                .userId(TEST_USER_ID)
+                .createdAt(Timestamp.now())
+                .updatedAt(Timestamp.now())
+                .days(new ArrayList<>())
+                .metadata(DietMetadata.builder().build())
+                .build();
+
+        Map<String, Object> firestoreMap = new HashMap<>();
+        when(firestore.collection(anyString())).thenReturn(collectionReference);
+        when(collectionReference.document(TEST_ID)).thenReturn(documentReference);
+        when(firestoreDietMapper.toFirestoreMap(any(Diet.class))).thenReturn(firestoreMap);
+        when(documentReference.update(firestoreMap)).thenReturn(writeFuture);
+
+        // Act
+        Diet updatedDiet = dietRepository.update(TEST_ID, dietWithoutId);
+
+        // Assert
+        assertNotNull(updatedDiet);
+        assertEquals(TEST_ID, updatedDiet.getId());
     }
 }

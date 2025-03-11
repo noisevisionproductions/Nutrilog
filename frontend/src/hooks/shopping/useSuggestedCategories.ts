@@ -1,41 +1,65 @@
-import { useRef } from 'react';
-import { ParsedProduct} from "../../types/product";
-import { DietCategorizationService} from "../../services/DietCategorizationService";
+import {useCallback, useState} from 'react';
+import {ParsedProduct} from "../../types/product";
+import {DietCategorizationService} from "../../services/DietCategorizationService";
 
 export function useSuggestedCategories() {
 
-    const suggestionCache = useRef<Record<string, string>>({});
+    const [suggestionCache, setSuggestionCache] = useState<Record<string, string>>({});
 
     /**
      * Pobiera sugestię kategorii dla pojedynczego produktu, używając cache
      */
-    const getSuggestion = async (product: ParsedProduct): Promise<string> => {
+    const getSuggestion = useCallback(async (product: ParsedProduct): Promise<string> => {
         const key = product.original || product.name;
 
-        if (suggestionCache.current[key]) {
-            return suggestionCache.current[key];
+        if (suggestionCache[key]) {
+            return suggestionCache[key];
         }
 
         try {
             const categoryId = await DietCategorizationService.suggestCategory(product);
-            suggestionCache.current[key] = categoryId;
+
+            setSuggestionCache(prevCache => ({
+                ...prevCache,
+                [key]: categoryId
+            }));
+
             return categoryId;
         } catch (error) {
             console.error('Błąd pobierania sugestii kategorii:', error);
             return 'other';
         }
-    };
+    }, [suggestionCache]);
+
+    const refreshSuggestions = useCallback(async (products: ParsedProduct[]) => {
+        try {
+            const suggestions = await DietCategorizationService.bulkSuggestCategories(products);
+
+            setSuggestionCache(prevCache => ({
+                ...prevCache,
+                ...suggestions
+            }));
+
+            return suggestions;
+        } catch (error) {
+            console.error('Błąd podczas odświeżania sugestii:', error);
+            return {};
+        }
+    }, []);
+
 
     /**
      * Wyczyść cache sugestii
      */
-    const clearSuggestions = () => {
-        suggestionCache.current = {};
-    };
+    const clearSuggestions = useCallback(() => {
+        setSuggestionCache({});
+    }, []);
+
 
     return {
         getSuggestion,
+        refreshSuggestions,
         clearSuggestions,
-
+        suggestionCache
     };
 }

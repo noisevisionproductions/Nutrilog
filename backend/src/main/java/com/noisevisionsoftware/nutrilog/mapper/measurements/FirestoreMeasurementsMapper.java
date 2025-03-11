@@ -5,7 +5,6 @@ import com.google.cloud.firestore.DocumentSnapshot;
 import com.noisevisionsoftware.nutrilog.model.measurements.BodyMeasurements;
 import com.noisevisionsoftware.nutrilog.model.measurements.MeasurementSourceType;
 import com.noisevisionsoftware.nutrilog.model.measurements.MeasurementType;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -13,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class FirestoreMeasurementsMapper {
 

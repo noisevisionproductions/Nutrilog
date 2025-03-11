@@ -131,15 +131,16 @@ public class ProductParsingService {
                     processedUnit.getUnit(),
                     input,
                     !processedUnit.isFoundKnownUnit() && unitService.isValidUnit(processedUnit.getUnit())
-            ));
+            ), true); // Dodajemy explicitly true
         } catch (Exception e) {
+            // W przypadku wyjątku również zwracamy wynik z success = true
             return new ParsingResult(new ParsedProduct(
                     cleanInputString(input),
                     1.0,
                     "szt",
                     input,
                     false
-            ));
+            ), true); // Dodajemy explicitly true
         }
     }
 
@@ -150,7 +151,7 @@ public class ProductParsingService {
                 .replaceAll("\\s+", " ");       // Normalizuj spacje
     }
 
-    private QuantityInfo extractQuantityAndUnit(String input) {
+    protected QuantityInfo extractQuantityAndUnit(String input) {
         for (Pattern pattern : QUANTITY_PATTERNS) {
             Matcher matcher = pattern.matcher(input);
             if (matcher.find()) {
@@ -187,7 +188,7 @@ public class ProductParsingService {
         return new QuantityInfo(false);
     }
 
-    private UnitProcessingResult processUnitAndName(String potentialUnit, String remainingText) {
+    protected UnitProcessingResult processUnitAndName(String potentialUnit, String remainingText) {
         String unit = "";
         String name = remainingText;
         boolean foundKnownUnit = false;

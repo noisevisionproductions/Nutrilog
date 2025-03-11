@@ -83,7 +83,7 @@ class DietMapperTest {
                 .build();
 
         DayRequest dayRequest = DayRequest.builder()
-                .date(LocalDateTime.now().toString())
+                .date(Timestamp.now())
                 .meals(Collections.singletonList(mealRequest))
                 .build();
 

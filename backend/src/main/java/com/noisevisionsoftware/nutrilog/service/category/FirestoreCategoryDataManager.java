@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class FirestoreCategoryDataManager {
     private final Firestore firestore;
-    private static final String COLLECTION_NAME = "product_categories_test";
+    private static final String COLLECTION_NAME = "product_categories";
 
     public Map<String, ProductCategoryData> loadData() {
         try {
@@ -107,7 +107,6 @@ public class FirestoreCategoryDataManager {
 
         if (variationsObj instanceof List<?>) {
             try {
-                // Sprawdź każdy element listy
                 for (Object item : (List<?>) variationsObj) {
                     if (item instanceof String) {
                         variations.add((String) item);

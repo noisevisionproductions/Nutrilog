@@ -6,11 +6,9 @@ import com.noisevisionsoftware.nutrilog.dto.response.BodyMeasurementsResponse;
 import com.noisevisionsoftware.nutrilog.model.measurements.BodyMeasurements;
 import com.noisevisionsoftware.nutrilog.model.measurements.MeasurementSourceType;
 import com.noisevisionsoftware.nutrilog.utils.DateUtils;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class BodyMeasurementsMapper {
 
     public BodyMeasurementsResponse toResponse(BodyMeasurements measurements) {

@@ -16,15 +16,12 @@ public class FirestoreService {
     private final Firestore firestore;
 
     public void deleteRelatedData(String dietId) {
-        log.info("Deleting related Firestore data for diet: {}", dietId);
         try {
             deleteCollection("shopping_lists", dietId);
 
             deleteCollection("recipe_references", dietId);
 
             firestore.document("diets/" + dietId).delete().get();
-
-            log.info("Successfully deleted all related data for diet: {}", dietId);
         } catch (Exception e) {
             log.error("Error deleting Firestore data for diet: {}", dietId, e);
             throw new RuntimeException("Failed to delete Firestore data", e);

@@ -1,8 +1,10 @@
 package com.noisevisionsoftware.nutrilog.controller;
 
+import com.noisevisionsoftware.nutrilog.dto.request.LoginRequest;
 import com.noisevisionsoftware.nutrilog.dto.response.ErrorResponse;
 import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import com.noisevisionsoftware.nutrilog.service.auth.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,11 +19,13 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<?> login(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody LoginRequest loginRequest) {
         try {
             if (authHeader == null || authHeader.isBlank()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body( new ErrorResponse("Authorization header is missing or empty"));
+                        .body(new ErrorResponse("Authorization header is missing or empty"));
             }
 
             if (!authHeader.startsWith("Bearer ") || authHeader.length() == 7) {
@@ -37,10 +41,36 @@ public class AuthController {
             }
 
             FirebaseUser user = authService.authenticateAdmin(token);
+
+            if (!user.getEmail().equals(loginRequest.getEmail())) {
+                log.warn("Email mismatch: {} vs {}", user.getEmail(), loginRequest.getEmail());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Nieprawidłowe dane uwierzytelniające"));
+            }
+
             return ResponseEntity.ok(user);
         } catch (Exception e) {
+            log.error("Authentication failed", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new ErrorResponse(e.getMessage() != null ? e.getMessage() : "Authentication failed"));
+        }
+    }
+
+    @PostMapping("/validate-token")
+    public ResponseEntity<?> validateToken(@RequestHeader("Authorization") String authHeader) {
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.length() == 7) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ErrorResponse("Invalid authorization header"));
+            }
+
+            String token = authHeader.substring(7);
+            FirebaseUser user = authService.validateToken(token);
+            return ResponseEntity.ok(user);
+        } catch (Exception e) {
+            log.error("Token validation failed", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ErrorResponse(e.getMessage()));
         }
     }
 }

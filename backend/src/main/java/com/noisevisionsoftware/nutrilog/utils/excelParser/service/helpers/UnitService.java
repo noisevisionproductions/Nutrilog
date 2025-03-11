@@ -122,7 +122,7 @@ public class UnitService {
     // W metodzie detectUnitInText w klasie UnitService
     public UnitDetectionResult detectUnitInText(String text) {
         if (text == null || text.isEmpty()) {
-            return new UnitDetectionResult("", "piece", false);
+            return new UnitDetectionResult("szt", "piece", false);
         }
 
         // Próbujemy znaleźć dokładne dopasowanie najpierw
@@ -154,7 +154,6 @@ public class UnitService {
             }
         }
 
-        // Jako ostateczność, sprawdzamy czy tekst zawiera jakąkolwiek znaną jednostkę
         for (String alias : UNIT_ALIASES.keySet()) {
             if (lowerText.contains(alias)) {
                 String normalizedUnit = UNIT_ALIASES.get(alias);

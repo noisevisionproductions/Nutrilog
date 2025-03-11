@@ -1,6 +1,5 @@
 package com.noisevisionsoftware.nutrilog.mapper.recipe;
 
-import com.google.cloud.Timestamp;
 import com.noisevisionsoftware.nutrilog.dto.request.recipe.NutritionalValuesRequest;
 import com.noisevisionsoftware.nutrilog.dto.request.recipe.RecipeUpdateRequest;
 import com.noisevisionsoftware.nutrilog.dto.response.recipe.NutritionalValuesResponse;
@@ -9,9 +8,6 @@ import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 @Component
 @RequiredArgsConstructor
@@ -59,11 +55,5 @@ public class RecipeMapper {
                 .fat(request.getFat())
                 .carbs(request.getCarbs())
                 .build();
-    }
-
-    private LocalDateTime timestampToLocalDateTime(Timestamp timestamp) {
-        return timestamp.toDate().toInstant()
-                .atZone(ZoneOffset.UTC)
-                .toLocalDateTime();
     }
 }

@@ -28,8 +28,12 @@ public class FirestoreUserMapper {
                 .storedAge(data.get("storedAge") != null
                         ? ((Number) data.get("storedAge")).intValue()
                         : null)
-                .profileCompleted((Boolean) data.get("profileCompleted"))
-                .role(UserRole.valueOf((String) data.get("role")))
+                .profileCompleted(data.get("profileCompleted") != null
+                        ? (Boolean) data.get("profileCompleted")
+                        : false)
+                .role(data.get("role") != null
+                        ? UserRole.valueOf((String) data.get("role"))
+                        : UserRole.USER)
                 .note((String) data.get("note"))
                 .createdAt(convertToLong(data.get("createdAt")))
                 .build();

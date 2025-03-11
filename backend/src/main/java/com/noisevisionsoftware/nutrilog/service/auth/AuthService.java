@@ -14,7 +14,6 @@ public class AuthService {
     private final FirebaseAuthenticationService firebaseAuthService;
 
     public FirebaseUser authenticateAdmin(String token) {
-
         if (token == null || token.isEmpty()) {
             log.error("Token is null or empty");
             throw new AuthenticationException("Invalid token");
@@ -29,6 +28,24 @@ public class AuthService {
 
         if (!"ADMIN".equals(user.getRole())) {
             log.error("User {} does not have admin role", user.getEmail());
+            throw new AuthenticationException("Insufficient privileges");
+        }
+
+        return user;
+    }
+
+    public FirebaseUser validateToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new AuthenticationException("Invalid token");
+        }
+
+        FirebaseUser user = firebaseAuthService.verifyToken(token);
+
+        if (user == null) {
+            throw new AuthenticationException("Invalid token");
+        }
+
+        if (!"ADMIN".equals(user.getRole())) {
             throw new AuthenticationException("Insufficient privileges");
         }
 

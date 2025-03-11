@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import Toast, { ToastType} from "../components/common/Toast";
+import React, {createContext, useContext, useState, useCallback, ReactNode} from 'react';
+import Toast, {ToastType} from "../components/common/Toast";
 
 interface ToastContextType {
     showToast: (message: string, type?: ToastType, duration?: number) => void;
@@ -11,7 +11,7 @@ interface ToastProviderProps {
     children: ReactNode;
 }
 
-export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
+export const ToastProvider: React.FC<ToastProviderProps> = ({children}) => {
     const [toast, setToast] = useState<{
         visible: boolean;
         message: string;
@@ -55,11 +55,11 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     }, []);
 
     const handleClose = useCallback(() => {
-        setToast(prev => ({ ...prev, visible: false }));
+        setToast(prev => ({...prev, visible: false}));
     }, []);
 
     return (
-        <ToastContext.Provider value={{ showToast }}>
+        <ToastContext.Provider value={{showToast}}>
             {children}
             <Toast
                 visible={toast.visible}
@@ -79,5 +79,3 @@ export const useToast = (): ToastContextType => {
     }
     return context;
 };
-
-export default ToastContext;

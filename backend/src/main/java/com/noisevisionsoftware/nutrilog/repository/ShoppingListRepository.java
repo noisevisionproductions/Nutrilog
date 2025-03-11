@@ -52,15 +52,12 @@ public class ShoppingListRepository {
         }
     }
 
-    // Zaktualizujmy też metodę save, aby obsługiwała aktualizacje
     public ShoppingList save(ShoppingList shoppingList) {
         try {
             DocumentReference docRef;
             if (shoppingList.getId() != null) {
-                // Aktualizacja istniejącego dokumentu
                 docRef = firestore.collection(COLLECTION_NAME).document(shoppingList.getId());
             } else {
-                // Tworzenie nowego dokumentu
                 docRef = firestore.collection(COLLECTION_NAME).document();
                 shoppingList.setId(docRef.getId());
             }

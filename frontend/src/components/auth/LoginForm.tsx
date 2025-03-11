@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 
 interface LoginFormState {
     email: string;
@@ -77,11 +77,15 @@ const LoginForm = () => {
             let errorMessage = 'Błąd logowania. Sprawdź dane i spróbuj ponownie.';
 
             if (error instanceof Error) {
-                if (error.message === 'Brak uprawnień administratora') {
+                if (error.message === 'Insufficient privileges' ||
+                    error.message === 'Brak uprawnień administratora') {
                     errorMessage = 'Brak uprawnień do panelu administratora';
                 } else if (error.message.includes('auth/wrong-password') ||
-                    error.message.includes('auth/user-not-found')) {
+                    error.message.includes('auth/user-not-found') ||
+                    error.message.includes('Nieprawidłowe dane')) {
                     errorMessage = 'Nieprawidłowy email lub hasło';
+                } else if (error.message) {
+                    errorMessage = error.message;
                 }
             }
 
@@ -143,7 +147,14 @@ const LoginForm = () => {
                             disabled={formState.loading}
                             className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {formState.loading ? 'Logowanie...' : 'Zaloguj się'}
+                            {formState.loading ? (
+                                <div className="flex items-center">
+                                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                    <span>Logowanie...</span>
+                                </div>
+                            ) : (
+                                'Zaloguj się'
+                            )}
                         </button>
                     </div>
                 </form>
