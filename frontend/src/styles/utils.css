@@ -1,0 +1,40 @@
+
+    /* Wymuszenie stałego paska przewijania */
+html {
+    overflow-y: scroll;
+}
+
+/* Stylowanie paska przewijania dla lepszego wyglądu */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Dla Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+/* Zapobieganie przesuwaniu się zawartości */
+body {
+    padding-right: 0 !important;
+}
+
+/* Poprawka dla modali */
+.modal-open {
+    overflow: auto !important;
+    padding-right: 0 !important;
+}

@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {
     const handleLogout = async () => {
         try {
             await logout();
-            navigate('/login');
+            navigate('/');
             toast.success('Wylogowano pomyślnie');
         } catch (error) {
             toast.error('Wystąpił błąd podczas wylogowywania');

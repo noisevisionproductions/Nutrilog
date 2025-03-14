@@ -26,8 +26,7 @@ const TeamSection = () => {
                             Tomasz Jurczyk
                         </p>
                         <p className="text-text-secondary">
-                            Z pasją do technologii i wizją usprawnienia pracy dietetyków, prowadzi rozwój Zdrowego
-                            Panelu, łącząc doświadczenie w tworzeniu oprogramowania z głębokim zrozumieniem potrzeb
+                            Z pasją do technologii i wizją usprawnienia pracy dietetyków, prowadzi rozwój Nutrilog, łącząc doświadczenie w tworzeniu oprogramowania z głębokim zrozumieniem potrzeb
                             branży dietetycznej.
                         </p>
                     </div>

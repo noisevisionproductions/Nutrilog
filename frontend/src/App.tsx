@@ -1,7 +1,6 @@
 import {BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import {AuthProvider} from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import LoginForm from './components/auth/LoginForm';
 import AdminPanel from "./pages/AdminPanel";
 import Unauthorized from "./pages/Unauthorized";
 import ErrorPage from "./pages/ErrorPage";
@@ -11,6 +10,7 @@ import {ToastProvider} from "./contexts/ToastContext";
 import LandingLayout from "./components/landing/layout/LandingLayout";
 import Landing from "./pages/Landing";
 import About from "./pages/About";
+import Login from "./pages/Login";
 
 function App() {
     return (
@@ -26,17 +26,19 @@ function App() {
                         {/* Landing page routes */}
                         <Route path="/" element={
                             <LandingLayout>
-                                <Landing />
+                                <Landing/>
                             </LandingLayout>
-                        } />
+                        }/>
                         <Route path="/about" element={
                             <LandingLayout>
-                                <About />
+                                <About/>
                             </LandingLayout>
-                        } />
+                        }/>
+
+                        {/* Auth routes */}
+                        <Route path="/login" element={<Login />} />
 
                         {/* Admin routes */}
-                        <Route path="/login" element={<LoginForm/>}/>
                         <Route path="/unauthorized" element={<Unauthorized/>}/>
                         <Route path="/error" element={<ErrorPage/>}/>
                         <Route
@@ -51,8 +53,6 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
-                        {/* Zmiana: teraz już nie przekierowujemy z głównej strony do panelu */}
-                        {/* <Route path="/" element={<Navigate to="/dashboard" replace/>}/> */}
                     </Routes>
                 </AuthProvider>
             </ToastProvider>

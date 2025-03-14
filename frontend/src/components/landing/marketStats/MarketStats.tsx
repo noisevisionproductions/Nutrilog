@@ -29,8 +29,8 @@ const MarketStats = () => {
         <section className="py-20 bg-surface">
             <Container>
                 <SectionHeader
-                    title="Dlaczego warto zdigitalizować swoją praktykę?"
-                    subtitle="Zobacz, jakie korzyści możesz osiągnąć dzięki wykorzystaniu nowoczesnych narzędzi"
+                    title="Trudności, które rozwiązuje nasza platforma"
+                    subtitle="Codzienne wyzwania dietetyków, które pomagamy przezwyciężyć"
                 />
 
                 <div className="mt-12 grid md:grid-cols-3 gap-8">

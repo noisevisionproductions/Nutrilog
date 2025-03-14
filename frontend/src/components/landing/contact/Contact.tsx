@@ -2,7 +2,6 @@ import Container from "../../ui/landing/Container";
 import SectionHeader from "../../ui/landing/SectionHeader";
 import ContactCard from "./ContactCard";
 import {EnvelopeIcon, PhoneIcon} from "@heroicons/react/16/solid";
-import {ChatBubbleLeftRightIcon} from "@heroicons/react/24/outline";
 import ContactForm from "./ContactForm";
 
 const Contact = () => {
@@ -29,18 +28,18 @@ const Contact = () => {
                             icon={EnvelopeIcon}
                             title="Napisz email"
                             description="Odpowiemy na Twoją wiadomość w ciągu 24 godzin"
-                            content="kontakt@zdrowypanel.pl"
+                            content="kontakt@nutriLog.pl"
                             action="mailto:kontakt@nutriLog.pl"
                         />
 
-                        <ContactCard
+                        {/*   <ContactCard
                             icon={ChatBubbleLeftRightIcon}
                             title="Umów prezentację"
                             description="Zaplanuj indywidualną prezentację systemu"
                             content="Wybierz dogodny termin"
                             action="#"
                             isButton
-                        />
+                        />*/}
                     </div>
 
                     {/* Prawa kolumna-formularz */}

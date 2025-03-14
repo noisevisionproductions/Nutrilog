@@ -6,7 +6,7 @@ import * as React from "react";
 import {useLocation} from "react-router-dom";
 import {useAuth} from "../../contexts/AuthContext";
 import {Link} from 'react-router-dom';
-import { AnimatePresence } from "framer-motion";
+import {AnimatePresence, motion} from "framer-motion";
 
 const Header: FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -147,8 +147,12 @@ const Header: FC = () => {
                 {/* Mobile Navigation */}
                 <AnimatePresence>
                     {isMobileMenuOpen && (
-                        <nav
-                            className="md:hidden mt-4 p-4 space-y-4 bg-white rounded-lg shadow-lg absolute left-0 right-0 z-50">
+                        <motion.nav
+                            initial={{opacity: 0, y: -20}}
+                            animate={{opacity: 1, y: 0}}
+                            exit={{opacity: 0, y: -20}}
+                            className="md:hidden mt-4 p-4 space-y-4 bg-white rounded-lg shadow-lg absolute left-4 right-4 z-50"
+                        >
                             {navigation.map((item) => (
                                 <a
                                     key={item.name}
@@ -171,18 +175,19 @@ const Header: FC = () => {
                                 <>
                                     <Link
                                         to="/login"
-                                        className="block text-text-secondary hover:text-primary py-2 font-medium"
+                                        className="block text-text-secondary hover:text-primary py-2 font-medium w-full text-left"
                                     >
                                         Logowanie
                                     </Link>
                                     <button
                                         onClick={(e) => handleScrollToSection(e, 'cta-section')}
-                                        className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark mt-2">
+                                        className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary-dark mt-2"
+                                    >
                                         Dołącz do nas
                                     </button>
                                 </>
                             )}
-                        </nav>
+                        </motion.nav>
                     )}
                 </AnimatePresence>
             </Container>

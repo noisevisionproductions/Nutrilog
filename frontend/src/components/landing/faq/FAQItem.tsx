@@ -1,7 +1,7 @@
 import {AnimatePresence, motion} from 'framer-motion';
 import {FAQItem as FAQItemType} from './faqData';
 import {useState} from "react";
-import {ChevronRightIcon} from "@heroicons/react/16/solid";
+import {ChevronDownIcon} from "lucide-react";
 
 const FAQItem = ({question, answer}: FAQItemType) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +20,7 @@ const FAQItem = ({question, answer}: FAQItemType) => {
                     transition={{duration: 0.2}}
                     className="flex-shrink-0"
                 >
-                    <ChevronRightIcon className="w-5 h-5 text-primary"/>
+                    <ChevronDownIcon className="w-5 h-5 text-primary"/>
                 </motion.div>
             </button>
 

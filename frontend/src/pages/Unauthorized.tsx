@@ -12,7 +12,7 @@ const Unauthorized = () => {
                     Nie posiadasz uprawnień do wyświetlania tej strony.
                 </p>
                 <button
-                    onClick={() => navigate('/login')}
+                    onClick={() => navigate('/')}
                     className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 >
                     Wróć do logowania

@@ -20,7 +20,7 @@ export const footerLinks: FooterSection[] = [
     {
         title: "Firma",
         links: [
-            { text: "O nas", href: "/o-nas" },
+            { text: "O nas", href: "/about" },
             { text: "Kontakt", href: "#contact" },
         ]
     },

@@ -1,5 +1,7 @@
 @import './styles/landing-theme.css';
+@import './styles/utils.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+

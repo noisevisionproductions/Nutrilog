@@ -39,7 +39,6 @@ public class FirebaseStorageConfig {
     }
 
     private String extractProjectId(String bucketName) {
-        // Remove .appspot.com from bucket name to get project ID
         return bucketName.replace(".appspot.com", "");
     }
 }

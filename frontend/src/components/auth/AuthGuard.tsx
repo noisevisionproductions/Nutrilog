@@ -23,7 +23,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
     }
 
     if (!currentUser || !userData) {
-        return <Navigate to="/login" />;
+        return <Navigate to="/" />;
     }
 
     if (userData.role !== requiredRole) {

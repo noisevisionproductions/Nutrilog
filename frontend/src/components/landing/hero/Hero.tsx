@@ -1,4 +1,3 @@
-// src/components/landing/Hero.tsx
 import { motion } from 'framer-motion';
 import Container from "../../ui/landing/Container";
 import NewsletterForm from "../forms/NewsletterForm";

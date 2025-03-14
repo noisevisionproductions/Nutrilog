@@ -3,7 +3,7 @@ import {auth} from './firebase';
 import {toast} from "sonner";
 
 const api = axios.create({
-    baseURL:/* import.meta.env.VITE_API_URL || */'http://localhost:8080/api',
+    baseURL:/* import.meta.env.VITE_API_URL ||*/ 'http://localhost:8080/api',
     headers: {
         'Content-Type': 'application/json'
     }
@@ -32,12 +32,11 @@ api.interceptors.response.use(
         });
 
         if (error.response?.status === 401) {
-            // Można tutaj dodać logikę wylogowania
             toast.error('Sesja wygasła. Zaloguj się ponownie.');
         } else if (error.response?.status === 403) {
             toast.error('Brak uprawnień do wykonania tej operacji.');
         } else {
-            toast.error(error.response?.data?.message || 'Wystąpił błąd');
+            toast.error(error.response?.data?.message || `Wystąpił błąd: ${error}`);
         }
         return Promise.reject(error);
     }

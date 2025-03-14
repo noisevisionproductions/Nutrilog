@@ -12,7 +12,7 @@ spring:
 
 firebase:
   storage:
-    bucket-name: fitapplication-3a2ae.appspot.com
+    bucket-name: fitapplication-3a2ae.firebasestorage.app
   service-account:
     path: firebase-service-account.json
 

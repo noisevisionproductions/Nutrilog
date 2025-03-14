@@ -33,6 +33,6 @@ export const faqItems: FAQItem[] = [
     {
         id: 6,
         question: "Jak wygląda kwestia bezpieczeństwa danych?",
-        answer: "Bezpieczeństwo danych jest naszym priorytetem. System będzie zgodny z RODO, a dane będą szyfrowane i przechowywane na bezpiecznych serwerach w UE. Regularnie przeprowadzamy audyty bezpieczeństwa."
+        answer: "Bezpieczeństwo danych jest naszym priorytetem. System będzie zgodny z RODO, a dane będą szyfrowane i przechowywane na bezpiecznych serwerach w UE. Nie będziemy mieli możliwości wglądu do wrażliwych danych dietetyków i ich klientów."
     }
 ];
