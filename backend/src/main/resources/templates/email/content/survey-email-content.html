@@ -1,0 +1,118 @@
+<!-- src/main/resources/templates/email/content/survey-email-content.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Ankieta dla dietetyków</title>
+    <style>
+        .survey-header {
+            margin-bottom: 20px;
+        }
+
+        .survey-header h1 {
+            color: #2D87BB;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .survey-description {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2D3748;
+            margin-bottom: 25px;
+        }
+
+        .survey-benefits {
+            background-color: #F8F9FA;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .survey-benefits h2 {
+            color: #43B988;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .benefits-list {
+            margin: 0;
+            padding: 0 0 0 20px;
+        }
+
+        .benefits-list li {
+            margin-bottom: 8px;
+            color: #4A5568;
+        }
+
+        .survey-button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .survey-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #43B988;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 16px;
+            text-decoration: none;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .survey-button:hover {
+            background-color: #338F69;
+        }
+
+        .survey-closing {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #2D3748;
+            margin-top: 30px;
+        }
+
+        .survey-signature {
+            margin-top: 20px;
+            color: #4A5568;
+        }
+    </style>
+</head>
+<body>
+<div class="survey-header">
+    <h1>Pomóż nam ulepszyć Nutri<span style="color: #43B988;">Log</span> dla dietetyków</h1>
+    <p class="survey-description">
+        Dzień dobry!<br><br>
+        Jako dietetyk, Twoja opinia jest dla nas niezwykle cenna. Pracujemy nad nowym systemem do zarządzania dietami klientów i chcielibyśmy dowiedzieć się, jakie funkcje są dla Ciebie najważniejsze.
+    </p>
+</div>
+
+<div class="survey-benefits">
+    <h2>Dlaczego warto wypełnić ankietę?</h2>
+    <ul class="benefits-list">
+        <li>Pomożesz nam stworzyć narzędzie idealnie dopasowane do potrzeb dietetyków</li>
+        <li>Otrzymasz <strong>20% zniżki</strong> na pierwszy miesiąc korzystania z systemu</li>
+        <li>Zostaniesz zapisany/a do listy beta-testerów i otrzymasz wczesny dostęp do nowych funkcji</li>
+        <li>Wypełnienie ankiety zajmie tylko <strong>3 minuty</strong></li>
+    </ul>
+</div>
+
+<p>
+    Nasz system NutriLog jest projektowany z myślą o dietetykach i ich potrzebach. Chcemy, aby ułatwiał codzienną pracę, oszczędzał czas i pomagał w efektywnym prowadzeniu klientów.
+</p>
+
+<div class="survey-button-container">
+    <a href="https://nutrilog.pl/survey" class="survey-button">WYPEŁNIJ ANKIETĘ</a>
+</div>
+
+<p class="survey-closing">
+    Dziękujemy za poświęcenie czasu. Twoja opinia pomoże nam stworzyć najlepsze narzędzie dla dietetyków na rynku.
+</p>
+
+<p class="survey-signature">
+    Z pozdrowieniami,<br>
+    Zespół NutriLog
+</p>
+</body>
+</html>

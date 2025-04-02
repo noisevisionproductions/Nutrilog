@@ -28,10 +28,8 @@ public class FileStorageService {
         try {
             String fileName = generateFileName(file.getOriginalFilename());
             String filePath = String.format("diets/%s/%s", userId, fileName);
-            log.info("Uploading file to Firebase Storage: {}", filePath);
 
             if (!storage.get(bucketName).exists()) {
-                log.error("Bucket {} does not exist", bucketName);
                 throw new IOException("Storage bucket does not exist: " + bucketName);
             }
 
@@ -42,11 +40,7 @@ public class FileStorageService {
 
             Blob blob = storage.create(blobInfo, file.getBytes());
 
-            // Generowanie publicznego URL z sygnaturą, który wygaśnie po 365 dniach
-            String signedUrl = blob.signUrl(365, TimeUnit.DAYS).toString();
-            log.info("File successfully uploaded. Signed URL: {}", signedUrl);
-
-            return signedUrl;
+            return blob.signUrl(365, TimeUnit.DAYS).toString();
         } catch (Exception e) {
             log.error("Failed to upload file to Firebase Storage: {}", e.getMessage());
             throw e;

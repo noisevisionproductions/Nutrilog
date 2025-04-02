@@ -2,6 +2,7 @@ package com.noisevisionsoftware.nutrilog.service;
 
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobInfo;
+import com.google.cloud.storage.Bucket;
 import com.google.cloud.storage.Storage;
 import com.noisevisionsoftware.nutrilog.service.firebase.FileStorageService;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,18 +54,24 @@ class FileStorageServiceTest {
     @Test
     void uploadFile_SuccessfulUpload_ReturnsMediaLink() throws IOException {
         // Arrange
+        Storage.BucketGetOption bucketGetOption = Storage.BucketGetOption.fields();
+        Bucket mockBucket = mock(Bucket.class);
+        when(storage.get(eq(testBucketName), any(Storage.BucketGetOption.class))).thenReturn(mockBucket);
+        when(mockBucket.exists()).thenReturn(true);
+
         when(multipartFile.getOriginalFilename()).thenReturn(testFileName);
         when(multipartFile.getContentType()).thenReturn(testContentType);
         when(multipartFile.getBytes()).thenReturn(testFileContent);
         when(storage.create(any(BlobInfo.class), eq(testFileContent))).thenReturn(blob);
-        String testMediaLink = "https://storage.googleapis.com/test-link";
-        when(blob.getMediaLink()).thenReturn(testMediaLink);
+
+        String signedUrlString = "https://storage.googleapis.com/test-signed-url";
+        when(blob.signUrl(eq(365L), eq(TimeUnit.DAYS))).thenReturn(URI.create(signedUrlString).toURL());
 
         // Act
         String result = fileStorageService.uploadFile(multipartFile, testUserId);
 
         // Assert
-        assertEquals(testMediaLink, result, "File link should be returned correctly");
+        assertEquals(signedUrlString, result, "Podpisany URL powinien zostać zwrócony poprawnie");
 
         // Capture arguments passed to storage.create()
         ArgumentCaptor<BlobInfo> blobInfoCaptor = ArgumentCaptor.forClass(BlobInfo.class);
@@ -69,32 +79,34 @@ class FileStorageServiceTest {
 
         // Verify BlobInfo was properly configured
         BlobInfo capturedBlobInfo = blobInfoCaptor.getValue();
-        assertEquals(testBucketName, capturedBlobInfo.getBucket(), "Bucket name should be correct");
+        assertEquals(testBucketName, capturedBlobInfo.getBucket(), "Nazwa bucketu powinna być poprawna");
         assertTrue(capturedBlobInfo.getName().startsWith("diets/" + testUserId + "/"),
-                "File path should contain user directory");
+                "Ścieżka pliku powinna zawierać katalog użytkownika");
         assertTrue(capturedBlobInfo.getName().endsWith(".xlsx"),
-                "File path should preserve the extension");
+                "Ścieżka pliku powinna zachować rozszerzenie");
         assertEquals(testContentType, capturedBlobInfo.getContentType(),
-                "Content type should be set correctly");
+                "Typ zawartości powinien być ustawiony poprawnie");
     }
 
     @Test
     void uploadFile_GetBytesError_ThrowsException() throws IOException {
         // Arrange
+        Bucket mockBucket = mock(Bucket.class);
+        when(storage.get(eq(testBucketName), any(Storage.BucketGetOption.class))).thenReturn(mockBucket);
+        when(mockBucket.exists()).thenReturn(true);
+
         when(multipartFile.getOriginalFilename()).thenReturn(testFileName);
         when(multipartFile.getContentType()).thenReturn(testContentType);
 
-        IOException ioException = new IOException("Error reading file bytes");
+        IOException ioException = new IOException("Błąd odczytu bajtów pliku");
         when(multipartFile.getBytes()).thenThrow(ioException);
 
         // Act & Assert
         Exception exception = assertThrows(IOException.class, () ->
                         fileStorageService.uploadFile(multipartFile, testUserId),
-                "Method should rethrow IOException");
+                "Metoda powinna ponownie rzucić IOException");
 
         assertEquals(ioException, exception);
-
-        // Storage.create nigdy nie powinno zostać wywołane
         verify(storage, never()).create(any(BlobInfo.class), any());
     }
 

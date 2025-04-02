@@ -30,7 +30,6 @@ class ChangelogMapperTest {
         String author = "testUser";
 
         ChangelogEntryRequest request = new ChangelogEntryRequest();
-        request.setTitle(title);
         request.setDescription(description);
         request.setType(type);
 
@@ -39,7 +38,6 @@ class ChangelogMapperTest {
 
         // then
         assertNotNull(result);
-        assertEquals(title, result.getTitle());
         assertEquals(description, result.getDescription());
         assertEquals(type, result.getType());
         assertEquals(author, result.getAuthor());
@@ -51,8 +49,6 @@ class ChangelogMapperTest {
         // given
         ChangelogEntry entry = new ChangelogEntry();
         entry.setId("1");
-        entry.setTitle("Tytuł");
-        // Celowo nie ustawiamy typu (pozostaje null)
 
         // when
         ChangelogEntryResponse result = mapper.toResponse(entry);
@@ -60,7 +56,6 @@ class ChangelogMapperTest {
         // then
         assertNotNull(result);
         assertEquals("1", result.getId());
-        assertEquals("Tytuł", result.getTitle());
         assertNull(result.getType());
     }
 
@@ -69,7 +64,6 @@ class ChangelogMapperTest {
     void toModel_ShouldMapAllEntryTypes(ChangelogEntryType type) {
         // given
         ChangelogEntryRequest request = new ChangelogEntryRequest();
-        request.setTitle("Tytuł");
         request.setDescription("Opis");
         request.setType(type);
 
@@ -92,7 +86,6 @@ class ChangelogMapperTest {
 
         ChangelogEntry entry = new ChangelogEntry();
         entry.setId(id);
-        entry.setTitle(title);
         entry.setDescription(description);
         entry.setCreatedAt(createdAt);
         entry.setAuthor(author);
@@ -104,7 +97,6 @@ class ChangelogMapperTest {
         // then
         assertNotNull(result);
         assertEquals(id, result.getId());
-        assertEquals(title, result.getTitle());
         assertEquals(description, result.getDescription());
         assertEquals(createdAt, result.getCreatedAt());
         assertEquals(author, result.getAuthor());
@@ -115,7 +107,6 @@ class ChangelogMapperTest {
     void toModel_ShouldCreateNewTimestamp() {
         // given
         ChangelogEntryRequest request = new ChangelogEntryRequest();
-        request.setTitle("Tytuł");
         request.setDescription("Opis");
         request.setType(ChangelogEntryType.IMPROVEMENT);
 
@@ -135,7 +126,6 @@ class ChangelogMapperTest {
     void toModel_WithNullAuthor_ShouldStillMapCorrectly() {
         // given
         ChangelogEntryRequest request = new ChangelogEntryRequest();
-        request.setTitle("Tytuł");
         request.setDescription("Opis");
         request.setType(ChangelogEntryType.FEATURE);
 
@@ -145,7 +135,6 @@ class ChangelogMapperTest {
         // then
         assertNotNull(result);
         assertNull(result.getAuthor());
-        assertEquals("Tytuł", result.getTitle());
     }
 
     @Test
@@ -160,7 +149,6 @@ class ChangelogMapperTest {
         // then
         assertNotNull(result);
         assertNull(result.getId());
-        assertNull(result.getTitle());
         assertNull(result.getDescription());
         assertNull(result.getCreatedAt());
         assertNull(result.getAuthor());
@@ -188,7 +176,6 @@ class ChangelogMapperTest {
     private ChangelogEntry createEntry(String id, ChangelogEntryType type) {
         ChangelogEntry entry = new ChangelogEntry();
         entry.setId(id);
-        entry.setTitle("Tytuł " + id);
         entry.setDescription("Opis " + id);
         entry.setCreatedAt(Timestamp.now());
         entry.setAuthor("Autor");

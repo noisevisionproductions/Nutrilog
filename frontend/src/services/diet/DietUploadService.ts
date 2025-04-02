@@ -3,6 +3,7 @@ import {DietTemplate, ParsedDietData} from "../../types";
 import axios, {AxiosError} from 'axios';
 import {ParsedProduct} from "../../types/product";
 import {toast} from "../../utils/toast";
+import {DietRecipeService} from "./DietRecipeService";
 
 interface ValidationResponse {
     valid: boolean;
@@ -170,9 +171,10 @@ export class DietUploadService {
     static async previewDiet(
         file: File,
         template: DietTemplate,
+        skipColumnsCount?: number
     ): Promise<ParsedDietData> {
         try {
-            const formData = this.prepareDietTemplateFormData(file, template);
+            const formData = this.prepareDietTemplateFormData(file, template, skipColumnsCount);
 
             const response = await api.post('/diets/upload/preview', formData, {
                 headers: {
@@ -180,7 +182,9 @@ export class DietUploadService {
                 },
             });
 
-            return this.sanitizeParsedDietData(response.data, template);
+            const sanitizedData = this.sanitizeParsedDietData(response.data, template);
+
+            return await this.enrichDietWithRecipes(sanitizedData);
         } catch (error) {
             if (error instanceof AxiosError) {
                 if (error.response?.status === 400) {
@@ -194,43 +198,14 @@ export class DietUploadService {
         }
     }
 
-    static async validateDietTemplate(
-        file: File,
-        template: DietTemplate,
-    ): Promise<ValidationResponse> {
-        try {
-            const formData = this.prepareDietTemplateFormData(file, template);
-
-            const response = await api.post('/diets/upload/validate-template', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-
-            return response.data;
-        } catch (error) {
-            console.error('Błąd podczas walidacji szablonu diety:', error);
-            return {
-                valid: false,
-                validationResults: [
-                    {
-                        isValid: false,
-                        message: error instanceof Error ? error.message : 'Wystąpił błąd podczas walidacji',
-                        severity: 'error'
-                    }
-                ],
-                additionalData: {}
-            };
-        }
-    }
-
     static async validateDietTemplateWithUser(
         file: File,
         template: DietTemplate,
-        userId?: string
+        userId?: string,
+        skipColumnsCount?: number
     ): Promise<ValidationResponse> {
         try {
-            const formData = this.prepareDietTemplateFormData(file, template);
+            const formData = this.prepareDietTemplateFormData(file, template, skipColumnsCount);
 
             if (userId) {
                 formData.append('userId', userId);
@@ -259,7 +234,11 @@ export class DietUploadService {
         }
     }
 
-    private static prepareDietTemplateFormData(file: File, template: DietTemplate): FormData {
+    private static prepareDietTemplateFormData(
+        file: File,
+        template: DietTemplate,
+        skipColumnsCounts?: number
+    ): FormData {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('mealsPerDay', template.mealsPerDay.toString());
@@ -274,7 +253,35 @@ export class DietUploadService {
             formData.append('mealTypes', type);
         });
 
+        if (skipColumnsCounts !== undefined) {
+            formData.append('skipColumnsCount', skipColumnsCounts.toString());
+        }
+
         return formData;
+    }
+
+    /**
+     * Wzbogaca podgląd diety o dane przepisów
+     */
+    static async enrichDietWithRecipes(parsedData: ParsedDietData): Promise<ParsedDietData> {
+        try {
+            const allMeals = parsedData.days.flatMap(day => day.meals);
+
+            const recipesMap = await DietRecipeService.findRecipesForMeals(allMeals);
+
+            const updatedDays = parsedData.days.map(day => ({
+                ...day,
+                meals: DietRecipeService.enrichMealsWithRecipeData(day.meals, recipesMap)
+            }));
+
+            return {
+                ...parsedData,
+                days: updatedDays
+            };
+        } catch (error) {
+            console.error("Błąd podczas wzbogacania diety o dane przepisów:", error);
+            return parsedData;
+        }
     }
 
     private static sanitizeParsedDietData(data: any, template: DietTemplate): ParsedDietData {

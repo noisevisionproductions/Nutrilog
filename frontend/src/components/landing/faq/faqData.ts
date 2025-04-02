@@ -34,5 +34,10 @@ export const faqItems: FAQItem[] = [
         id: 6,
         question: "Jak wygląda kwestia bezpieczeństwa danych?",
         answer: "Bezpieczeństwo danych jest naszym priorytetem. System będzie zgodny z RODO, a dane będą szyfrowane i przechowywane na bezpiecznych serwerach w UE. Nie będziemy mieli możliwości wglądu do wrażliwych danych dietetyków i ich klientów."
+    },
+    {
+        id: 7,
+        question: "Czym NutriLog wyróżnia się na tle konkurencji?",
+        answer: "NutriLog wyróżnia się wykorzystaniem najnowocześniejszych technologii zarówno w panelu dietetyka, jak i aplikacji dla klientów. Cały system jest zoptymalizowany pod kątem wydajności, co zapewnia płynne działanie bez zawieszania się czy crashów, nawet przy dużym obciążeniu. Dzięki starannie zaprojektowanej architekturze i rygorystycznym testom, oferujemy niezawodne narzędzie, które pozwala dietetykom skupić się na pracy z klientami, a nie na problemach technicznych."
     }
 ];

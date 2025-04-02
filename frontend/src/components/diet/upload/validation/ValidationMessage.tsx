@@ -4,11 +4,12 @@ import {AlertCircle, AlertTriangle, Calendar, CheckCircle, Clock, FileText, List
 export type ValidationSeverity = 'error' | 'warning' | 'success' | 'ERROR' | 'WARNING' | 'SUCCESS';
 
 export type ValidationErrorType =
-    | 'diet-overlap'
-    | 'excel-structure'
+    'excel-structure'
     | 'meals-per-day'
     | 'date'
     | 'meals-config'
+    | 'diet-overlap'
+    | 'parser-settings'
     | 'unknown';
 
 interface ValidationMessageProps {
@@ -74,15 +75,15 @@ const ValidationMessage: React.FC<ValidationMessageProps> = ({
         switch (errorType) {
             case 'diet-overlap':
             case 'date':
-                return <Calendar className="h-4 w-4 mr-1" />;
+                return <Calendar className="h-4 w-4 mr-1"/>;
             case 'excel-structure':
-                return <FileText className="h-4 w-4 mr-1" />;
+                return <FileText className="h-4 w-4 mr-1"/>;
             case 'meals-per-day':
-                return <List className="h-4 w-4 mr-1" />;
+                return <List className="h-4 w-4 mr-1"/>;
             case 'meals-config':
-                return <Clock className="h-4 w-4 mr-1" />;
+                return <Clock className="h-4 w-4 mr-1"/>;
             default:
-                return <AlertCircle className="h-4 w-4 mr-1" />;
+                return <AlertCircle className="h-4 w-4 mr-1"/>;
         }
     };
 

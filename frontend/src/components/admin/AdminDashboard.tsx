@@ -1,16 +1,13 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import {
     ChartBarIcon,
-    UserGroupIcon,
-    ClipboardDocumentCheckIcon,
-    EnvelopeOpenIcon,
-    ChatBubbleLeftRightIcon
+    UserGroupIcon
 } from '@heroicons/react/24/outline';
-import { useAuth} from "../../contexts/AuthContext";
+import {useAuth} from "../../contexts/AuthContext";
 
 const AdminDashboard: React.FC = () => {
-    const { currentUser } = useAuth();
+    const {currentUser} = useAuth();
 
     const adminModules = [
         {
@@ -24,66 +21,53 @@ const AdminDashboard: React.FC = () => {
             description: 'Przeglądaj, weryfikuj i zarządzaj subskrybentami newslettera.',
             icon: UserGroupIcon,
             tabName: 'subscribers'
-        },
-        {
-            name: 'Masowa wysyłka wiadomości',
-            description: 'Wysyłaj wiadomości email do wszystkich aktywnych subskrybentów.',
-            icon: EnvelopeOpenIcon,
-            tabName: 'bulkEmail'
-        },
-        {
-            name: 'Ankiety i badania',
-            description: 'Zarządzaj ankietami i przeglądaj wyniki badań.',
-            icon: ClipboardDocumentCheckIcon,
-            tabName: 'surveys'
-        },
-        {
-            name: 'Wiadomości kontaktowe',
-            description: 'Przeglądaj i odpowiadaj na wiadomości z formularza kontaktowego.',
-            icon: ChatBubbleLeftRightIcon,
-            tabName: 'contactMessages'
         }
     ];
 
+    const handleModuleClick = (tabName: string) => {
+        window.dispatchEvent(new CustomEvent('panel-tab-change', {detail: tabName}));
+    };
+
     return (
-        <div className="space-y-8">
-            <div className="bg-white">
-                <div className="pb-5 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold leading-6 text-gray-900">
+        <div className="space-y-6 pb-8">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-2xl font-bold mb-4">
                         Panel Administratora
-                    </h2>
-                    <p className="mt-2 max-w-4xl text-sm text-gray-500">
-                        Witaj, {currentUser?.displayName || currentUser?.email}! Zarządzaj ustawieniami systemu, newsletterem i wiadomościami kontaktowymi.
+                    </h1>
+                    <p className="text-slate-500 text-sm mt-1">
+                        Witaj, {currentUser?.displayName || currentUser?.email}! Zarządzaj ustawieniami systemu,
+                        newsletterem i wiadomościami kontaktowymi.
                     </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {adminModules.map((module) => {
                     const Icon = module.icon;
 
                     return (
                         <div
                             key={module.name}
-                            className="relative bg-white p-6 border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition duration-200"
+                            className="relative bg-white p-6 border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition duration-200 cursor-pointer hover:border-primary-light group"
+                            onClick={() => handleModuleClick(module.tabName)}
                         >
                             <div className="flex items-center mb-4">
-                                <div className="p-2 rounded-md bg-primary-light/10">
-                                    <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+                                <div
+                                    className="p-2 rounded-md bg-primary-light/10 group-hover:bg-primary-light/20 transition-colors">
+                                    <Icon className="h-6 w-6 text-primary" aria-hidden="true"/>
                                 </div>
-                                <h3 className="ml-3 text-lg font-medium text-gray-900">
+                                <h3 className="ml-3 text-lg font-medium text-gray-900 group-hover:text-primary">
                                     {module.name}
                                 </h3>
                             </div>
                             <p className="text-sm text-gray-500 mb-4">
                                 {module.description}
                             </p>
-                            <button
-                                onClick={() => window.dispatchEvent(new CustomEvent('panel-tab-change', { detail: module.tabName }))}
-                                className="text-sm font-medium text-primary hover:text-primary-dark"
-                            >
+                            <span
+                                className="text-sm font-medium text-primary hover:text-primary-dark group-hover:underline">
                                 Przejdź &rarr;
-                            </button>
+                            </span>
                         </div>
                     );
                 })}

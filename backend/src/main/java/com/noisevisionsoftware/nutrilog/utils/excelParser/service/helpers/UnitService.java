@@ -88,6 +88,14 @@ public class UnitService {
         put("szklanki", "szklanka");
         put("garść", "garść");
         put("garści", "garść");
+
+        put("g.", "g");
+        put("kg.", "kg");
+        put("dag.", "dag");
+        put("ml.", "ml");
+        put("l.", "l");
+        put("szt.", "szt");
+        put("opak.", "opak");
     }};
 
     public Optional<ProductUnit> getUnit(String value) {
@@ -119,16 +127,15 @@ public class UnitService {
                 ));
     }
 
-    // W metodzie detectUnitInText w klasie UnitService
     public UnitDetectionResult detectUnitInText(String text) {
         if (text == null || text.isEmpty()) {
             return new UnitDetectionResult("szt", "piece", false);
         }
 
-        // Próbujemy znaleźć dokładne dopasowanie najpierw
-        String lowerText = text.toLowerCase();
-        if (UNIT_ALIASES.containsKey(lowerText)) {
-            String normalizedUnit = UNIT_ALIASES.get(lowerText);
+        String cleanText = text.toLowerCase().replaceAll("\\b\\.+", "");
+
+        if (UNIT_ALIASES.containsKey(cleanText)) {
+            String normalizedUnit = UNIT_ALIASES.get(cleanText);
             Optional<ProductUnit> unit = getUnit(normalizedUnit);
             if (unit.isPresent()) {
                 return new UnitDetectionResult(normalizedUnit, unit.get().getType(), true);
@@ -155,7 +162,7 @@ public class UnitService {
         }
 
         for (String alias : UNIT_ALIASES.keySet()) {
-            if (lowerText.contains(alias)) {
+            if (cleanText.contains(alias)) {
                 String normalizedUnit = UNIT_ALIASES.get(alias);
                 Optional<ProductUnit> unit = getUnit(normalizedUnit);
                 if (unit.isPresent()) {
@@ -168,7 +175,14 @@ public class UnitService {
     }
 
     public String normalizeUnitAlias(String unit) {
-        return UNIT_ALIASES.getOrDefault(unit.toLowerCase(), unit.toLowerCase());
+        if (unit == null) return "";
+
+        String cleanedUnit = unit.toLowerCase().trim();
+        if (cleanedUnit.endsWith(".")) {
+            cleanedUnit = cleanedUnit.substring(0, cleanedUnit.length() - 1);
+        }
+
+        return UNIT_ALIASES.getOrDefault(cleanedUnit, cleanedUnit);
     }
 
     public boolean canCombineQuantities(String unit1, String unit2) {

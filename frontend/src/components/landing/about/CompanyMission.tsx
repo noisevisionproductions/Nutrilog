@@ -11,6 +11,16 @@ const CompanyMission = () => {
                     transition={{duration: 0.5}}
                     className="max-w-3xl mx-auto text-center"
                 >
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="p-6">
+                            <img
+                                src="/images/logo-n.png"
+                                alt="NutriLog Logo"
+                                className="h-28 w-auto mx-auto"
+                            />
+                        </div>
+                    </div>
+
                     <h1 className="text-4xl font-bold text-text-primary mb-6">
                         Nasza misja
                     </h1>

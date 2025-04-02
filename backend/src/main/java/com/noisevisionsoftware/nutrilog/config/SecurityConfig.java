@@ -49,12 +49,14 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Te end pointy muszą być dostępne dla wszystkich, aby poprawnie wyświetlały się w aplikacji
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/diets/**").permitAll()
+                        .requestMatchers("/api/recipes/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("OWNER")
+                        .requestMatchers("/api/admin/cache/**").hasRole("ADMIN")
                         .requestMatchers("/api/shopping-lists/**").hasRole("ADMIN")
-                        .requestMatchers("/api/recipes/**").hasRole("ADMIN")
                         .requestMatchers("/api/measurements/**").hasRole("ADMIN")
                         .requestMatchers("/api/changelog/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
@@ -109,7 +111,7 @@ public class SecurityConfig {
                 "X-XSRF-TOKEN"
         ));
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(List.of("Authorization", "X-XSRF-TOKEN" ));
+        configuration.setExposedHeaders(List.of("Authorization", "X-XSRF-TOKEN"));
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -117,7 +119,7 @@ public class SecurityConfig {
         return source;
     }
 
-    private boolean isDevProfile() {
+    protected boolean isDevProfile() {
         return Arrays.stream(environment.getActiveProfiles())
                 .anyMatch(profile -> profile.equals("dev") || profile.equals("local"));
     }

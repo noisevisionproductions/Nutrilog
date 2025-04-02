@@ -1,5 +1,5 @@
 import {DietTemplate, MealType} from "../../../../../types";
-import {getMealTypeLabel} from "../../../../../utils/mealTypeUtils";
+import {getMealTypeLabel} from "../../../../../utils/diet/mealTypeUtils";
 import React from "react";
 
 interface MealConfigSectionProps {

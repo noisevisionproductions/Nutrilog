@@ -103,7 +103,7 @@ public class NewsletterController {
     }
 
     @PostMapping("/subscribers/{id}/metadata")
-    public ResponseEntity<?> updateSubscriberMetadata(@PathVariable String id, @RequestBody MetadataWrapper wrapper) {
+    public ResponseEntity<?> updateSubscriberMetadata(@PathVariable Long id, @RequestBody MetadataWrapper wrapper) {
         try {
             publicNewsletterService.updateSubscriberMetadata(id, wrapper.getMetadata());
             return ResponseEntity.ok(Map.of(

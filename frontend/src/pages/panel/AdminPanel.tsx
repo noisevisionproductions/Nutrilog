@@ -2,9 +2,7 @@ import React, {useState} from 'react';
 import {AdminNav} from '../../types/navigation';
 import AdminDashboard from "../../components/admin/AdminDashboard";
 import AdminNewsletterPanel from "../newsletter/AdminNewsletterPanel";
-/*import SubscribersManagement from '../../components/panel/newsletter/SubscribersManagement';
-import SurveysManagement from '../../components/panel/surveys/SurveysManagement';*/
-import BulkEmailSender from '../../components/admin/newsletter/BulkEmailSender';
+import BulkEmailSender from '../../components/admin/newsletter/email-sender/BulkEmailSender';
 import ContactMessagesPanel from '../../components/admin/contact/ContactMessagesPanel';
 import AdminSidebar from "../../components/navigation/AdminSidebar";
 import usePageTitle from "../../hooks/usePageTitle";
@@ -29,10 +27,6 @@ const AdminPanel: React.FC = () => {
                 return <AdminDashboard/>;
             case 'newsletter':
                 return <AdminNewsletterPanel/>;
-            /*     case 'subscribers':
-                     return <SubscribersManagement/>;
-                 case 'surveys':
-                     return <SurveysManagement/>;*/
             case 'bulkEmail':
                 return <BulkEmailSender/>;
             case 'contactMessages':

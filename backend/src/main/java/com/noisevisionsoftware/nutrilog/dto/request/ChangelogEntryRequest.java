@@ -12,9 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChangelogEntryRequest {
     @NotBlank
-    private String title;
-
-    @NotBlank
     private String description;
 
     @NotNull

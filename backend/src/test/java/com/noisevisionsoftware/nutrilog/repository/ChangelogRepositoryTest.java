@@ -274,7 +274,6 @@ class ChangelogRepositoryTest {
     private ChangelogEntry createTestEntry(String id) {
         return ChangelogEntry.builder()
                 .id(id)
-                .title("Test Entry")
                 .description("This is a test entry description")
                 .createdAt(Timestamp.now())
                 .author("test-author")

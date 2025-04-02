@@ -62,7 +62,6 @@ const DietShoppingListEditor: React.FC<DietShoppingListEditorProps> = ({
             const updated = await updateItems(newItems);
             if (updated) {
                 setShoppingList(updated);
-                console.log('Successfully updated shopping list');
             }
         } catch (error) {
             console.error('Error updating item:', error);

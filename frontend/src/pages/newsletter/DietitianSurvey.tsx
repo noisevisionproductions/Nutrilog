@@ -6,6 +6,7 @@ interface SurveyQuestion {
     question: string;
     type: 'radio' | 'checkbox' | 'text';
     options?: string[];
+    required?: boolean;
 }
 
 interface SurveyProps {
@@ -20,21 +21,34 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
     const [currentStep, setCurrentStep] = useState(0);
     const [answers, setAnswers] = useState<Record<string, any>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     const questions: SurveyQuestion[] = [
         {
-            id: 'dietGoals',
-            question: 'Jakie cele żywieniowe najczęściej realizujesz ze swoimi klientami?',
+            id: 'dietSoftwareExperience',
+            question: 'Czy korzystałeś/aś wcześniej z oprogramowania do układania diet?',
+            type: 'radio',
+            options: [
+                'Tak, korzystam obecnie',
+                'Tak, korzystałem/am w przeszłości',
+                'Nie, nigdy nie korzystałem/am'
+            ],
+            required: true
+        },
+        {
+            id: 'currentTools',
+            question: 'Z jakich narzędzi aktualnie korzystasz przy układaniu diet?',
             type: 'checkbox',
             options: [
-                'Redukcja masy ciała',
-                'Zwiększenie masy mięśniowej',
-                'Poprawa zdrowia',
-                'Leczenie chorób dietozależnych',
-                'Dieta podczas ciąży',
-                'Dieta sportowa',
+                'Excel/Arkusze kalkulacyjne',
+                'Dedykowane oprogramowanie dietetyczne',
+                'Aplikacje mobilne',
+                'Kalkulatory online',
+                'Własne szablony',
+                'Papier i długopis',
                 'Inne'
-            ]
+            ],
+            required: true
         },
         {
             id: 'clientsPerMonth',
@@ -46,28 +60,12 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                 '11-20',
                 '21-50',
                 'Powyżej 50'
-            ]
+            ],
+            required: true
         },
         {
-            id: 'toolsUsed',
-            question: 'Jakich narzędzi obecnie używasz do układania diet?',
-            type: 'checkbox',
-            options: [
-                'Excel/Arkusze kalkulacyjne',
-                'Specjalistyczne oprogramowanie (jakie?)',
-                'Gotowe szablony PDF',
-                'Własne rozwiązania',
-                'Inne'
-            ]
-        },
-        {
-            id: 'painPoints',
-            question: 'Co jest dla Ciebie największym wyzwaniem w układaniu diet?',
-            type: 'text'
-        },
-        {
-            id: 'desiredFeatures',
-            question: 'Jakie funkcje chciał(a)byś widzieć w aplikacji do układania diet?',
+            id: 'softwareKeyFeatures',
+            question: 'Które funkcje w aplikacji do układania diet są dla Ciebie najważniejsze?',
             type: 'checkbox',
             options: [
                 'Automatyczne obliczanie makroskładników',
@@ -76,10 +74,16 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                 'Komunikacja z klientami',
                 'Raportowanie postępów klientów',
                 'Generowanie raportów i faktur',
-                'Integracja z kalendarzem',
-                'Mobilny dostęp dla klientów',
+                'Gotową bazę przepisów',
                 'Inne'
-            ]
+            ],
+            required: true
+        },
+        {
+            id: 'additionalInfo',
+            question: 'Czy masz jakieś pytania, dodatkowe informacje lub wymagania?',
+            type: 'text',
+            required: false
         }
     ];
 
@@ -108,9 +112,36 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
         }
     };
 
+    const validateCurrentStep = (): boolean => {
+        const currentQuestion = questions[currentStep];
+
+        if (!currentQuestion.required) {
+            return true;
+        }
+
+        const answer = answers[currentQuestion.id];
+
+        if (!answer) {
+            setValidationError('To pytanie wymaga odpowiedzi.');
+            return false;
+        }
+
+        if (currentQuestion.type === 'checkbox' && Array.isArray(answer) && answer.length === 0) {
+            setValidationError('Wybierz przynajmniej jedną opcję.');
+            return false;
+        }
+
+        return true;
+    };
+
     const handleNext = () => {
+        if (!validateCurrentStep()) {
+            return;
+        }
+
         if (currentStep < questions.length - 1) {
             setCurrentStep(prev => prev + 1);
+            setValidationError(null);
         } else {
             handleSubmit().catch(console.error);
         }
@@ -119,14 +150,17 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
     const handlePrevious = () => {
         if (currentStep > 0) {
             setCurrentStep(prev => prev - 1);
+            setValidationError(null);
         }
     };
 
     const handleSubmit = async () => {
         try {
+            setIsSubmitting(true);
             await PublicNewsletterService.saveSubscriberMetadata(subscriberId, {
                 surveyCompleted: 'true',
-                surveyAnswers: JSON.stringify(answers)
+                surveyAnswers: JSON.stringify(answers),
+                surveyCompletedAt: new Date().toISOString()
             });
             onComplete();
         } catch (error) {
@@ -138,6 +172,10 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
     };
 
     const handleSkip = () => {
+        PublicNewsletterService.saveSubscriberMetadata(subscriberId, {
+            surveySkipped: 'true',
+            surveySkippedAt: new Date().toISOString()
+        }).catch(console.error);
         onComplete();
     };
 
@@ -145,30 +183,33 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
     const progress = ((currentStep + 1) / questions.length) * 100;
 
     return (
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
-            <div className="mb-6">
+        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6 overflow-y-auto max-h-[80vh]">
+            <div className="mb-6 sticky top-0 bg-white pt-2 pb-4 z-10">
                 <h2 className="text-2xl font-semibold text-text-primary mb-2">Pomóż nam ulepszyć NutriLog</h2>
                 <p className="text-text-secondary">
                     Dziękujemy za potwierdzenie adresu email. Twoje odpowiedzi na poniższe pytania pomogą nam lepiej
                     zrozumieć potrzeby dietetyków.
                 </p>
-            </div>
 
-            <div className="mb-4 bg-gray-200 rounded-full h-2.5">
-                <div
-                    className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-in-out"
-                    style={{width: `${progress}%`}}
-                ></div>
+                <div className="mt-4 mb-2 bg-gray-200 rounded-full h-2.5">
+                    <div
+                        className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-in-out"
+                        style={{width: `${progress}%`}}
+                    ></div>
+                </div>
+                <p className="text-sm text-text-secondary">Pytanie {currentStep + 1} z {questions.length}</p>
             </div>
-            <p className="text-sm text-text-secondary mb-6">Pytanie {currentStep + 1} z {questions.length}</p>
 
             <div className="mb-8">
-                <h3 className="text-lg font-medium mb-4">{currentQuestion.question}</h3>
+                <h3 className="text-lg font-medium mb-4 break-words">
+                    {currentQuestion.question}
+                    {currentQuestion.required && <span className="text-red-500 ml-1">*</span>}
+                </h3>
 
                 {currentQuestion.type === 'radio' && (
                     <div className="space-y-3">
                         {currentQuestion.options?.map((option) => (
-                            <label key={option} className="flex items-start">
+                            <label key={option} className="flex items-start cursor-pointer group">
                                 <input
                                     type="radio"
                                     name={currentQuestion.id}
@@ -177,7 +218,7 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                                     onChange={() => handleInputChange(currentQuestion.id, option)}
                                     className="mt-1 h-4 w-4 text-primary focus:ring-primary-light border-gray-300"
                                 />
-                                <span className="ml-2">{option}</span>
+                                <span className="ml-2 group-hover:text-primary-dark transition-colors">{option}</span>
                             </label>
                         ))}
                     </div>
@@ -186,7 +227,7 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                 {currentQuestion.type === 'checkbox' && (
                     <div className="space-y-3">
                         {currentQuestion.options?.map((option) => (
-                            <label key={option} className="flex items-start">
+                            <label key={option} className="flex items-start cursor-pointer group">
                                 <input
                                     type="checkbox"
                                     value={option}
@@ -194,7 +235,7 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                                     onChange={() => handleInputChange(currentQuestion.id, option)}
                                     className="mt-1 h-4 w-4 text-primary focus:ring-primary-light rounded border-gray-300"
                                 />
-                                <span className="ml-2">{option}</span>
+                                <span className="ml-2 group-hover:text-primary-dark transition-colors">{option}</span>
                             </label>
                         ))}
                     </div>
@@ -209,14 +250,18 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                         placeholder="Wpisz swoją odpowiedź..."
                     ></textarea>
                 )}
+
+                {validationError && (
+                    <p className="text-red-500 mt-2 text-sm">{validationError}</p>
+                )}
             </div>
 
-            <div className="flex justify-between">
+            <div className="flex justify-between sticky bottom-0 bg-white pt-4">
                 <div>
                     {currentStep > 0 && (
                         <button
                             onClick={handlePrevious}
-                            className="px-4 py-2 text-text-secondary bg-gray-100 rounded-md hover:bg-gray-200"
+                            className="px-4 py-2 text-text-secondary bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
                         >
                             Wstecz
                         </button>
@@ -226,7 +271,7 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                 <div>
                     <button
                         onClick={handleSkip}
-                        className="px-4 py-2 mr-3 text-text-secondary hover:underline"
+                        className="px-4 py-2 mr-3 text-text-secondary hover:underline transition-colors"
                     >
                         Pomiń ankietę
                     </button>
@@ -234,18 +279,20 @@ const DietitianSurvey: React.FC<SurveyProps> = ({
                     <button
                         onClick={handleNext}
                         disabled={isSubmitting}
-                        className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark disabled:opacity-50 transition-colors"
                     >
                         {isSubmitting ? (
                             <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg"
-                     fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Wysyłanie...
-              </span>
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                            strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Wysyłanie...
+                            </span>
                         ) : currentStep === questions.length - 1 ? "Zakończ" : "Dalej"}
                     </button>
                 </div>

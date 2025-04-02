@@ -7,8 +7,8 @@ import com.noisevisionsoftware.nutrilog.model.recipe.RecipeReference;
 import com.noisevisionsoftware.nutrilog.model.recipe.jpa.RecipeEntity;
 import com.noisevisionsoftware.nutrilog.model.recipe.jpa.RecipeReferenceEntity;
 import com.noisevisionsoftware.nutrilog.repository.RecipeRepository;
-import com.noisevisionsoftware.nutrilog.repository.jpa.RecipeJpaRepository;
-import com.noisevisionsoftware.nutrilog.repository.jpa.RecipeReferenceJpaRepository;
+import com.noisevisionsoftware.nutrilog.repository.jpa.recipe.RecipeJpaRepository;
+import com.noisevisionsoftware.nutrilog.repository.jpa.recipe.RecipeReferenceJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -114,8 +114,8 @@ public class PostgresRecipeRepositoryImpl implements RecipeRepository {
                     .orElseThrow(() -> new RuntimeException("Recipe not found with id: " + id));
 
             RecipeEntity updatedEntity = recipeJpaConverter.toJpaEntity(recipe);
-            updatedEntity.setId(entity.getId());  // Zachowaj oryginalny ID z bazy danych
-            updatedEntity.setExternalId(id);      // Ustaw zewnętrzny ID
+            updatedEntity.setId(entity.getId());
+            updatedEntity.setExternalId(id);
 
             RecipeEntity savedEntity = recipeJpaRepository.save(updatedEntity);
             return recipeJpaConverter.toModel(savedEntity);
@@ -153,6 +153,10 @@ public class PostgresRecipeRepositoryImpl implements RecipeRepository {
     @Override
     public Recipe save(Recipe recipe) {
         try {
+            if (recipe.getId() == null || recipe.getId().isEmpty()) {
+                recipe.setId(generateFirestoreStyleId());
+            }
+
             RecipeEntity entity = recipeJpaConverter.toJpaEntity(recipe);
             RecipeEntity savedEntity = recipeJpaRepository.save(entity);
             return recipeJpaConverter.toModel(savedEntity);
@@ -180,10 +184,24 @@ public class PostgresRecipeRepositoryImpl implements RecipeRepository {
         try {
             RecipeReferenceEntity entity = recipeReferenceJpaConverter.toJpaEntity(reference);
             recipeReferenceJpaRepository.save(entity);
-            log.info("Zapisano referencję przepisu: {} w PostgreSQL", entity.getId());
         } catch (Exception e) {
             log.error("Błąd podczas zapisywania referencji przepisu w PostgreSQL", e);
             throw new RuntimeException("Failed to save recipe reference", e);
         }
+    }
+
+    /**
+     * Generuje ID w stylu Firestore - 20 znaków alfanumerycznych
+     */
+    private String generateFirestoreStyleId() {
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder id = new StringBuilder(20);
+        Random random = new Random();
+
+        for (int i = 0; i < 20; i++) {
+            id.append(characters.charAt(random.nextInt(characters.length())));
+        }
+
+        return id.toString();
     }
 }

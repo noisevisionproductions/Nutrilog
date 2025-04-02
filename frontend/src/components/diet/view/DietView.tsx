@@ -6,22 +6,28 @@ import {formatTimestamp} from "../../../utils/dateFormatters";
 import {Diet, Recipe, ShoppingListV3} from "../../../types";
 import CategoryShoppingList from "./CategoryShoppingList";
 import {useRecipes} from "../../../hooks/useRecipes";
-import {getMealTypeLabel} from "../../../utils/mealTypeUtils";
-import {getDietWarningStatus, getWarningStatusText, isDietEnded} from "../../../utils/dietWarningUtils";
+import {getMealTypeLabel} from "../../../utils/diet/mealTypeUtils";
+import {
+    getDaysRemainingToDietEnd,
+    getDietWarningStatus,
+    getWarningStatusText,
+    isDietEnded
+} from "../../../utils/diet/dietWarningUtils";
 import DietWarningIndicator from "../../common/DietWarningIndicator";
+import {checkFutureDiets} from "../../../utils/diet/dietContinuityUtils";
 
 interface DietViewProps {
     diet: Diet;
+    allDiets?: Diet[];
     onClose: () => void;
 }
 
-const DietView: React.FC<DietViewProps> = ({diet, onClose}) => {
+const DietView: React.FC<DietViewProps> = ({diet, allDiets, onClose}) => {
     const {recipes, isLoadingRecipes} = useRecipes(diet.days);
     const {shoppingList, loading: shoppingListLoading} = useShoppingList(diet.id);
 
     const warningStatus = getDietWarningStatus(diet);
     const isEnded = isDietEnded(diet);
-    const hasWarning = warningStatus !== 'normal' || isEnded;
 
     const renderShoppingList = () => {
         if (shoppingListLoading) {
@@ -47,58 +53,99 @@ const DietView: React.FC<DietViewProps> = ({diet, onClose}) => {
     const renderMetadata = () => {
         if (!diet.metadata) return null;
 
+        const continuityStatus = checkFutureDiets(diet, allDiets || []);
+        const WARNING_THRESHOLD = 3;
+        const daysRemaining = getDaysRemainingToDietEnd(diet);
+        const showWarning = isEnded || daysRemaining <= WARNING_THRESHOLD || warningStatus === 'critical';
+
         return (
             <div className="text-sm text-gray-600 space-y-2">
                 <p>
-                    <span className="font-medium">
-                        Liczba dni:
-                    </span>
+                <span className="font-medium">
+                    Liczba dni:
+                </span>
                     {' '}
                     {diet.metadata.totalDays || diet.days?.length || 0}
                 </p>
                 {diet.metadata.fileName && (
                     <p>
-                        <span className="font-medium">
-                            Nazwa pliku:
-                        </span>
+                    <span className="font-medium">
+                        Nazwa pliku:
+                    </span>
                         {' '}
                         {diet.metadata.fileName}
                     </p>
                 )}
                 {diet.createdAt && (
                     <p>
-                        <span className="font-medium">
-                            Data utworzenia:
-                        </span>
+                    <span className="font-medium">
+                        Data utworzenia:
+                    </span>
                         {' '}
                         {formatTimestamp(diet.createdAt)}
                     </p>
                 )}
 
-                {hasWarning && (
-                    <div
-                        className={`mt-4 p-3 rounded-md ${isEnded ? 'bg-gray-100' : (warningStatus === 'critical' ? 'bg-red-50' : 'bg-amber-50')}`}>
+                {showWarning && (
+                    <div className="mt-4 p-3 rounded-md bg-gray-50 border">
                         <div className="flex items-center">
                             <DietWarningIndicator
                                 status={warningStatus}
                                 diet={diet}
                                 size="md"
+                                allDiets={allDiets || []}
                             />
-                            <span className="ml-2 font-medium">
-                                {isEnded
-                                    ? 'Dieta zakończona'
-                                    : getWarningStatusText(diet)
-                                }
-                            </span>
                         </div>
-                        {!isEnded && (
-                            <p className="text-xs mt-1 opacity-80">
-                                {warningStatus === 'critical'
-                                    ? 'Zalecane jest niezwłoczne skontaktowanie się z klientem w celu ustalenia kontynuacji diety.'
-                                    : 'Wkrótce warto skontaktować się z klientem w sprawie przedłużenia diety.'
-                                }
-                            </p>
-                        )}
+
+                        {isEnded ? (
+                            <div className="mt-2 text-sm">
+                                <p className="font-medium text-gray-700">Dieta zakończona</p>
+                                {continuityStatus.hasFutureDiet ? (
+                                    <p className="text-xs mt-1 text-green-600">
+                                        Klient ma zaplanowaną kolejną dietę
+                                        {continuityStatus.nextDietStartTimestamp &&
+                                            ` (rozpoczyna się ${formatTimestamp(continuityStatus.nextDietStartTimestamp)})`}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs mt-1 text-amber-600">
+                                        Klient nie ma zaplanowanej kontynuacji diety.
+                                    </p>
+                                )}
+                            </div>
+                        ) : warningStatus === 'critical' ? (
+                            <div className="mt-2 text-sm">
+                                <p className="font-medium text-gray-700">{getWarningStatusText(diet)}</p>
+                                {continuityStatus.hasFutureDiet ? (
+                                    <p className="text-xs mt-1 text-blue-600">
+                                        Klient ma zaplanowaną kolejną dietę
+                                        {continuityStatus.gapDays <= 0
+                                            ? ' (rozpoczyna się bezpośrednio po obecnej)'
+                                            : ` (rozpoczyna się za ${continuityStatus.gapDays} dni)`}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs mt-1 text-red-600">
+                                        Zalecane jest niezwłoczne skontaktowanie się z klientem w celu ustalenia
+                                        kontynuacji diety.
+                                    </p>
+                                )}
+                            </div>
+                        ) : daysRemaining <= WARNING_THRESHOLD ? (
+                            <div className="mt-2 text-sm">
+                                <p className="font-medium text-gray-700">{getWarningStatusText(diet)}</p>
+                                {continuityStatus.hasFutureDiet ? (
+                                    <p className="text-xs mt-1 text-blue-600">
+                                        Klient ma zaplanowaną kolejną dietę
+                                        {continuityStatus.gapDays <= 0
+                                            ? ' (rozpoczyna się bezpośrednio po obecnej)'
+                                            : ` (rozpoczyna się za ${continuityStatus.gapDays} dni)`}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs mt-1 text-amber-600">
+                                        Wkrótce warto skontaktować się z klientem w sprawie przedłużenia diety.
+                                    </p>
+                                )}
+                            </div>
+                        ) : null}
                     </div>
                 )}
             </div>
@@ -192,13 +239,6 @@ const DietView: React.FC<DietViewProps> = ({diet, onClose}) => {
                     <div className="flex justify-between items-center border-b pb-4">
                         <div className="flex items-center gap-2">
                             <SheetTitle>Szczegóły Diety</SheetTitle>
-                            {hasWarning && (
-                                <DietWarningIndicator
-                                    status={warningStatus}
-                                    diet={diet}
-                                    size="sm"
-                                />
-                            )}
                         </div>
                         <SheetClose className="text-gray-400 hover:text-gray-500"/>
                     </div>

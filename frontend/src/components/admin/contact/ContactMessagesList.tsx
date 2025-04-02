@@ -2,8 +2,7 @@ import React, {useEffect, useState} from "react";
 import {ContactMessage, ContactMessageStatus} from "../../../types/contact";
 import {AdminContactService} from "../../../services/contact/AdminContactService";
 import LoadingSpinner from "../../common/LoadingSpinner";
-import {format} from "date-fns";
-import {pl} from "date-fns/locale";
+import {formatTimestamp} from "../../../utils/dateFormatters";
 
 interface ContactMessagesListProps {
     onSelectMessage: (id: string) => void;
@@ -114,7 +113,7 @@ const ContactMessagesList: React.FC<ContactMessagesListProps> = ({onSelectMessag
                                 {message.phone && <div className="text-xs text-gray-400">{message.phone}</div>}
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                {format(message.createdAt.toDate(), 'dd MMM yyyy, HH:mm', {locale: pl})}
+                                {formatTimestamp(message.createdAt)}
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                 {getStatusBadge(message.status)}

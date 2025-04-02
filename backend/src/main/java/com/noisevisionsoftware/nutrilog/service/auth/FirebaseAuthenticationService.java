@@ -4,8 +4,8 @@ import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
-import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import com.noisevisionsoftware.nutrilog.model.user.UserRole;
+import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,7 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -27,10 +28,18 @@ public class FirebaseAuthenticationService {
         try {
             FirebaseUser user = verifyToken(token);
             if (user != null) {
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+
+                if (UserRole.OWNER.name().equals(user.getRole())) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                }
+
                 return new UsernamePasswordAuthenticationToken(
                         user,
                         token,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                        authorities
                 );
             }
         } catch (Exception e) {

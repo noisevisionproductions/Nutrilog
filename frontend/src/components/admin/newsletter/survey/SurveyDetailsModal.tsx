@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "../../../ui/dialog";
 import {NewsletterSubscriber} from "../../../../types/newsletter";
-import {formatTimestamp} from "../../../../utils/dateFormatters";
+import {formatPostgresTimestamp} from "../../../../utils/dateFormatters";
 
 interface SurveyDetailsModalProps {
     subscriber: NewsletterSubscriber;
@@ -20,32 +20,32 @@ const SurveyDetailsModal: React.FC<SurveyDetailsModalProps> = ({
                                                                    isOpen,
                                                                    onClose
                                                                }) => {
-    // Definicja pytań ankiety-musi odpowiadać strukturze w DietitianSurvey.tsx
+    // Definicja pytań ankiety-musi odpowiadać strukturze w dietitiansurvey.tsx
     const questions: SurveyQuestion[] = [
         {
-            id: 'dietGoals',
-            question: 'Jakie cele żywieniowe najczęściej realizujesz ze swoimi klientami?',
+            id: 'dietSoftwareExperience',
+            question: 'Czy korzystałeś/aś wcześniej z oprogramowania do układania diet?',
+            type: 'radio'
+        },
+        {
+            id: 'currentTools',
+            question: 'Z jakich narzędzi aktualnie korzystasz przy układaniu diet?',
             type: 'checkbox'
         },
         {
             id: 'clientsPerMonth',
             question: 'Ilu klientów przeciętnie prowadzisz miesięcznie?',
-            type: 'radio'
+            type: 'radio',
         },
         {
-            id: 'toolsUsed',
-            question: 'Jakich narzędzi obecnie używasz do układania diet?',
+            id: 'softwareKeyFeatures',
+            question: 'Które funkcje w aplikacji do układania diet są dla Ciebie najważniejsze?',
             type: 'checkbox'
         },
         {
-            id: 'painPoints',
-            question: 'Co jest dla Ciebie największym wyzwaniem w układaniu diet?',
+            id: 'additionalInfo',
+            question: 'Czy masz jakieś pytania, dodatkowe informacje lub wymagania?',
             type: 'text'
-        },
-        {
-            id: 'desiredFeatures',
-            question: 'Jakie funkcje chciał(a)byś widzieć w aplikacji do układania diet?',
-            type: 'checkbox'
         }
     ];
 
@@ -61,6 +61,15 @@ const SurveyDetailsModal: React.FC<SurveyDetailsModalProps> = ({
     };
 
     const answers = getSurveyAnswers();
+    const surveyCompletedDate = subscriber.metadata?.surveyCompletedAt
+        ? new Date(subscriber.metadata.surveyCompletedAt).toLocaleDateString('pl-PL', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+        : formatPostgresTimestamp(subscriber.verifiedAt);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -82,7 +91,7 @@ const SurveyDetailsModal: React.FC<SurveyDetailsModalProps> = ({
                             </div>
                             <div>
                                 <p className="text-sm text-text-secondary">Data wypełnienia ankiety:</p>
-                                <p className="font-medium">{formatTimestamp(subscriber.verifiedAt)}</p>
+                                <p className="font-medium">{surveyCompletedDate}</p>
                             </div>
                         </div>
                     </div>

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    BarChart, Bar, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts';
+import {
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+    BarChart, Bar, PieChart, Pie, Cell, Legend, AreaChart, Area
+} from 'recharts';
 import LoadingSpinner from "../common/LoadingSpinner";
-import { useStatsData} from "../../hooks/shopping/useStatsData";
+import { useStatsData } from "../../hooks/shopping/useStatsData";
 import StatCard from './StatCard';
 import ChartCard from './ChartCard';
 import { Users, TrendingUp, Utensils, Calendar, Clock, UserCheck } from 'lucide-react';
+import SectionHeader from "../common/SectionHeader";
 
 // Kolory do wykresów
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -31,22 +34,19 @@ const StatsPanel: React.FC = () => {
         );
     }
 
-    // Funkcja do formatowania wartości w tooltipie
     const formatTooltipValue = (value: number) => {
         return `${value} ${value === 1 ? 'dieta' : value < 5 ? 'diety' : 'diet'}`;
     };
 
     return (
-        <div className="space-y-8 pb-8">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold mb-2">Panel Statystyk</h2>
-                <p className="opacity-90">
-                    Przegląd kluczowych metryk i wskaźników związanych z dietami i użytkownikami.
-                </p>
-            </div>
+        <div className="space-y-6 pb-8">
+            <SectionHeader
+                title="Panel Statystyk"
+                description="Przegląd kluczowych metryk i wskaźników związanych z dietami i użytkownikami."
+            />
 
             {/* Karty statystyk */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                 <StatCard
                     title="Użytkownicy"
                     value={stats.totalUsers}
@@ -107,29 +107,29 @@ const StatsPanel: React.FC = () => {
             </div>
 
             {/* Wykresy */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 <ChartCard
                     title={`${showCumulative ? 'Skumulowany wzrost' : 'Miesięczny przyrost'} diet`}
                     description="Liczba nowych diet tworzonych w każdym miesiącu. Przełącz między widokiem miesięcznym a skumulowanym."
                     footer={
                         <div className="flex justify-between items-center">
-                            <span>Źródło: dane z systemu Nutrilog</span>
+                            <span className="text-xs text-slate-500">Źródło: dane z systemu Nutrilog</span>
                             <button
                                 onClick={() => setShowCumulative(!showCumulative)}
-                                className="text-blue-600 hover:text-blue-800 font-medium"
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                             >
                                 Pokaż {showCumulative ? 'miesięczne' : 'skumulowane'}
                             </button>
                         </div>
                     }
                 >
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={300}>
                         {showCumulative ? (
                             <AreaChart data={stats.monthlyData}>
                                 <defs>
                                     <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1} />
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -173,7 +173,7 @@ const StatsPanel: React.FC = () => {
                     title="Użytkownicy Systemu"
                     description="Porównanie liczby wszystkich użytkowników systemu do tych, którzy aktywnie korzystają z dietami."
                 >
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={stats.usersData} layout="vertical">
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                             <XAxis type="number" />
@@ -188,7 +188,7 @@ const StatsPanel: React.FC = () => {
                     title="Popularność Typów Posiłków"
                     description="Rozkład typów posiłków używanych w dietach."
                 >
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie
                                 data={stats.mealsTypeData}
@@ -215,7 +215,7 @@ const StatsPanel: React.FC = () => {
                     title="Rozkład Długości Diet"
                     description="Liczba diet w zależności od ich długości (w dniach)."
                 >
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={stats.dietLengthDistribution}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                             <XAxis dataKey="range" />

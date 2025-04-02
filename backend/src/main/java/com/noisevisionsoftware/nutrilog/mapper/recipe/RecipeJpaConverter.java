@@ -28,7 +28,7 @@ public class RecipeJpaConverter {
                     .build();
         }
 
-        LocalDateTime createdAt = null;
+        LocalDateTime createdAt;
         if (recipe.getCreatedAt() != null) {
             createdAt = LocalDateTime.ofEpochSecond(
                     recipe.getCreatedAt().getSeconds(),
@@ -38,8 +38,14 @@ public class RecipeJpaConverter {
             createdAt = LocalDateTime.now();
         }
 
+        String externalId = recipe.getId();
+        if (externalId == null || externalId.isEmpty()) {
+            // Jeśli brak ID, użyj UUID jako fallback
+            externalId = UUID.randomUUID().toString();
+        }
+
         return RecipeEntity.builder()
-                .externalId(recipe.getId() != null ? recipe.getId() : UUID.randomUUID().toString())
+                .externalId(externalId) // Używamy oryginalnego ID
                 .name(recipe.getName())
                 .instructions(recipe.getInstructions())
                 .createdAt(createdAt)

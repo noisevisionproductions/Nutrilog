@@ -202,14 +202,14 @@ public class DietService {
         log.debug("Odświeżenie cache diet");
     }
 
-    private Timestamp getDietStartDate(Diet diet) {
+    public Timestamp getDietStartDate(Diet diet) {
         if (diet.getDays() == null || diet.getDays().isEmpty()) {
             return null;
         }
         return diet.getDays().getFirst().getDate();
     }
 
-    private Timestamp getDietEndDate(Diet diet) {
+    public Timestamp getDietEndDate(Diet diet) {
         if (diet.getDays() == null || diet.getDays().isEmpty()) {
             return null;
         }

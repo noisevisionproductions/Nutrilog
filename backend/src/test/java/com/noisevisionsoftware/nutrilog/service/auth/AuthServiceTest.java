@@ -3,6 +3,7 @@ package com.noisevisionsoftware.nutrilog.service.auth;
 import com.noisevisionsoftware.nutrilog.exception.AuthenticationException;
 import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -119,6 +120,115 @@ class AuthServiceTest {
         );
 
         assertEquals("User verification failed", exception.getMessage());
+
+        // Verify
+        verify(firebaseAuthService).verifyToken(VALID_TOKEN);
+    }
+
+    @Test
+    @DisplayName("Should successfully validate token for admin user")
+    void validateToken_WithValidAdminToken_ShouldReturnUser() {
+        // Arrange
+        when(firebaseAuthService.verifyToken(VALID_TOKEN)).thenReturn(adminUser);
+
+        // Act
+        FirebaseUser result = authService.validateToken(VALID_TOKEN);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(TEST_UID, result.getUid());
+        assertEquals(TEST_EMAIL, result.getEmail());
+        assertEquals("ADMIN", result.getRole());
+
+        // Verify
+        verify(firebaseAuthService).verifyToken(VALID_TOKEN);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when token is null")
+    void validateToken_WithNullToken_ShouldThrowException() {
+        // Act & Assert
+        AuthenticationException exception = assertThrows(
+                AuthenticationException.class,
+                () -> authService.validateToken(null)
+        );
+
+        assertEquals("Invalid token", exception.getMessage());
+
+        // Verify
+        verifyNoInteractions(firebaseAuthService);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when token is empty")
+    void validateToken_WithEmptyToken_ShouldThrowException() {
+        // Act & Assert
+        AuthenticationException exception = assertThrows(
+                AuthenticationException.class,
+                () -> authService.validateToken(INVALID_TOKEN)
+        );
+
+        assertEquals("Invalid token", exception.getMessage());
+
+        // Verify
+        verifyNoInteractions(firebaseAuthService);
+    }
+
+    @Test
+    @DisplayName("Should throw exception for non-admin user")
+    void validateToken_WithNonAdminUser_ShouldThrowException() {
+        // Arrange
+        when(firebaseAuthService.verifyToken(VALID_TOKEN)).thenReturn(regularUser);
+
+        // Act & Assert
+        AuthenticationException exception = assertThrows(
+                AuthenticationException.class,
+                () -> authService.validateToken(VALID_TOKEN)
+        );
+
+        assertEquals("Insufficient privileges", exception.getMessage());
+
+        // Verify
+        verify(firebaseAuthService).verifyToken(VALID_TOKEN);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when token verification fails")
+    void validateToken_WithVerificationFailure_ShouldThrowException() {
+        // Arrange
+        when(firebaseAuthService.verifyToken(VALID_TOKEN)).thenReturn(null);
+
+        // Act & Assert
+        AuthenticationException exception = assertThrows(
+                AuthenticationException.class,
+                () -> authService.validateToken(VALID_TOKEN)
+        );
+
+        assertEquals("Invalid token", exception.getMessage());
+
+        // Verify
+        verify(firebaseAuthService).verifyToken(VALID_TOKEN);
+    }
+
+    @Test
+    @DisplayName("Should successfully validate token for owner user")
+    void validateToken_WithOwnerToken_ShouldReturnUser() {
+        // Arrange
+        FirebaseUser ownerUser = FirebaseUser.builder()
+                .uid(TEST_UID)
+                .email(TEST_EMAIL)
+                .role("OWNER")
+                .build();
+        when(firebaseAuthService.verifyToken(VALID_TOKEN)).thenReturn(ownerUser);
+
+        // Act
+        FirebaseUser result = authService.validateToken(VALID_TOKEN);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(TEST_UID, result.getUid());
+        assertEquals(TEST_EMAIL, result.getEmail());
+        assertEquals("OWNER", result.getRole());
 
         // Verify
         verify(firebaseAuthService).verifyToken(VALID_TOKEN);

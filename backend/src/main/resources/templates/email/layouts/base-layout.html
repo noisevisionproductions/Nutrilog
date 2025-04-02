@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriLog</title>
     <style>
-        /* Zostawiamy wszystkie style bez zmian */
         /* Reset stylów */
         body, p, h1, h2, h3, h4, h5, h6, table, td {
             margin: 0;
@@ -99,6 +98,34 @@
             background-color: #338F69;
         }
 
+        /* Promotional box */
+        .promotional-box {
+            background-color: #f0f9ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2D87BB;
+        }
+
+        .promotional-box h2 {
+            color: #2D87BB;
+            margin-top: 0;
+        }
+
+        /* Announcement box */
+        .announcement-box {
+            background-color: #fffbea;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #FFD93D;
+        }
+
+        .announcement-box h2 {
+            color: #805500;
+            margin-top: 0;
+        }
+
         /* Survey notice */
         .survey-notice {
             margin-top: 24px;
@@ -150,9 +177,30 @@
     </div>
 
     <div class="content">
+        <!-- Promotional box - tylko dla szablonu promocyjnego -->
+        <div th:if="${isPromotional}" class="promotional-box">
+            <h2 th:text="${promotionTitle}">Specjalna oferta!</h2>
+            <p th:text="${promotionSubtitle}">Sprawdź nasze najnowsze promocje.</p>
+        </div>
+
+        <!-- Announcement box - tylko dla szablonu z ogłoszeniami -->
+        <div th:if="${isAnnouncement}" class="announcement-box">
+            <h2 th:text="${announcementTitle}">Ważna informacja</h2>
+        </div>
+
+        <!-- Główna treść wiadomości -->
         <th:block th:utext="${emailContent}">
             <!-- Tutaj będzie wstawiona treść -->
         </th:block>
+
+        <!-- Survey notice - tylko dla szablonu ankiety -->
+        <div th:if="${isSurvey}" class="survey-notice">
+            <h2>Pomóż nam ulepszyć nasze usługi</h2>
+            <p>Twoja opinia jest dla nas ważna. Wypełnij krótką ankietę.</p>
+            <div class="button-container">
+                <a th:href="${surveyUrl}" class="button">Przejdź do ankiety</a>
+            </div>
+        </div>
     </div>
 
     <!-- Stopka -->

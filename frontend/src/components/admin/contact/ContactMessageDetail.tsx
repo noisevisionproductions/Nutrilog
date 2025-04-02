@@ -1,9 +1,8 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {AdminContactService} from '../../../services/contact/AdminContactService';
-import {format} from 'date-fns';
-import {pl} from 'date-fns/locale';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import {ContactMessage, ContactMessageStatus} from "../../../types/contact";
+import {formatTimestamp} from "../../../utils/dateFormatters";
 
 interface ContactMessageDetailProps {
     id: string;
@@ -97,7 +96,7 @@ const ContactMessageDetail: React.FC<ContactMessageDetailProps> = ({id, onBack})
                         Szczegóły wiadomości
                     </h3>
                     <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                        Wysłano: {format(message.createdAt.toDate(), 'dd MMMM yyyy, HH:mm', {locale: pl})}
+                        Wysłano: {formatTimestamp(message.createdAt)}
                     </p>
                 </div>
                 <div className="border-t border-gray-200">

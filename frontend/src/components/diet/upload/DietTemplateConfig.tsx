@@ -1,5 +1,5 @@
 import React from "react";
-import {getMealTypeLabel} from "../../../utils/mealTypeUtils";
+import {getMealTypeLabel} from "../../../utils/diet/mealTypeUtils";
 import {DietTemplate, MealType} from "../../../types";
 import {stringToTimestamp, toISODate} from "../../../utils/dateFormatters";
 import { Calendar, Clock } from "react-feather";

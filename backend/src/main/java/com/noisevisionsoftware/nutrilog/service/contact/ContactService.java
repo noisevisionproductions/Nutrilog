@@ -7,7 +7,7 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.WriteResult;
 import com.noisevisionsoftware.nutrilog.dto.request.ContactFormRequest;
 import com.noisevisionsoftware.nutrilog.model.ContactMessage;
-import com.noisevisionsoftware.nutrilog.service.EmailService;
+import com.noisevisionsoftware.nutrilog.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

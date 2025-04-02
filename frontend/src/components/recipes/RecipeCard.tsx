@@ -31,9 +31,14 @@ const RecipeCard: React.FC<RecipeCardProps> = ({recipe, onClick}) => {
                 <div className={`p-5 h-full flex flex-col ${!hasImage ? 'h-full' : ''}`}>
                     <div className="flex-grow">
                         <div className="flex justify-between items-start mb-3">
-                            <h3 className="font-medium text-lg line-clamp-2 text-slate-900 group-hover:text-primary-dark transition-colors">
-                                {recipe.name}
-                            </h3>
+                            <div>
+                                <h3 className="font-medium text-lg line-clamp-2 text-slate-900 group-hover:text-primary-dark transition-colors">
+                                    {recipe.name}
+                                </h3>
+                                <div className="text-xs text-slate-400 mt-1">
+                                    ID: {recipe.id}
+                                </div>
+                            </div>
                             {!hasImage && (
                                 <div
                                     className="h-8 w-8 bg-gray-50 rounded-md flex items-center justify-center shadow-sm border border-slate-200 flex-shrink-0 ml-2">

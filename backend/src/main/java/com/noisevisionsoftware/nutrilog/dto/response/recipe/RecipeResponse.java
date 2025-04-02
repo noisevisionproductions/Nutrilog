@@ -10,6 +10,7 @@ import java.util.List;
 @Builder
 public class RecipeResponse {
     private String id;
+    private String originalId;
     private String name;
     private String instructions;
     private Timestamp createdAt;

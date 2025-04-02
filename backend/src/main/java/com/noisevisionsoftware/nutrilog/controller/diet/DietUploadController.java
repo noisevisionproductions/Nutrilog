@@ -171,7 +171,8 @@ public class DietUploadController {
             @RequestParam("startDate") String startDate,
             @RequestParam("duration") int duration,
             @RequestParam Map<String, String> allParams,
-            @RequestParam("mealTypes") List<String> mealTypes) {
+            @RequestParam("mealTypes") List<String> mealTypes,
+            @RequestParam(value = "skipColumnsCount", required = false) Integer skipColumnsCount) {
 
         Map<String, String> mealTimes = new HashMap<>();
         for (int i = 0; i < mealsPerDay; i++) {
@@ -185,7 +186,12 @@ public class DietUploadController {
         try {
             validateInput(file, mealsPerDay, startDate, duration, mealTimes, mealTypes);
 
-            ExcelParserService.ParsedExcelResult parseResult = excelParserService.parseDietExcel(file);
+            ExcelParserService.ParsedExcelResult parseResult;
+            if (skipColumnsCount != null) {
+                parseResult = excelParserService.parseDietExcel(file, skipColumnsCount);
+            } else {
+                parseResult = excelParserService.parseDietExcel(file);
+            }
 
             List<ParsedDay> days = generateDietDays(
                     parseResult.meals(),

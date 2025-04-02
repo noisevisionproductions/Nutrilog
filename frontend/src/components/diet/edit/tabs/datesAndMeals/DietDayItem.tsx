@@ -1,5 +1,5 @@
 import { MinusCircle, PlusCircle } from "lucide-react";
-import { getMealTypeLabel } from "../../../../../utils/mealTypeUtils";
+import { getMealTypeLabel } from "../../../../../utils/diet/mealTypeUtils";
 import { formatTimestamp } from "../../../../../utils/dateFormatters";
 import React, { useCallback } from "react";
 import { Recipe, Day } from "../../../../../types";

@@ -20,6 +20,7 @@ import {useAuth} from "../../contexts/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {toast} from "../../utils/toast";
 import {useChangeLog} from "../../hooks/useChangeLog";
+import {ChartBarIcon} from "@heroicons/react/24/outline";
 
 interface DietitianNavButtonProps {
     icon: React.ElementType;
@@ -31,7 +32,6 @@ interface DietitianNavButtonProps {
     showNotification?: boolean;
 }
 
-// Własny komponent przycisku nawigacyjnego dla panelu dietetyka
 const DietitianNavButton: React.FC<DietitianNavButtonProps> = ({
                                                                    icon: Icon,
                                                                    label,
@@ -55,7 +55,7 @@ const DietitianNavButton: React.FC<DietitianNavButtonProps> = ({
                 className
             )}
         >
-            <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-primary")} />
+            <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-primary")}/>
 
             {!isCollapsed && (
                 <span className="ml-3 truncate">{label}</span>
@@ -65,7 +65,7 @@ const DietitianNavButton: React.FC<DietitianNavButtonProps> = ({
                 <span className={cn(
                     "w-2 h-2 bg-red-500 rounded-full absolute",
                     isCollapsed ? "top-3 right-3" : "top-2 right-2"
-                )} />
+                )}/>
             )}
         </button>
     );
@@ -74,19 +74,21 @@ const DietitianNavButton: React.FC<DietitianNavButtonProps> = ({
 interface SidebarProps {
     activeTab: MainNav;
     onTabChange: (tab: MainNav) => void;
+    children?: React.ReactNode;
 }
 
 const navigationItems = [
-    {id: 'upload', label: 'Upload Excel', icon: Upload},
+    {id: 'dietitianDashboard', label: 'Pulpit', icon: LayoutDashboard},
+    {id: 'upload', label: 'Dodawanie Diety', icon: Upload},
     {id: 'diets', label: 'Diety', icon: FileSpreadsheet},
     {id: 'recipes', label: 'Przepisy', icon: BookOpen},
     {id: 'users', label: 'Użytkownicy', icon: Users},
-    {id: 'stats', label: 'Statystyki', icon: LayoutDashboard},
+    {id: 'stats', label: 'Statystyki', icon: ChartBarIcon},
     {id: 'guide', label: 'Przewodnik', icon: HelpCircle},
     {id: 'changelog', label: 'Historia zmian', icon: ClipboardList},
 ] as const;
 
-const DietitianSidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {
+const DietitianSidebar: React.FC<SidebarProps> = ({activeTab, onTabChange, children}) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const {logout, isAdmin} = useAuth();
     const {hasUnread} = useChangeLog();
@@ -123,13 +125,13 @@ const DietitianSidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {
                 )}>
                     {!isCollapsed && (
                         <div className="flex items-center space-x-2">
-                            <UtensilsCrossed className="h-6 w-6" />
+                            <UtensilsCrossed className="h-6 w-6"/>
                             <h1 className="text-xl font-bold">Panel Dietetyka</h1>
                         </div>
                     )}
 
                     {isCollapsed && (
-                        <UtensilsCrossed className="h-8 w-8" />
+                        <UtensilsCrossed className="h-8 w-8"/>
                     )}
 
                     <button
@@ -196,6 +198,9 @@ const DietitianSidebar: React.FC<SidebarProps> = ({activeTab, onTabChange}) => {
                         className="text-gray-600 hover:text-red-600 hover:bg-red-50"
                     />
                 </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+                {children}
             </div>
         </div>
     );

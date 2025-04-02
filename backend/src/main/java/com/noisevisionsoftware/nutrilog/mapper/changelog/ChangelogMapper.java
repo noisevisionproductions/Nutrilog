@@ -11,7 +11,6 @@ public class ChangelogMapper {
 
     public ChangelogEntry toModel(ChangelogEntryRequest request, String author) {
         return ChangelogEntry.builder()
-                .title(request.getTitle())
                 .description(request.getDescription())
                 .type(request.getType())
                 .author(author)
@@ -22,7 +21,6 @@ public class ChangelogMapper {
     public ChangelogEntryResponse toResponse(ChangelogEntry entry) {
         return ChangelogEntryResponse.builder()
                 .id(entry.getId())
-                .title(entry.getTitle())
                 .description(entry.getDescription())
                 .createdAt(entry.getCreatedAt())
                 .author(entry.getAuthor())

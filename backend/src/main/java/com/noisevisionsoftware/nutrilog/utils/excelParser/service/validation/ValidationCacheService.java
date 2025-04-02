@@ -21,7 +21,6 @@ public class ValidationCacheService {
         cleanExpiredCacheEntries();
 
         if (validationCache.containsKey(cacheKey)) {
-            log.debug("Cache hit for validation request, returning cached response");
             return Optional.of(validationCache.get(cacheKey));
         }
 

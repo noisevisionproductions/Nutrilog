@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +44,10 @@ public class RecipeService {
 
     @Cacheable(value = RECIPES_BATCH_CACHE, key = "#ids")
     public List<Recipe> getRecipesByIds(Collection<String> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         return recipeRepository.findAllByIds(ids);
     }
 
@@ -81,33 +86,43 @@ public class RecipeService {
 
         if (existingRecipe.isPresent()) {
             Recipe existing = existingRecipe.get();
-            log.debug("Znaleziono istniejący przepis: {} (id: {})", existing.getName(), existing.getId());
+
+            // Tworzymy kopię z aktualizacjami, aby uniknąć modyfikacji obiektu w cache
+            Recipe updatedRecipe = Recipe.builder()
+                    .id(existing.getId())
+                    .name(existing.getName())
+                    .instructions(existing.getInstructions())
+                    .createdAt(existing.getCreatedAt())
+                    .photos(existing.getPhotos() != null ? new ArrayList<>(existing.getPhotos()) : new ArrayList<>())
+                    .nutritionalValues(existing.getNutritionalValues())
+                    .parentRecipeId(existing.getParentRecipeId())
+                    .build();
 
             boolean shouldUpdate = false;
 
             // Jeśli nowy przepis ma instrukcje, a stary nie ma, lub nowe są dłuższe
-            if ((existing.getInstructions() == null || existing.getInstructions().isEmpty()) &&
+            if ((updatedRecipe.getInstructions() == null || updatedRecipe.getInstructions().isEmpty()) &&
                     recipe.getInstructions() != null && !recipe.getInstructions().isEmpty()) {
-                existing.setInstructions(recipe.getInstructions());
+                updatedRecipe.setInstructions(recipe.getInstructions());
                 shouldUpdate = true;
-            } else if (existing.getInstructions() != null && recipe.getInstructions() != null &&
-                    recipe.getInstructions().length() > existing.getInstructions().length()) {
+            } else if (updatedRecipe.getInstructions() != null && recipe.getInstructions() != null &&
+                    recipe.getInstructions().length() > updatedRecipe.getInstructions().length()) {
                 // Jeśli nowe instrukcje są bardziej szczegółowe (dłuższe)
-                existing.setInstructions(recipe.getInstructions());
+                updatedRecipe.setInstructions(recipe.getInstructions());
                 shouldUpdate = true;
             }
 
             // Jeśli nowy przepis ma wartości odżywcze, a stary nie ma
-            if (existing.getNutritionalValues() == null && recipe.getNutritionalValues() != null) {
-                existing.setNutritionalValues(recipe.getNutritionalValues());
+            if (updatedRecipe.getNutritionalValues() == null && recipe.getNutritionalValues() != null) {
+                updatedRecipe.setNutritionalValues(recipe.getNutritionalValues());
                 shouldUpdate = true;
             }
 
             if (recipe.getPhotos() != null && !recipe.getPhotos().isEmpty()) {
                 List<String> combinedPhotos = new ArrayList<>();
 
-                if (existing.getPhotos() != null) {
-                    combinedPhotos.addAll(existing.getPhotos());
+                if (updatedRecipe.getPhotos() != null) {
+                    combinedPhotos.addAll(updatedRecipe.getPhotos());
                 }
 
                 for (String photo : recipe.getPhotos()) {
@@ -117,20 +132,20 @@ public class RecipeService {
                     }
                 }
 
-                existing.setPhotos(combinedPhotos);
+                updatedRecipe.setPhotos(combinedPhotos);
             }
 
             if (shouldUpdate) {
-                log.debug("Aktualizacja istniejącego przepisu: {}", existing.getId());
-                return recipeRepository.update(existing.getId(), existing);
+                return recipeRepository.update(updatedRecipe.getId(), updatedRecipe);
             }
 
             return existing;
         } else {
-            log.debug("Tworzenie nowego przepisu: {}", recipe.getName());
+            log.info("Tworzenie nowego przepisu: {}", recipe.getName());
             return createRecipe(recipe);
         }
     }
+
 
     @Caching(evict = {
             @CacheEvict(value = RECIPES_CACHE, key = "#id"),
@@ -264,7 +279,6 @@ public class RecipeService {
 
     @Scheduled(cron = "0 0 3 * * ?")
     public void cleanupTempImages() {
-        log.info("Rozpoczęcie czyszczenia tymczasowych zdjęć...");
         try {
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.DAY_OF_YEAR, -7);

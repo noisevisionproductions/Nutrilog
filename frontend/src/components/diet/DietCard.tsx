@@ -3,11 +3,12 @@ import {formatTimestamp} from "../../utils/dateFormatters";
 import {Diet} from "../../types";
 import {Trash2, Eye, Edit2, Calendar, User, Clock, FileText} from 'lucide-react';
 import ConfirmationDialog from "../common/ConfirmationDialog";
-import {getDietWarningStatus, isDietEnded} from "../../utils/dietWarningUtils";
+import {getDietWarningStatus, isDietEnded} from "../../utils/diet/dietWarningUtils";
 import DietWarningIndicator from "../common/DietWarningIndicator";
 
 interface DietCardProps {
     diet: Diet & { userEmail?: string };
+    allDiets?: Diet[];
     onViewClick: () => void;
     onEditClick: () => void;
     onDeleteClick: (dietId: string) => void;
@@ -15,6 +16,7 @@ interface DietCardProps {
 
 const DietCard: React.FC<DietCardProps> = ({
                                                diet,
+                                               allDiets,
                                                onViewClick,
                                                onEditClick,
                                                onDeleteClick
@@ -80,13 +82,12 @@ const DietCard: React.FC<DietCardProps> = ({
                             <User className="h-3.5 w-3.5 mr-2 text-slate-500"/>
                             {diet.userEmail || 'Brak emaila'}
                         </h3>
-                        {(warningStatus !== 'normal' || isEnded) && (
-                            <DietWarningIndicator
-                                status={warningStatus}
-                                diet={diet}
-                                size="sm"
-                            />
-                        )}
+                        <DietWarningIndicator
+                            status={warningStatus}
+                            diet={diet}
+                            size="sm"
+                            allDiets={allDiets}
+                        />
                         <span className="text-xs text-slate-500 mt-1">
                             ID: {diet.id.slice(0, 8)}
                         </span>

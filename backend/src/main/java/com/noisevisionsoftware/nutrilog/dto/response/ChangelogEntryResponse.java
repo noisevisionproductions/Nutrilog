@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ChangelogEntryResponse {
     private String id;
-    private String title;
     private String description;
     private Timestamp createdAt;
     private String author;

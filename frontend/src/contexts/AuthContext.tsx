@@ -1,9 +1,10 @@
 import {onAuthStateChanged, signInWithEmailAndPassword, signOut, User as FirebaseUser} from 'firebase/auth';
 import React, {createContext, useContext, useEffect, useState} from "react";
 import {auth} from '../config/firebase';
-import {User} from '../types/user';
+import {User, UserRole} from '../types/user';
 import api from "../config/axios";
 import axios from 'axios';
+import {useRouteRestoration} from "./RouteRestorationContext";
 
 interface AuthContextType {
     currentUser: FirebaseUser | null;
@@ -14,6 +15,8 @@ interface AuthContextType {
     logout: () => Promise<void>;
     refreshUserData: () => Promise<void>;
     isAdmin: () => boolean;
+    isOwner: () => boolean;
+    hasRole: (requiredRole: UserRole) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -31,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
     const [userData, setUserData] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [userClaims, setUserClaims] = useState<Record<string, any> | null>(null);
+    const {clearSavedRoute} = useRouteRestoration();
 
     useEffect(() => {
         return onAuthStateChanged(auth, async (user) => {
@@ -122,6 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
 
     const logout = async () => {
         try {
+            clearSavedRoute();
             await signOut(auth);
             setCurrentUser(null);
             setUserData(null);
@@ -132,12 +137,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
         }
     };
 
+    const isOwner = (): boolean => {
+        if (userClaims?.owner === true) {
+            return true;
+        }
+
+        return userData?.role === UserRole.OWNER;
+    };
+
     const isAdmin = (): boolean => {
+        if (isOwner()) {
+            return true;
+        }
+
         if (userClaims?.admin === true) {
             return true;
         }
 
-        return userData?.role === 'ADMIN';
+        return userData?.role === UserRole.ADMIN;
+    };
+
+    const hasRole = (requiredRole: UserRole): boolean => {
+        if (!userData) return false;
+
+        const roleHierarchy: Record<UserRole, number> = {
+            [UserRole.USER]: 1,
+            [UserRole.ADMIN]: 2,
+            [UserRole.OWNER]: 3
+        };
+
+        const userRole = userData.role as UserRole;
+        const userRoleLevel = roleHierarchy[userRole] || 0;
+        const requiredRoleLevel = roleHierarchy[requiredRole] || 0;
+
+        return userRoleLevel >= requiredRoleLevel;
     };
 
     const value = {
@@ -148,7 +181,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
         login,
         logout,
         refreshUserData,
-        isAdmin
+        isAdmin,
+        isOwner,
+        hasRole
     };
 
     return (

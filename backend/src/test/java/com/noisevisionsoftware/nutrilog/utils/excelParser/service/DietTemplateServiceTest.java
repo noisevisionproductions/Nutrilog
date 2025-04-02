@@ -85,7 +85,8 @@ class DietTemplateServiceTest {
         ValidationResponse cachedResponse = new ValidationResponse();
         cachedResponse.setValid(true);
 
-        when(cacheService.generateCacheKey(validRequest)).thenReturn(cacheKey);
+        // Zmień "" na null, aby dopasować do faktycznego wywołania
+        when(cacheService.generateCacheKey(validRequest, null)).thenReturn(cacheKey);
         when(cacheService.getFromCache(cacheKey)).thenReturn(Optional.of(cachedResponse));
 
         // when

@@ -8,6 +8,8 @@ import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import com.noisevisionsoftware.nutrilog.service.ChangelogService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/changelog")
 @RequiredArgsConstructor
+@Slf4j
 public class ChangelogController {
     private final ChangelogService changelogService;
     private final ChangelogMapper changelogMapper;
@@ -50,5 +53,16 @@ public class ChangelogController {
     @GetMapping("/has-unread")
     public ResponseEntity<Boolean> hasUnreadEntries(@AuthenticationPrincipal FirebaseUser currentUser) {
         return ResponseEntity.ok(changelogService.hasUnreadEntries(currentUser.getUid()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleIllegalStateException(IllegalStateException e) {
+        if (e.getMessage().contains("already been closed")) {
+            log.error("Firestore client has been closed", e);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body("Usługa tymczasowo niedostępna. Spróbuj ponownie.");
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Wystąpił błąd wewnętrzny.");
     }
 }

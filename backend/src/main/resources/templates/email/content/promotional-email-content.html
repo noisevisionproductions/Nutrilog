@@ -1,0 +1,187 @@
+<!-- src/main/resources/templates/email/content/promotional-email-content.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Specjalna oferta dla dietetyków</title>
+    <style>
+        .promo-header {
+            margin-bottom: 20px;
+        }
+
+        .promo-header h1 {
+            color: #2D87BB;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .highlight-box {
+            background-color: #f0f9ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #2D87BB;
+        }
+
+        .highlight-box h2 {
+            color: #2D87BB;
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .promo-description {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2D3748;
+            margin-bottom: 25px;
+        }
+
+        .feature-list {
+            margin: 20px 0;
+            padding: 0;
+            list-style-type: none;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .feature-icon {
+            width: 24px;
+            height: 24px;
+            background-color: #43B988;
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            color: #4A5568;
+        }
+
+        .pricing-box {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .old-price {
+            text-decoration: line-through;
+            color: #A0AEC0;
+            font-size: 18px;
+        }
+
+        .new-price {
+            color: #2D87BB;
+            font-size: 30px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .pricing-note {
+            font-size: 14px;
+            color: #718096;
+        }
+
+        .cta-button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 14px 30px;
+            background-color: #43B988;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 16px;
+            text-decoration: none;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .cta-button:hover {
+            background-color: #338F69;
+        }
+
+        .limited-offer {
+            font-size: 14px;
+            color: #E53E3E;
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .promo-footer {
+            margin-top: 30px;
+            color: #718096;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="promo-header">
+    <h1>Specjalna oferta tylko dla dietetyków!</h1>
+    <p class="promo-description">
+        Dzień dobry!<br><br>
+        Przygotowaliśmy specjalną ofertę dla dietetyków, którzy chcą zwiększyć efektywność swojej pracy i zapewnić lepszą obsługę swoim klientom.
+    </p>
+</div>
+
+<div class="highlight-box">
+    <h2>Promocja wiosenna!</h2>
+    <p>Z okazji nadchodzącej wiosny, oferujemy <strong>30% zniżki</strong> na roczny abonament systemu NutriLog dla profesjonalnych dietetyków.</p>
+</div>
+
+<p>NutriLog to zaawansowany system dla dietetyków, który pomoże Ci:</p>
+
+<ul class="feature-list">
+    <li class="feature-item">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Tworzyć i zarządzać spersonalizowanymi planami żywieniowymi</div>
+    </li>
+    <li class="feature-item">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Monitorować postępy klientów w czasie rzeczywistym</div>
+    </li>
+    <li class="feature-item">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Automatycznie generować listy zakupów dla klientów</div>
+    </li>
+    <li class="feature-item">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Integrować się z popularnymi aplikacjami fitness</div>
+    </li>
+    <li class="feature-item">
+        <div class="feature-icon">✓</div>
+        <div class="feature-text">Oszczędzać czas dzięki automatyzacji rutynowych zadań</div>
+    </li>
+</ul>
+
+<div class="pricing-box">
+    <p class="old-price">Regularna cena: 199 zł / miesiąc</p>
+    <p class="new-price">139 zł / miesiąc*</p>
+    <p class="pricing-note">*przy płatności rocznej, oferta ważna do 30.04.2025</p>
+</div>
+
+<div class="cta-button-container">
+    <a href="https://nutrilog.pl/promocja-wiosenna" class="cta-button">SKORZYSTAJ Z PROMOCJI</a>
+</div>
+
+<p class="limited-offer">Oferta limitowana! Tylko dla pierwszych 50 dietetyków.</p>
+
+<p class="promo-footer">
+    Z pozdrowieniami,<br>
+    Zespół NutriLog
+</p>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {toast} from "../../../utils/toast";
-import BaseImageUpload from "../../common/BaseImageUpload";
+import BaseImageUpload from "../../common/image/BaseImageUpload";
 
 interface DietImageUploadProps {
     onSuccess: (imageDataUrl: string) => void;

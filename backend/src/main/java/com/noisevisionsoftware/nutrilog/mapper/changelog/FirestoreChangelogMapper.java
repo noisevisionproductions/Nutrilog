@@ -20,7 +20,6 @@ public class FirestoreChangelogMapper {
 
         return ChangelogEntry.builder()
                 .id(document.getId())
-                .title((String) data.get("title"))
                 .description((String) data.get("description"))
                 .createdAt((Timestamp) data.get("createdAt"))
                 .author((String) data.get("author"))
@@ -30,7 +29,6 @@ public class FirestoreChangelogMapper {
 
     public Map<String, Object> toFirestoreMap(ChangelogEntry entry) {
         Map<String, Object> data = new HashMap<>();
-        data.put("title", entry.getTitle());
         data.put("description", entry.getDescription());
         data.put("createdAt", entry.getCreatedAt());
         data.put("author", entry.getAuthor());

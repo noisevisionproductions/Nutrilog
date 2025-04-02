@@ -4,11 +4,13 @@ import com.noisevisionsoftware.nutrilog.dto.request.recipe.RecipeUpdateRequest;
 import com.noisevisionsoftware.nutrilog.dto.response.recipe.RecipeImageResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.recipe.RecipeResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.recipe.RecipesPageResponse;
+import com.noisevisionsoftware.nutrilog.exception.NotFoundException;
 import com.noisevisionsoftware.nutrilog.mapper.recipe.RecipeMapper;
 import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
 import com.noisevisionsoftware.nutrilog.service.RecipeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +22,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,6 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/recipes")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class RecipeController {
     private final RecipeService recipeService;
     private final RecipeMapper recipeMapper;
@@ -60,14 +65,25 @@ public class RecipeController {
 
     @GetMapping("/{id}")
     public ResponseEntity<RecipeResponse> getRecipeById(@PathVariable String id) {
-        Recipe recipe = recipeService.getRecipeById(id);
-        return ResponseEntity.ok(recipeMapper.toResponse(recipe));
+        try {
+            Recipe recipe = recipeService.getRecipeById(id);
+            return ResponseEntity.ok(recipeMapper.toResponse(recipe));
+        } catch (NotFoundException e) {
+            log.warn("Nie znaleziono przepisu o ID: {}", id);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/batch")
-    public ResponseEntity<List<RecipeResponse>> getRecipesByIds(
-            @RequestParam List<String> ids) {
-        List<Recipe> recipes = recipeService.getRecipesByIds(ids);
+    public ResponseEntity<List<RecipeResponse>> getRecipesByIds(@RequestParam String ids) {
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+
+        List<String> requestedIds = Arrays.asList(ids.split(","));
+
+        List<Recipe> recipes = recipeService.getRecipesByIds(requestedIds);
+
         return ResponseEntity.ok(
                 recipes.stream()
                         .map(recipeMapper::toResponse)

@@ -1,10 +1,11 @@
 import React, {useState} from 'react';
 import NewsletterStats from "../../components/admin/newsletter/NewsletterStats";
-import BulkEmailSender from "../../components/admin/newsletter/BulkEmailSender";
+import BulkEmailSender from "../../components/admin/newsletter/email-sender/BulkEmailSender";
 import SubscribersList from "../../components/admin/newsletter/SubscribersList";
 import SurveyResults from "../../components/admin/newsletter/survey/SurveyResults";
+import ExternalRecipientsManager from "../../components/admin/newsletter/external-recipients/ExternalRecipientsManager";
 
-type NewsletterTabType = 'stats' | 'subscribers' | 'bulkEmail' | 'surveys';
+type NewsletterTabType = 'stats' | 'subscribers' | 'bulkEmail' | 'externalRecipients' | 'surveys';
 
 const AdminNewsletterPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<NewsletterTabType>('stats');
@@ -12,22 +13,25 @@ const AdminNewsletterPanel: React.FC = () => {
     const tabs = [
         {key: 'stats', label: 'Statystyki'},
         {key: 'subscribers', label: 'Subskrybenci'},
+        {key: 'externalRecipients', label: 'Zewnętrzni odbiorcy'},
         {key: 'bulkEmail', label: 'Masowa wysyłka'},
         {key: 'surveys', label: 'Ankiety'}
     ];
 
     const renderTabContent = () => {
         switch (activeTab) {
-            case 'subscribers':
-                return <SubscribersList/>;
             case 'stats':
                 return <NewsletterStats/>;
+            case 'subscribers':
+                return <SubscribersList/>;
+            case 'externalRecipients':
+                return <ExternalRecipientsManager/>;
             case 'bulkEmail':
                 return <BulkEmailSender/>;
             case 'surveys':
                 return <SurveyResults/>;
             default:
-                return <SubscribersList/>;
+                return <NewsletterStats/>;
         }
     };
 
@@ -36,7 +40,7 @@ const AdminNewsletterPanel: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">Zarządzanie Newsletterem</h2>
 
             <div className="border-b border-gray-200 mb-6">
-                <nav className="-mb-px flex space-x-6">
+                <nav className="-mb-px flex space-x-6 overflow-x-auto pb-1">
                     {tabs.map(tab => (
                         <button
                             key={tab.key}

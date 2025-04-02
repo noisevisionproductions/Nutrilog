@@ -9,8 +9,10 @@ import {Diet} from "../../types";
 import {useDiets} from "../../hooks/diet/useDiets";
 import {toast} from "../../utils/toast";
 import {getTimestamp} from "../../utils/dateUtils";
-import {AlertTriangle, FileText, Filter, RefreshCw} from 'lucide-react';
-import {getDaysRemainingToDietEnd, getDietWarningStatus, isDietEnded} from "../../utils/dietWarningUtils";
+import {AlertTriangle, Clock, FileText, Filter, RefreshCw} from 'lucide-react';
+import {getDaysRemainingToDietEnd, getDietWarningStatus, isDietEnded} from "../../utils/diet/dietWarningUtils";
+import {hasDietGap} from "../../utils/diet/dietContinuityUtils";
+import SectionHeader from "../common/SectionHeader";
 
 interface DietWithUser extends Diet {
     userEmail?: string;
@@ -34,6 +36,7 @@ const DietManagement: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [filterExpanded, setFilterExpanded] = useState(true);
     const [showOnlyWarnings, setShowOnlyWarnings] = useState(false);
+    const [showOnlyGaps, setShowOnlyGaps] = useState(false);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -47,10 +50,17 @@ const DietManagement: React.FC = () => {
             const matchesUser = selectedUserId ? diet.userId === selectedUserId : true;
             const matchesSearch = diet.userEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 diet.metadata?.fileName?.toLowerCase().includes(searchQuery.toLowerCase());
+
+            const warningStatus = getDietWarningStatus(diet);
             const matchesWarning = showOnlyWarnings ?
-                (getDietWarningStatus(diet) !== 'normal' && !isDietEnded(diet)) :
+                (warningStatus !== 'normal' && !isDietEnded(diet)) :
                 true;
-            return matchesUser && matchesSearch && matchesWarning;
+
+            const hasGap = showOnlyGaps ?
+                hasDietGap(diet, diets) && !isDietEnded(diet) :
+                true;
+
+            return matchesUser && matchesSearch && matchesWarning && hasGap;
         });
 
         if (showOnlyWarnings) {
@@ -73,7 +83,13 @@ const DietManagement: React.FC = () => {
                     return 0;
             }
         });
-    }, [diets, selectedUserId, searchQuery, sortBy, showOnlyWarnings]);
+    }, [diets, selectedUserId, searchQuery, sortBy, showOnlyWarnings, showOnlyGaps]);
+
+    const gapsCount = React.useMemo(() => {
+        return diets.filter(diet =>
+            !isDietEnded(diet) && hasDietGap(diet, diets)
+        ).length;
+    }, [diets]);
 
     const warningCount = React.useMemo(() => {
         return diets.filter(diet => {
@@ -138,42 +154,59 @@ const DietManagement: React.FC = () => {
     return (
         <div className="space-y-6 pb-8">
             {/* Nagłówek */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold mb-4">Zarządzanie Dietami</h1>
-                    <p className="text-slate-500 text-sm mt-1">Zarządzaj dietami wszystkich użytkowników</p>
-                </div>
-                <div className="flex gap-2">
-                    {warningCount > 0 && (
-                        <button
-                            onClick={() => setShowOnlyWarnings(!showOnlyWarnings)}
-                            className={`px-3 py-2 rounded-md border shadow-sm flex items-center text-sm font-medium
+            <SectionHeader title="Zarządzanie dietami"
+                           description="Zarządzaj dietami wszystkich użytkowników"
+            />
+
+            <div className="flex gap-2">
+                {warningCount > 0 && (
+                    <button
+                        onClick={() => setShowOnlyWarnings(!showOnlyWarnings)}
+                        className={`px-3 py-2 rounded-md border shadow-sm flex items-center text-sm font-medium
                                ${showOnlyWarnings
-                                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}
                             transition-colors`}
-                        >
-                            <AlertTriangle
-                                className={`h-4 w-4 mr-2 ${showOnlyWarnings ? 'text-amber-500' : 'text-slate-500'}`}/>
-                            {showOnlyWarnings ? 'Wszystkie diety' : `Ostrzeżenia (${warningCount})`}
-                        </button>
-                    )}
-                    <button
-                        onClick={() => setFilterExpanded(!filterExpanded)}
-                        className="px-3 py-2 rounded-md bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors flex items-center text-sm font-medium"
                     >
-                        <Filter className="h-4 w-4 mr-2"/>
-                        Filtry {filterExpanded ? '↑' : '↓'}
+                        <AlertTriangle
+                            className={`h-4 w-4 mr-2 ${showOnlyWarnings ? 'text-amber-500' : 'text-slate-500'}`}/>
+                        {showOnlyWarnings ? 'Wszystkie diety' : `Ostrzeżenia (${warningCount})`}
                     </button>
+                )}
+
+                {gapsCount > 0 && (
                     <button
-                        onClick={handleRefreshDiets}
-                        disabled={isRefreshing}
-                        className="px-3 py-2 rounded-md bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors flex items-center text-sm font-medium disabled:opacity-50"
+                        onClick={() => {
+                            setShowOnlyGaps(!showOnlyGaps);
+                            if (!showOnlyGaps) setShowOnlyWarnings(false);
+                        }}
+                        className={`px-3 py-2 rounded-md border shadow-sm flex items-center text-sm font-medium
+                           ${showOnlyGaps
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}
+                        transition-colors`}
                     >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`}/>
-                        Odśwież
+                        <Clock
+                            className={`h-4 w-4 mr-2 ${showOnlyGaps ? 'text-blue-500' : 'text-slate-500'}`}/>
+                        {showOnlyGaps ? 'Wszystkie diety' : `Bez kontynuacji (${gapsCount})`}
                     </button>
-                </div>
+                )}
+
+                <button
+                    onClick={() => setFilterExpanded(!filterExpanded)}
+                    className="px-3 py-2 rounded-md bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors flex items-center text-sm font-medium"
+                >
+                    <Filter className="h-4 w-4 mr-2"/>
+                    Filtry {filterExpanded ? '↑' : '↓'}
+                </button>
+                <button
+                    onClick={handleRefreshDiets}
+                    disabled={isRefreshing}
+                    className="px-3 py-2 rounded-md bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors flex items-center text-sm font-medium disabled:opacity-50"
+                >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`}/>
+                    Odśwież
+                </button>
             </div>
 
             {/* Baner ostrzeżeń */}
@@ -230,6 +263,7 @@ const DietManagement: React.FC = () => {
                         <DietCard
                             key={diet.id}
                             diet={diet}
+                            allDiets={diets}
                             onViewClick={() => setSelectedDiet(diet)}
                             onEditClick={() => setEditingDiet(diet)}
                             onDeleteClick={handleDietDelete}
@@ -241,6 +275,7 @@ const DietManagement: React.FC = () => {
             {selectedDiet && (
                 <DietView
                     diet={selectedDiet}
+                    allDiets={diets}
                     onClose={() => setSelectedDiet(null)}
                 />
             )}

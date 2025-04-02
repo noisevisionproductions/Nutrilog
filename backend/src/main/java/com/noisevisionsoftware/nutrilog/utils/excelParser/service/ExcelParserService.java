@@ -6,6 +6,7 @@ import com.alibaba.excel.event.AnalysisEventListener;
 import com.noisevisionsoftware.nutrilog.model.diet.MealType;
 import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import com.noisevisionsoftware.nutrilog.service.category.ProductCategorizationService;
+import com.noisevisionsoftware.nutrilog.utils.excelParser.config.ExcelParserConfig;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedMeal;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedProduct;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsingResult;
@@ -18,6 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +31,7 @@ public class ExcelParserService {
     private final ProductParsingService productParsingService;
     private final ProductCategorizationService categorizationService;
     private final UnitService unitService;
+    private final ExcelParserConfig excelParserConfig;
 
     public record ParsedExcelResult(
             List<ParsedMeal> meals,
@@ -37,6 +41,16 @@ public class ExcelParserService {
     }
 
     public ParsedExcelResult parseDietExcel(MultipartFile file) throws IOException {
+        return parseDietExcel(file, excelParserConfig.getSkipColumnsCount());
+    }
+
+    public ParsedExcelResult parseDietExcel(MultipartFile file, int skipColumnsCount) throws IOException {
+        if (skipColumnsCount < 0) {
+            skipColumnsCount = excelParserConfig.getSkipColumnsCount();
+        } else if (skipColumnsCount > excelParserConfig.getMaxSkipColumnsCount()) {
+            skipColumnsCount = excelParserConfig.getSkipColumnsCount();
+        }
+
         List<List<String>> rows = new ArrayList<>();
 
         EasyExcel.read(file.getInputStream())
@@ -45,7 +59,6 @@ public class ExcelParserService {
                 .registerReadListener(new AnalysisEventListener<Map<Integer, String>>() {
                     @Override
                     public void invoke(Map<Integer, String> rowMap, AnalysisContext context) {
-                        // Konwertuj Map na List
                         List<String> rowData = new ArrayList<>();
                         for (int i = 0; i < rowMap.size(); i++) {
                             String value = rowMap.get(i);
@@ -67,18 +80,20 @@ public class ExcelParserService {
         // Pomijamy pierwszy wiersz (nagłówki)
         for (int i = 1; i < rows.size(); i++) {
             List<String> row = rows.get(i);
-            if (row.size() < 2 || row.get(1).trim().isEmpty()) {
+
+            // Upewnij się, że wiersz ma wystarczającą liczbę kolumn po uwzględnieniu pomijanych
+            if (row.size() <= skipColumnsCount + 1 || row.get(skipColumnsCount + 1).trim().isEmpty()) {
                 continue;
             }
 
             ParsedMeal meal = new ParsedMeal();
-            meal.setName(row.get(1).trim());
-            meal.setInstructions(row.size() > 2 ? row.get(2).trim() : "");
+            meal.setName(row.get(skipColumnsCount + 1).trim());
+            meal.setInstructions(row.size() > skipColumnsCount + 2 ? row.get(skipColumnsCount + 2).trim() : "");
 
             // Parsowanie składników
             List<ParsedProduct> ingredients = new ArrayList<>();
-            if (row.size() > 3 && !row.get(3).trim().isEmpty()) {
-                String[] ingredientsList = row.get(3).split(",");
+            if (row.size() > skipColumnsCount + 3 && !row.get(skipColumnsCount + 3).trim().isEmpty()) {
+                List<String> ingredientsList = splitIngredientsList(row.get(3));
                 for (String ingredient : ingredientsList) {
                     ingredient = ingredient.trim();
                     if (!ingredient.isEmpty()) {
@@ -100,8 +115,8 @@ public class ExcelParserService {
             meal.setIngredients(ingredients);
 
             // Parsowanie wartości odżywczych
-            if (row.size() > 4 && !row.get(4).trim().isEmpty()) {
-                meal.setNutritionalValues(parseNutritionalValues(row.get(4)));
+            if (row.size() > skipColumnsCount + 4 && !row.get(skipColumnsCount + 4).trim().isEmpty()) {
+                meal.setNutritionalValues(parseNutritionalValues(row.get(skipColumnsCount + 4)));
             }
 
             meal.setMealType(MealType.BREAKFAST);
@@ -203,7 +218,23 @@ public class ExcelParserService {
     }
 
     private double parseNutritionalValue(String value) {
-        return Double.parseDouble(value.trim().replace(",", "."));
+        if (value == null || value.trim().isEmpty()) {
+            return 0.0;
+        }
+
+        try {
+            String cleaned = value.replaceAll("[^0-9.,]", "")
+                    .replace(',', '.');
+
+            if (cleaned.isEmpty()) {
+                return 0.0;
+            }
+
+            return Double.parseDouble(cleaned);
+        } catch (NumberFormatException e) {
+            log.warn("Nie można sparsować wartości: '{}', zwracam 0", value);
+            return 0.0;
+        }
     }
 
     private boolean isValidNutritionalValue(double value) {
@@ -275,5 +306,39 @@ public class ExcelParserService {
 
         // Jeśli nie można znormalizować, zwracamy sumę oryginalnych wartości
         return quantity1 + quantity2;
+    }
+
+    private List<String> splitIngredientsList(String ingredientsStr) {
+        List<String> result = new ArrayList<>();
+
+        // Wzorzec do wykrywania produktów oddzielonych przecinkami
+        // Ten wzorzec uwzględnia przecinki w liczbach
+        Pattern pattern = Pattern.compile(
+                // Produkt może zawierać tekst, liczby (również z przecinkiem jako separator dziesiętny)
+                // i kończy się przecinkiem z opcjonalną spacją
+                "([^,]+\\d+[,.]\\d+\\s*[a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]+|[^,]+),\\s*"
+        );
+
+        Matcher matcher = pattern.matcher(ingredientsStr + ", "); // Dodajemy przecinek na końcu dla ułatwienia
+        int lastEnd = 0;
+
+        // Znajdź wszystkie dopasowania
+        while (matcher.find()) {
+            String item = matcher.group(1).trim();
+            if (!item.isEmpty()) {
+                result.add(item);
+            }
+            lastEnd = matcher.end();
+        }
+
+        // Dodaj ostatni element, jeśli pozostał
+        if (lastEnd < ingredientsStr.length()) {
+            String lastItem = ingredientsStr.substring(lastEnd).trim();
+            if (!lastItem.isEmpty() && !lastItem.equals(",")) {
+                result.add(lastItem);
+            }
+        }
+
+        return result;
     }
 }

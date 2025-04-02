@@ -7,13 +7,8 @@ import {
     Home,
     LogOut,
     Newspaper,
-    Users2,
-    MessagesSquare,
-    Clipboard,
     Utensils,
-    Shield,
-    Settings,
-    SendHorizontal
+    Shield
 } from "lucide-react";
 import {cn} from "../../utils/cs";
 import {useAuth} from "../../contexts/AuthContext";
@@ -26,7 +21,6 @@ interface AdminSidebarProps {
     children: React.ReactNode;
 }
 
-// Interfejs dla właściwości przycisku nawigacyjnego panel
 interface AdminNavButtonProps {
     icon: React.ElementType;
     label: string;
@@ -37,7 +31,6 @@ interface AdminNavButtonProps {
     showNotification?: boolean;
 }
 
-// Własny komponent przycisku nawigacyjnego dla panelu admina
 const AdminNavButton: React.FC<AdminNavButtonProps> = ({
                                                            icon: Icon,
                                                            label,
@@ -85,11 +78,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({activeTab, onTabChange, chil
     const navigationItems = [
         {id: 'adminDashboard', label: 'Pulpit', icon: LayoutDashboard},
         {id: 'newsletter', label: 'Newsletter', icon: Newspaper},
-        {id: 'subscribers', label: 'Subskrybenci', icon: Users2},
-        {id: 'surveys', label: 'Ankiety', icon: Clipboard},
-        {id: 'bulkEmail', label: 'Masowa wysyłka', icon: SendHorizontal},
-        {id: 'contactMessages', label: 'Wiadomości', icon: MessagesSquare},
-        {id: 'settings', label: 'Ustawienia', icon: Settings}
     ] as const;
 
     const handleLogout = async () => {

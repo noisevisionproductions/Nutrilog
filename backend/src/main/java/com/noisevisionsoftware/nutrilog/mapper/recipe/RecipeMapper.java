@@ -19,6 +19,7 @@ public class RecipeMapper {
 
         return RecipeResponse.builder()
                 .id(recipe.getId())
+                .originalId(recipe.getId())
                 .name(recipe.getName())
                 .instructions(recipe.getInstructions())
                 .createdAt(recipe.getCreatedAt())

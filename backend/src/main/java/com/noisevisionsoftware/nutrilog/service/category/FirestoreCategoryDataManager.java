@@ -121,16 +121,41 @@ public class FirestoreCategoryDataManager {
     }
 
     private String createDocumentId(String productName) {
-        if (productName.length() > 40) {
-            String prefix = productName.substring(0, 20).toLowerCase()
-                    .replaceAll("[^a-z0-9]", "_");
-            return prefix + "_" + UUID.randomUUID().toString().replace("-", "");
+        if (productName == null || productName.trim().isEmpty()) {
+            return "unnamed_product_" + UUID.randomUUID().toString().substring(0, 8);
         }
 
-        return productName.toLowerCase()
-                .replaceAll("[^a-z0-9ąćęłńóśźż]", "_")
+        // Czyścimy jednostkę z kropek i innych specjalnych znaków
+        String cleaned = productName.toLowerCase()
+                .replaceAll("\\.", "")
+                .trim();
+
+        if (cleaned.isEmpty()) {
+            return "unnamed_product_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+
+        if (cleaned.length() > 40) {
+            String prefix = cleaned.substring(0, 20)
+                    .replaceAll("[^a-z0-9ąćęłńóśźż]", "_");
+
+            // Zabezpieczenie przed pustym prefix
+            if (prefix.isEmpty() || prefix.matches("_+")) {
+                prefix = "product";
+            }
+
+            return prefix + "_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+
+        String docId = cleaned.replaceAll("[^a-z0-9ąćęłńóśźż]", "_")
                 .replaceAll("_+", "_")
                 .trim();
+
+        // Zabezpieczenie przed pustym ID
+        if (docId.isEmpty()) {
+            return "product_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+
+        return docId;
     }
 
     /**

@@ -68,6 +68,36 @@ export const formatTimestamp = (timestamp: number | Date | Timestamp | Firestore
     return date.toLocaleDateString('pl-PL', options);
 };
 
+/**
+ * Formatuje tablicę z datą PostgreSQL do czytelnego formatu
+ * @param postgresTimestamp tablica [rok, miesiąc, dzień, godzina, minuta, sekunda, nanosekundy] z PostgreSQL
+ * @returns sformatowana data w formacie lokalnym
+ */
+export const formatPostgresTimestamp = (postgresTimestamp: any): string => {
+    if (!postgresTimestamp) return '-';
+
+    try {
+        // Obsługa dla tablicy [rok, miesiąc, dzień, godzina, minuta, sekunda, nanosekundy]
+        if (Array.isArray(postgresTimestamp) && postgresTimestamp.length >= 6) {
+            const [year, month, day, hour, minute, second] = postgresTimestamp;
+            // Miesiące w JavaScript są zero-based (0-11), więc odejmujemy 1
+            const date = new Date(year, month - 1, day, hour, minute, second);
+            return date.toLocaleString('pl-PL', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        return String(postgresTimestamp);
+    } catch (error) {
+        console.error('Error formatting PostgreSQL timestamp:', error);
+        return '-';
+    }
+};
+
 export const toFirestoreTimestamp = (date: Date | string | number | Timestamp): Timestamp => {
     if (date instanceof Timestamp) {
         return date;

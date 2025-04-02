@@ -7,6 +7,7 @@ interface ImportMetaEnv {
     readonly VITE_FIREBASE_APP_ID: string
     readonly VITE_FIREBASE_FUNCTIONS: string
     readonly VITE_API_URL: string
+    readonly SENDGRID_API_KEY: string
 }
 
 interface ImportMeta {

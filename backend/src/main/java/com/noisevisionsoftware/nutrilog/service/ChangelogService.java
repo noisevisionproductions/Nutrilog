@@ -17,7 +17,7 @@ import java.util.List;
 public class ChangelogService {
     private final ChangelogRepository changelogRepository;
 
-    @Cacheable(value = "changelogCache", key = "'all'")
+    @Cacheable(value = "changelogCache", key = "'all'", unless = "#result == null")
     public List<ChangelogEntry> getAllEntries() {
         return changelogRepository.findAll();
     }

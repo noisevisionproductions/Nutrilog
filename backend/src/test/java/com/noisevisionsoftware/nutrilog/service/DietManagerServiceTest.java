@@ -11,6 +11,9 @@ import com.noisevisionsoftware.nutrilog.model.diet.Diet;
 import com.noisevisionsoftware.nutrilog.model.diet.DietFileInfo;
 import com.noisevisionsoftware.nutrilog.model.diet.MealType;
 import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
+import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
+import com.noisevisionsoftware.nutrilog.model.recipe.RecipeReference;
+import com.noisevisionsoftware.nutrilog.repository.RecipeRepository;
 import com.noisevisionsoftware.nutrilog.service.diet.DietManagerService;
 import com.noisevisionsoftware.nutrilog.service.diet.DietService;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.*;
@@ -48,28 +51,7 @@ class DietManagerServiceTest {
     private RecipeService recipeService;
 
     @Mock
-    private CollectionReference dietsCollectionRef;
-
-    @Mock
-    private CollectionReference recipesCollectionRef;
-
-    @Mock
-    private CollectionReference recipeReferencesCollectionRef;
-
-    @Mock
-    private CollectionReference shoppingListsCollectionRef;
-
-    @Mock
-    private DocumentReference dietDocRef;
-
-    @Mock
-    private DocumentReference recipeDocRef;
-
-    @Mock
-    private ApiFuture<WriteResult> writeResultFuture;
-
-    @Mock
-    private ApiFuture<DocumentReference> documentReferenceFuture;
+    private RecipeRepository recipeRepository;
 
     @InjectMocks
     private DietManagerService dietManagerService;
@@ -91,35 +73,47 @@ class DietManagerServiceTest {
     @Test
     void saveDietWithShoppingList_ShouldSaveDietAndReturnId() throws Exception {
         // given
+        DocumentReference dietDocRef = mock(DocumentReference.class);
+        CollectionReference dietsCollectionRef = mock(CollectionReference.class);
         when(firestore.collection("diets")).thenReturn(dietsCollectionRef);
         when(dietsCollectionRef.document()).thenReturn(dietDocRef);
         when(dietDocRef.getId()).thenReturn(testDietId);
+        doNothing().when(recipeRepository).saveReference(any(RecipeReference.class));
 
-        when(firestore.collection("recipes")).thenReturn(recipesCollectionRef);
-        when(recipesCollectionRef.document()).thenReturn(recipeDocRef);
-        when(recipeDocRef.getId()).thenReturn("recipe123");
+        // Mockowanie ApiFuture i WriteResult
+        @SuppressWarnings("unchecked")
+        ApiFuture<WriteResult> writeResultFuture = mock(ApiFuture.class);
+        WriteResult writeResult = mock(WriteResult.class);
+        when(writeResultFuture.get()).thenReturn(writeResult);
+        when(dietDocRef.set(any())).thenReturn(writeResultFuture);
+        when(dietDocRef.update(eq("days"), any())).thenReturn(writeResultFuture);
 
-        when(firestore.collection("recipe_references")).thenReturn(recipeReferencesCollectionRef);
-        when(recipeReferencesCollectionRef.add(any())).thenReturn(documentReferenceFuture);
+        // Mockowanie shopping_lists
+        CollectionReference shoppingListsCollectionRef = mock(CollectionReference.class);
+        DocumentReference shoppingListDocRef = mock(DocumentReference.class);
 
+        @SuppressWarnings("unchecked")
+        ApiFuture<DocumentReference> documentReferenceFuture = mock(ApiFuture.class);
         when(firestore.collection("shopping_lists")).thenReturn(shoppingListsCollectionRef);
         when(shoppingListsCollectionRef.add(any())).thenReturn(documentReferenceFuture);
+        when(documentReferenceFuture.get()).thenReturn(shoppingListDocRef);
 
-        when(dietDocRef.set(any())).thenReturn(writeResultFuture);
-        when(dietDocRef.update(anyString(), any())).thenReturn(writeResultFuture);
-        when(recipeDocRef.set(any())).thenReturn(writeResultFuture);
-        when(writeResultFuture.get()).thenReturn(mock(WriteResult.class));
-        when(documentReferenceFuture.get()).thenReturn(mock(DocumentReference.class));
-
-        // Pozostała konfiguracja
+        // Mockowanie FirestoreDietMapper
         Map<String, Object> dietMap = new HashMap<>();
         when(firestoreMapper.toFirestoreMap(any(Diet.class))).thenReturn(dietMap);
 
-        // Mock dla ProductParsingService
+        // Mockowanie ProductParsingService
         ParsingResult parsingResult = mock(ParsingResult.class);
+        when(productParsingService.parseProduct(anyString())).thenReturn(parsingResult);
+
         ParsedProduct parsedProduct = new ParsedProduct("jabłka", 1.0, "kg", "1kg jabłek", false);
         when(parsingResult.getProduct()).thenReturn(parsedProduct);
-        when(productParsingService.parseProduct(anyString())).thenReturn(parsingResult);
+
+        Recipe testRecipe = Recipe.builder()
+                .id("recipe123")
+                .name("Test Recipe")
+                .build();
+        when(recipeService.findOrCreateRecipe(any(Recipe.class))).thenReturn(testRecipe);
 
         // when
         String result = dietManagerService.saveDietWithShoppingList(testParsedDietData, testUserId, testFileInfo);
@@ -127,19 +121,22 @@ class DietManagerServiceTest {
         // then
         assertEquals(testDietId, result);
 
-        // Weryfikacja wywołań metod
-        verify(dietDocRef).set(anyMap());
+        // Weryfikacja zapisania diety
+        verify(dietDocRef).set(any());
         verify(dietDocRef).update(eq("days"), any());
 
-        // Weryfikacja zapisu przepisów
-        verify(recipesCollectionRef, times(2)).document(); // 2 przepisy (po 1 na każdy posiłek)
-        verify(recipeDocRef, times(2)).set(anyMap());
-        verify(recipeReferencesCollectionRef, times(2)).add(anyMap());
+        // Weryfikacja zapisania przepisów
+        verify(recipeService, times(testParsedDietData.getDays().stream()
+                .mapToInt(day -> day.getMeals().size())
+                .sum())).findOrCreateRecipe(any(Recipe.class));
 
-        // Weryfikacja zapisu listy zakupów
+        // Weryfikacja zapisania listy zakupów
         verify(shoppingListsCollectionRef).add(argThat(map ->
-                map != null && map.containsKey("dietId") &&
+                map != null &&
+                        testDietId.equals(map.get("dietId")) &&
+                        testUserId.equals(map.get("userId")) &&
                         map.containsKey("items") &&
+                        map.containsKey("createdAt") &&
                         map.containsKey("version")
         ));
 

@@ -27,7 +27,9 @@ const Footer = () => {
                                               clipRule="evenodd"/>
                                     </svg>
                                 </a>*/}
-                                <a href="#" className="text-text-secondary-dark hover:text-primary">
+                                <a href="https://discord.gg/WSqaQbcc"
+                                   className="text-text-secondary-dark hover:text-primary" target="_blank"
+                                   rel="noopener noreferrer">
                                     <span className="sr-only">Discord</span>
                                     <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                                         <path
@@ -65,7 +67,7 @@ const Footer = () => {
                             <p className="text-xs text-text-secondary-dark">
                                 © {currentYear} NutriLog. Wszystkie prawa zastrzeżone.
                             </p>
-                          {/*  <div className="flex gap-6">
+                            {/*  <div className="flex gap-6">
                                 <Link
                                     to="/privacy-policy"
                                     className="text-xs text-text-secondary-dark hover:text-primary"

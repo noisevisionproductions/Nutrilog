@@ -92,6 +92,30 @@ export class RecipeService {
         });
     }
 
+    /**
+     * Znajduje przepis na podstawie nazwy
+     */
+    static async findRecipeByName(name: string): Promise<Recipe | null> {
+        try {
+            const searchResults = await this.searchRecipes(name);
+
+            if (searchResults.length === 0) {
+                return null;
+            }
+
+            // Szukaj dokładnego dopasowania
+            const exactMatch = searchResults.find(recipe =>
+                recipe.name.toLowerCase() === name.toLowerCase()
+            );
+
+            // Jeśli nie ma dokładnego dopasowania, zwróć pierwszy wynik
+            return exactMatch || searchResults[0];
+        } catch (error) {
+            console.error(`Błąd podczas wyszukiwania przepisu o nazwie "${name}":`, error);
+            return null;
+        }
+    }
+
     static async searchRecipes(query: string): Promise<Recipe[]> {
         const response = await api.get(`${this.BASE_URL}/search`, {
             params: {query}

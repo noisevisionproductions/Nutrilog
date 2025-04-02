@@ -1,5 +1,3 @@
-import {Timestamp} from "firebase/firestore";
-
 export interface NewsletterFormData {
     email: string;
     role: 'dietetyk' | 'firma';
@@ -9,16 +7,35 @@ export interface NewsletterSubscriber {
     id: string;
     email: string;
     role: 'DIETITIAN' | 'COMPANY';
-    createdAt: Timestamp | any;
+    createdAt: string;
     verified: boolean;
-    verifiedAt: Timestamp | any | null;
+    verifiedAt: string | null;
     active: boolean;
-    lastEmailSent?: Timestamp | any | null;
+    lastEmailSent?: string | null;
     metadata?: {
         surveyCompleted?: string;
         surveyAnswers?: string;
         [key: string]: string | undefined;
-    };}
+    };
+}
+
+export interface EmailStats {
+    total: number;
+    delivered: number;
+    opens: number;
+    clicks: number;
+    bounces: number;
+    unsubscribes: number;
+    spamReports: number;
+    uniqueOpens: number;
+    uniqueClicks: number;
+    dailyStats: {
+        date: string;
+        delivered: number;
+        opens: number;
+        clicks: number;
+    }[];
+}
 
 export interface NewsletterStatsData {
     total: number;
@@ -26,6 +43,7 @@ export interface NewsletterStatsData {
     active: number;
     activeVerified: number;
     roleDistribution: Record<string, number>;
+    emailStats?: EmailStats;
 }
 
 export interface BulkEmailRequest {

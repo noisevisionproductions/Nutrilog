@@ -1,6 +1,7 @@
 package com.noisevisionsoftware.nutrilog.service.auth;
 
 import com.noisevisionsoftware.nutrilog.exception.AuthenticationException;
+import com.noisevisionsoftware.nutrilog.model.user.UserRole;
 import com.noisevisionsoftware.nutrilog.security.model.FirebaseUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,8 @@ public class AuthService {
             throw new AuthenticationException("User verification failed");
         }
 
-        if (!"ADMIN".equals(user.getRole())) {
+        if (!UserRole.ADMIN.name().equals(user.getRole()) && !UserRole.OWNER.name().equals(user.getRole())) {
+            log.error("User does not have admin privileges: {}", user.getEmail());
             throw new AuthenticationException("Insufficient privileges");
         }
 
@@ -44,7 +46,8 @@ public class AuthService {
             throw new AuthenticationException("Invalid token");
         }
 
-        if (!"ADMIN".equals(user.getRole())) {
+        if (!UserRole.ADMIN.name().equals(user.getRole()) && !UserRole.OWNER.name().equals(user.getRole())) {
+            log.error("User does not have sufficient privileges: {}", user.getEmail());
             throw new AuthenticationException("Insufficient privileges");
         }
 

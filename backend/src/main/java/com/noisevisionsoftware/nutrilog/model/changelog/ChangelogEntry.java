@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChangelogEntry {
     private String id;
-    private String title;
     private String description;
     private Timestamp createdAt;
     private String author;

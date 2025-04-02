@@ -55,7 +55,6 @@ class FirestoreChangelogMapperTest {
         // then
         assertNotNull(result);
         assertEquals(id, result.getId());
-        assertEquals(title, result.getTitle());
         assertEquals(description, result.getDescription());
         assertEquals(createdAt, result.getCreatedAt());
         assertEquals(author, result.getAuthor());
@@ -134,7 +133,6 @@ class FirestoreChangelogMapperTest {
 
         ChangelogEntry entry = ChangelogEntry.builder()
                 .id("entry-id-123")  // id nie powinno być mapowane do mapy Firestore
-                .title(title)
                 .description(description)
                 .createdAt(createdAt)
                 .author(author)
@@ -146,8 +144,7 @@ class FirestoreChangelogMapperTest {
 
         // then
         assertNotNull(result);
-        assertEquals(5, result.size());  // sprawdzamy, czy mamy 5 pól (bez id)
-        assertEquals(title, result.get("title"));
+        assertEquals(4, result.size());  // sprawdzamy, czy mamy 5 pól (bez id)
         assertEquals(description, result.get("description"));
         assertEquals(createdAt, result.get("createdAt"));
         assertEquals(author, result.get("author"));
@@ -164,7 +161,6 @@ class FirestoreChangelogMapperTest {
 
     private void testToFirestoreTypeMapping(ChangelogEntryType type, String expectedFirestoreType) {
         ChangelogEntry entry = ChangelogEntry.builder()
-                .title("Test")
                 .description("Test")
                 .createdAt(Timestamp.now())
                 .author("author")
@@ -180,7 +176,6 @@ class FirestoreChangelogMapperTest {
         // given
         ChangelogEntry entry = ChangelogEntry.builder()
                 .id("test-id-123")
-                .title("Test")
                 .description("Test")
                 .createdAt(Timestamp.now())
                 .author("author")
@@ -234,7 +229,6 @@ class FirestoreChangelogMapperTest {
 
         // then
         assertNotNull(result);
-        assertNull(result.getTitle());
         assertNull(result.getDescription());
         assertNotNull(result.getCreatedAt());
         assertNull(result.getAuthor());

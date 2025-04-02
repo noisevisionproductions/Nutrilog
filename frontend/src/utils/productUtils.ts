@@ -2,6 +2,12 @@ import { ParsedProduct } from '../types/product';
 import { DEFAULT_CATEGORIES } from '../data/productCategories';
 import {Category} from "../types/product-categories";
 
+const cleanProductName = (name: string): string => {
+    if (!name) return '';
+    // Usuń kropki i inne niepotrzebne znaki
+    return name.replace(/\s*\.\s*/g, ' ').trim();
+};
+
 export const createSafeProduct = (productText: any): ParsedProduct => {
     // Sprawdź typ wartości i konwertuj na string, jeśli to nie jest string
     let text: string;
@@ -37,9 +43,9 @@ export const createSafeProduct = (productText: any): ParsedProduct => {
         const unit = quantityUnitMatch[2].toLowerCase();
 
         // Usunięcie ilości i jednostki z nazwy
-        const name = trimmedText
+        const name = cleanProductName(trimmedText
             .replace(quantityUnitMatch[0], '')
-            .trim();
+            .trim());
 
         return {
             name: name || trimmedText,

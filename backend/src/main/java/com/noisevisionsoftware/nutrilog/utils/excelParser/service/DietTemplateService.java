@@ -179,7 +179,7 @@ public class DietTemplateService {
             }
         }
 
-        return null; // Brak błędów
+        return null;
     }
 
     private ExcelParserService.ParsedExcelResult parseExcelFile(
@@ -188,7 +188,13 @@ public class DietTemplateService {
             Map<String, Object> additionalData) {
 
         try {
-            ExcelParserService.ParsedExcelResult parseResult = excelParserService.parseDietExcel(request.getFile());
+            ExcelParserService.ParsedExcelResult parseResult;
+
+            if (request.getSkipColumnsCount() != null) {
+                parseResult = excelParserService.parseDietExcel(request.getFile(), request.getSkipColumnsCount());
+            } else {
+                parseResult = excelParserService.parseDietExcel(request.getFile());
+            }
 
             // Dodanie danych do response
             additionalData.put("totalMeals", parseResult.totalMeals());

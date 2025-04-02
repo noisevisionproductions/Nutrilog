@@ -1,122 +1,141 @@
 package com.noisevisionsoftware.nutrilog.service.newsletter;
 
-import com.google.cloud.Timestamp;
-import com.google.cloud.firestore.CollectionReference;
-import com.google.cloud.firestore.Firestore;
 import com.noisevisionsoftware.nutrilog.model.newsletter.NewsletterSubscriber;
 import com.noisevisionsoftware.nutrilog.model.newsletter.SubscriberRole;
-import com.noisevisionsoftware.nutrilog.service.EmailService;
+import com.noisevisionsoftware.nutrilog.repository.jpa.newsletter.NewsletterSubscriberRepository;
+import com.noisevisionsoftware.nutrilog.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AdminNewsletterService {
 
-    private final Firestore firestore;
+    private final NewsletterSubscriberRepository subscriberRepository;
     private final EmailService emailService;
-    private static final String COLLECTION_NAME = "newsletter_subscribers";
-
-    protected CollectionReference getCollection() {
-        return firestore.collection(COLLECTION_NAME);
-    }
 
     /**
      * Pobiera wszystkich aktywnych i zweryfikowanych subskrybentów
      */
     @Cacheable("newsletterSubscribers")
-    public List<NewsletterSubscriber> getAllActiveSubscribers() throws ExecutionException, InterruptedException {
-        return getCollection()
-                .whereEqualTo("active", true)
-                .whereEqualTo("verified", true)
-                .get().get().getDocuments().stream()
-                .map(doc -> doc.toObject(NewsletterSubscriber.class))
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<NewsletterSubscriber> getAllActiveSubscribers() {
+        return subscriberRepository.findAllByActiveTrueAndVerifiedTrue();
     }
 
     /**
      * Pobiera wszystkich subskrybentów
      */
-    public List<NewsletterSubscriber> getAllSubscribers() throws ExecutionException, InterruptedException {
-        return getCollection()
-                .get().get().getDocuments().stream()
-                .map(doc -> doc.toObject(NewsletterSubscriber.class))
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public List<NewsletterSubscriber> getAllSubscribers(){
+        return subscriberRepository.findAll();
     }
 
     /**
      * Dezaktywuje subskrybenta
      */
     @CacheEvict(value = "newsletterSubscribers", allEntries = true)
-    public void deactivateSubscriber(String id) throws ExecutionException, InterruptedException {
-        getCollection().document(id).update("active", false).get();
+    @Transactional
+    public void deactivateSubscriber(Long id) {
+        subscriberRepository.findById(id).ifPresent(subscriber ->{
+            subscriber.setActive(false);
+            subscriberRepository.save(subscriber);
+        });
     }
 
     /**
      * Aktywuje subskrybenta
      */
     @CacheEvict(value = "newsletterSubscribers", allEntries = true)
-    public void activateSubscriber(String id) throws ExecutionException, InterruptedException {
-        getCollection().document(id).update("active", true).get();
+    @Transactional
+    public void activateSubscriber(Long id) {
+        subscriberRepository.findById(id).ifPresent(subscriber -> {
+            subscriber.setActive(true);
+            subscriberRepository.save(subscriber);
+        });
     }
 
     /**
      * Ręcznie weryfikuje subskrybenta (przez admina)
      */
     @CacheEvict(value = "newsletterSubscribers", allEntries = true)
-    public void verifySubscriberManually(String id) throws ExecutionException, InterruptedException {
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("verified", true);
-        updates.put("verifiedAt", Timestamp.now());
-
-        getCollection().document(id).update(updates).get();
+    @Transactional
+    public void verifySubscriberManually(Long id){
+        subscriberRepository.findById(id).ifPresent(subscriber ->{
+            subscriber.setVerified(true);
+            subscriber.setVerifiedAt(LocalDateTime.now());
+            subscriberRepository.save(subscriber);
+        });
     }
 
     /**
      * Aktualizuje metadane subskrybenta (dla admina)
      */
     @CacheEvict(value = "newsletterSubscribers", allEntries = true)
-    public void updateSubscriberMetadata(String id, Map<String, String> newMetadata) throws ExecutionException, InterruptedException {
-        NewsletterSubscriber subscriber = getCollection().document(id).get().get().toObject(NewsletterSubscriber.class);
+    @Transactional
+    public void updateSubscriberMetadata(Long id, Map<String, String> newMetadata) {
+        subscriberRepository.findById(id).ifPresent(subscriber -> {
+            if (subscriber.getMetadataEntries() == null) {
+                subscriber.setMetadataEntries(new HashSet<>());
+            }
 
-        if (subscriber != null) {
             Map<String, String> metadata = subscriber.getMetadata();
             if (metadata == null) {
                 metadata = new HashMap<>();
             }
 
             metadata.putAll(newMetadata);
-            getCollection().document(id).update("metadata", metadata).get();
-        }
+            subscriber.setMetadata(metadata);
+
+            subscriber.updateMetadata();
+
+            subscriberRepository.save(subscriber);
+        });
+    }
+
+    /**
+     * Aktualizuje datę ostatniego wysłanego emaila dla subskrybenta
+     */
+    @CacheEvict(value = "newsletterSubscribers", allEntries = true)
+    @Transactional
+    public void updateLastEmailSent(String email){
+        subscriberRepository.findByEmail(email).ifPresent(subscriber -> {
+            subscriber.setLastEmailSent(LocalDateTime.now());
+            subscriberRepository.save(subscriber);
+        });
     }
 
     /**
      * Usuwa subskrybenta całkowicie z bazy danych
      */
     @CacheEvict(value = "newsletterSubscribers", allEntries = true)
-    public void deleteSubscriber(String id) throws ExecutionException, InterruptedException {
-        getCollection().document(id).delete().get();
+    @Transactional
+    public void deleteSubscriber(Long id)  {
+        subscriberRepository.deleteById(id);
     }
 
     /**
      * Wysyła wiadomość do wszystkich aktywnych i zweryfikowanych subskrybentów
      */
+    @Transactional
     public void sendBulkEmail(String subject, String content) {
         try {
             List<NewsletterSubscriber> subscribers = getAllActiveSubscribers();
 
             for (NewsletterSubscriber subscriber : subscribers) {
                 emailService.sendCustomEmail(subscriber.getEmail(), subject, content);
+                updateLastEmailSent(subscriber.getEmail());
             }
         } catch (Exception e) {
             throw new RuntimeException("Błąd podczas wysyłania masowego emaila", e);
@@ -127,21 +146,21 @@ public class AdminNewsletterService {
      * Pobiera statystyki newslettera
      */
     @Cacheable("newsletterStats")
-    public Map<String, Object> getNewsletterStats() throws ExecutionException, InterruptedException {
-        List<NewsletterSubscriber> allSubscribers = getAllSubscribers();
+    @Transactional(readOnly = true)
+    public Map<String, Object> getNewsletterStats() {
+        long totalCount = subscriberRepository.count();
+        long verifiedCount = subscriberRepository.countVerifiedSubscribers();
+        long activeCount = subscriberRepository.countActiveSubscribers();
+        long activeVerifiedCount = subscriberRepository.countActiveVerifiedSubscribers();
 
-        long totalCount = allSubscribers.size();
-        long verifiedCount = allSubscribers.stream().filter(NewsletterSubscriber::isVerified).count();
-        long activeCount = allSubscribers.stream().filter(NewsletterSubscriber::isActive).count();
-        long activeVerifiedCount = allSubscribers.stream()
-                .filter(s -> s.isActive() && s.isVerified())
-                .count();
+        Map<SubscriberRole, Long> roleDistribution =  new HashMap<>();
+        List<Object[]> roleCounts = subscriberRepository.countByRole();
 
-        Map<SubscriberRole, Long> roleDistribution = allSubscribers.stream()
-                .collect(Collectors.groupingBy(
-                        NewsletterSubscriber::getRole,
-                        Collectors.counting()
-                ));
+        for (Object[] roleCount : roleCounts){
+            SubscriberRole role = (SubscriberRole) roleCount[0];
+            Long count = (Long)     roleCount[1];
+            roleDistribution.put(role, count);
+        }
 
         return Map.of(
                 "total", totalCount,

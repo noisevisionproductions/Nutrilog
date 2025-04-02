@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private static final int MAX_REQUEST_PER_MINUTE = 60;
+    private static final int MAX_REQUEST_PER_MINUTE = 500;
 
     private final Cache<String, AtomicInteger> requestCounts = Caffeine.newBuilder()
             .expireAfterWrite(1, TimeUnit.MINUTES)

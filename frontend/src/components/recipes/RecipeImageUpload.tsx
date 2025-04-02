@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {toast} from "../../utils/toast";
 import {RecipeService} from "../../services/RecipeService";
-import BaseImageUpload from "../common/BaseImageUpload";
+import BaseImageUpload from "../common/image/BaseImageUpload";
 
 interface RecipeImageUploadProps {
     recipeId: string;

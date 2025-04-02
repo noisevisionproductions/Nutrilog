@@ -62,8 +62,8 @@ class ValidationCacheServiceTest {
         when(request2.getStartDate()).thenReturn("2023-10-15");
 
         // when
-        String key1 = cacheService.generateCacheKey(request1);
-        String key2 = cacheService.generateCacheKey(request2);
+        String key1 = cacheService.generateCacheKey(request1, "");
+        String key2 = cacheService.generateCacheKey(request2, "");
 
         // then
         assertNotNull(key1);
@@ -217,7 +217,7 @@ class ValidationCacheServiceTest {
             mockedMessageDigest.when(() -> MessageDigest.getInstance("MD5"))
                     .thenThrow(new NoSuchAlgorithmException("MD5 unavailable"));
 
-            String result = spyCacheService.generateCacheKey(mockRequest);
+            String result = spyCacheService.generateCacheKey(mockRequest, "");
 
             // then
             assertNotNull(result);

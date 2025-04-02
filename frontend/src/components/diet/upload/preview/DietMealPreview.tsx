@@ -1,11 +1,12 @@
 import React, {useState} from "react";
 import {ParsedMeal} from "../../../../types";
-import {getMealTypeLabel} from "../../../../utils/mealTypeUtils";
+import {getMealTypeLabel} from "../../../../utils/diet/mealTypeUtils";
 import {Clock, Image, Plus} from "lucide-react";
-import ImageUploadDialog from "../../../common/ImageUploadDialog";
+import ImageUploadDialog from "../../../common/image/ImageUploadDialog";
 import {Button} from "../../../ui/button";
 import api from "../../../../config/axios";
 import {toast} from "../../../../utils/toast";
+import ImageGallery from "../../../common/image/ImageGallery";
 
 interface DietMealPreviewProps {
     meal: ParsedMeal;
@@ -65,27 +66,32 @@ const DietMealPreview: React.FC<DietMealPreviewProps> = ({meal, mealIndex, onIma
                 </div>
             </div>
 
-            {/* Wyświetlanie zdjęć, jeśli są dostępne */}
             {meal.photos && meal.photos.length > 0 && (
-                <div className="mt-3 overflow-x-auto">
-                    <div className="flex gap-2">
-                        {meal.photos.map((photo, idx) => (
-                            <div key={idx} className="w-16 h-16 flex-shrink-0 rounded overflow-hidden border">
-                                <img
-                                    src={photo}
-                                    alt={`${meal.name} ${idx}`}
-                                    className="w-full h-full object-cover"
-                                />
-                            </div>
-                        ))}
-                    </div>
+                <div className="mt-3">
+                    <ImageGallery
+                        images={meal.photos}
+                        imageSize="lg"
+                        className="py-1"
+                        emptyMessage="Brak zdjęć posiłku"
+                        itemAlt={`${meal.name}`}
+                    />
                 </div>
             )}
 
             <div className="mt-2">
-                <div className="font-medium text-gray-900 text-lg">{meal.name}</div>
+                <div className="flex items-start gap-1">
+                    <div className="font-medium text-gray-900 text-lg">{meal.name}</div>
+                    {meal.recipeId && !meal.recipeId.startsWith('temp-recipe-') && (
+                        <div className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                            Powiązany przepis
+                        </div>
+                    )}
+                </div>
+
                 {meal.instructions && (
-                    <div className="text-sm text-gray-600 mt-2">{meal.instructions}</div>
+                    <div className="text-sm text-gray-600 mt-2 whitespace-pre-line">
+                        {meal.instructions}
+                    </div>
                 )}
 
                 {meal.nutritionalValues && (
@@ -109,7 +115,7 @@ const DietMealPreview: React.FC<DietMealPreviewProps> = ({meal, mealIndex, onIma
                     </div>
                 )}
 
-                {meal.ingredients && meal.ingredients.length > 0 && (
+                {/*{meal.ingredients && meal.ingredients.length > 0 && (
                     <div className="mt-3 bg-gray-100 p-2 rounded">
                         <div className="text-sm font-medium mb-1">Składniki:</div>
                         <div className="grid grid-cols-2 gap-x-2 text-sm">
@@ -122,7 +128,7 @@ const DietMealPreview: React.FC<DietMealPreviewProps> = ({meal, mealIndex, onIma
                             ))}
                         </div>
                     </div>
-                )}
+                )}*/}
             </div>
 
             {showImageUpload && (
@@ -133,6 +139,7 @@ const DietMealPreview: React.FC<DietMealPreviewProps> = ({meal, mealIndex, onIma
                     description="Wybierz zdjęcie, aby dodać je do tego posiłku. Zdjęcie zostanie zapisane po kliknięciu 'Zapisz dietę'."
                     onSuccess={handleImageUploadSuccess}
                     localMode={true}
+                    recipeId={meal.recipeId}
                 />
             )}
         </div>

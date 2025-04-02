@@ -16,5 +16,5 @@ public class DietTemplateRequest {
     private int duration;
     private Map<String, String> mealTimes;
     private List<MealType> mealTypes;
-
+    private Integer skipColumnsCount;
 }

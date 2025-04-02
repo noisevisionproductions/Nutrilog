@@ -2,6 +2,7 @@ package com.noisevisionsoftware.nutrilog.service;
 
 import com.google.cloud.Timestamp;
 import com.noisevisionsoftware.nutrilog.dto.response.diet.DietInfo;
+import com.noisevisionsoftware.nutrilog.exception.DietOverlapException;
 import com.noisevisionsoftware.nutrilog.exception.NotFoundException;
 import com.noisevisionsoftware.nutrilog.model.diet.Day;
 import com.noisevisionsoftware.nutrilog.model.diet.Diet;
@@ -42,12 +43,21 @@ class DietServiceTest {
 
     @BeforeEach
     void setUp() {
+        // Przygotowanie dni dla testowej diety
+        Day day1 = Day.builder()
+                .date(Timestamp.now())
+                .build();
+
+        List<Day> days = new ArrayList<>();
+        days.add(day1);
+
+        // Utworzenie testowej diety
         testDiet = Diet.builder()
                 .id(TEST_ID)
                 .userId(TEST_USER_ID)
                 .createdAt(Timestamp.now())
                 .updatedAt(Timestamp.now())
-                .days(new ArrayList<>())
+                .days(days)
                 .metadata(DietMetadata.builder().build())
                 .build();
 
@@ -108,11 +118,16 @@ class DietServiceTest {
     @Test
     void createDiet_ShouldSaveDietWithTimestamps() {
         // Arrange
+        List<Day> days = new ArrayList<>();
+        days.add(Day.builder().date(Timestamp.now()).build());
+
         Diet dietToCreate = Diet.builder()
                 .userId(TEST_USER_ID)
+                .days(days)
                 .build();
 
         when(dietRepository.save(any(Diet.class))).thenReturn(testDiet);
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(new ArrayList<>());
 
         // Act
         Diet createdDiet = dietService.createDiet(dietToCreate);
@@ -122,22 +137,25 @@ class DietServiceTest {
         verify(dietRepository).save(dietToCreate);
         assertNotNull(dietToCreate.getCreatedAt());
         assertNotNull(dietToCreate.getUpdatedAt());
+        assertEquals(TEST_ID, createdDiet.getId());
     }
 
     @Test
     void updateDiet_WhenDietExists_ShouldUpdateDiet() {
         // Arrange
+        List<Day> days = new ArrayList<>();
+        days.add(Day.builder().date(Timestamp.now()).build());
+
         Diet dietToUpdate = Diet.builder()
                 .id(TEST_ID)
                 .userId(TEST_USER_ID)
-                .days(new ArrayList<>())
+                .days(days)
                 .build();
 
         when(dietRepository.findById(TEST_ID)).thenReturn(Optional.of(testDiet));
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(List.of(testDiet));
 
-        when(dietRepository.update(eq(TEST_ID), any(Diet.class))).thenAnswer(invocation -> {
-            return invocation.<Diet>getArgument(1);
-        });
+        when(dietRepository.update(eq(TEST_ID), any(Diet.class))).thenAnswer(invocation -> invocation.getArgument(1));
 
         // Act
         Diet updatedDiet = dietService.updateDiet(dietToUpdate);
@@ -146,8 +164,8 @@ class DietServiceTest {
         assertNotNull(updatedDiet);
         verify(dietRepository).findById(TEST_ID);
         verify(dietRepository).update(eq(TEST_ID), any(Diet.class));
-        assertEquals(testDiet.getCreatedAt(), dietToUpdate.getCreatedAt());
-        assertNotNull(dietToUpdate.getUpdatedAt());
+        assertEquals(testDiet.getCreatedAt(), updatedDiet.getCreatedAt());
+        assertNotNull(updatedDiet.getUpdatedAt());
     }
 
 
@@ -185,11 +203,17 @@ class DietServiceTest {
     @Test
     void createDiet_ShouldSetCurrentTimestamps() {
         // Arrange
+        List<Day> days = new ArrayList<>();
+        days.add(Day.builder().date(Timestamp.now()).build());
+
         Diet dietToCreate = Diet.builder()
                 .userId(TEST_USER_ID)
+                .days(days)
                 .build();
 
-        when(dietRepository.save(any(Diet.class))).thenAnswer(invocation -> invocation.<Diet>getArgument(0));
+        // Ważne: zwracamy tę samą dietę, którą przekazujemy do save
+        when(dietRepository.save(any(Diet.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(new ArrayList<>());
 
         // Act
         Diet createdDiet = dietService.createDiet(dietToCreate);
@@ -199,26 +223,31 @@ class DietServiceTest {
         assertNotNull(createdDiet.getUpdatedAt());
         assertTrue(createdDiet.getCreatedAt().getSeconds() > 0);
         assertTrue(createdDiet.getUpdatedAt().getSeconds() > 0);
+        assertSame(dietToCreate, createdDiet);
     }
 
     @Test
     void updateDiet_ShouldPreserveCreatedAtAndUpdateUpdatedAt() {
         // Arrange
-        Timestamp originalCreatedAt = Timestamp.now();
+        Timestamp originalCreatedAt = Timestamp.ofTimeSecondsAndNanos(1000000000, 0);
+        Timestamp originalUpdatedAt = Timestamp.ofTimeSecondsAndNanos(1000000000, 0);
         testDiet.setCreatedAt(originalCreatedAt);
+        testDiet.setUpdatedAt(originalUpdatedAt);
+
+        List<Day> days = new ArrayList<>();
+        days.add(Day.builder().date(Timestamp.now()).build());
 
         Diet dietToUpdate = Diet.builder()
                 .id(TEST_ID)
                 .userId(TEST_USER_ID)
-                .days(new ArrayList<>())
+                .days(days)
                 .build();
 
         when(dietRepository.findById(TEST_ID)).thenReturn(Optional.of(testDiet));
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(List.of(testDiet));
 
-        // Poprawka: zwróć przekazaną dietę z metody update
-        when(dietRepository.update(eq(TEST_ID), any(Diet.class))).thenAnswer(invocation -> {
-            return invocation.<Diet>getArgument(1);
-        });
+        // Zwracamy zaktualizowaną dietę
+        when(dietRepository.update(eq(TEST_ID), any(Diet.class))).thenAnswer(invocation -> invocation.<Diet>getArgument(1));
 
         // Act
         Diet updatedDiet = dietService.updateDiet(dietToUpdate);
@@ -226,7 +255,8 @@ class DietServiceTest {
         // Assert
         assertEquals(originalCreatedAt, updatedDiet.getCreatedAt());
         assertNotNull(updatedDiet.getUpdatedAt());
-        assertTrue(updatedDiet.getUpdatedAt().getSeconds() >= originalCreatedAt.getSeconds());
+        assertNotEquals(originalUpdatedAt, updatedDiet.getUpdatedAt());
+        assertTrue(updatedDiet.getUpdatedAt().getSeconds() > originalCreatedAt.getSeconds());
     }
 
     @Test
@@ -282,13 +312,17 @@ class DietServiceTest {
     @Test
     void createDiet_ShouldSetTimestampsAndSaveDiet() {
         // given
+        List<Day> days = new ArrayList<>();
+        days.add(Day.builder().date(Timestamp.now()).build());
+
         Diet newDiet = Diet.builder()
                 .userId(TEST_USER_ID)
-                .days(new ArrayList<>())
+                .days(days)
                 .build();
 
-        // Przechwyć wartość przekazaną do save
+        // Zwracamy tę samą dietę
         when(dietRepository.save(any(Diet.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(new ArrayList<>());
 
         // when
         Diet result = dietService.createDiet(newDiet);
@@ -298,6 +332,7 @@ class DietServiceTest {
         assertNotNull(result.getUpdatedAt());
         assertEquals(TEST_USER_ID, result.getUserId());
         verify(dietRepository).save(newDiet);
+        assertSame(newDiet, result);
     }
 
     @Test
@@ -329,20 +364,27 @@ class DietServiceTest {
     @Test
     void updateDiet_WhenValid_ShouldUpdateDietAndPreserveCreatedAt() {
         // given
+        Timestamp originalCreatedAt = Timestamp.now();
+        testDiet.setCreatedAt(originalCreatedAt);
+
+        List<Day> days = new ArrayList<>();
+        days.add(Day.builder().date(Timestamp.now()).build());
+
         Diet updatedDiet = Diet.builder()
                 .id(TEST_ID)
                 .userId(TEST_USER_ID)
-                .days(new ArrayList<>())
+                .days(days)
                 .build();
 
         when(dietRepository.findById(TEST_ID)).thenReturn(Optional.of(testDiet));
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(List.of(testDiet));
         when(dietRepository.update(eq(TEST_ID), any(Diet.class))).thenAnswer(invocation -> invocation.getArgument(1));
 
         // when
         Diet result = dietService.updateDiet(updatedDiet);
 
         // then
-        assertEquals(testDiet.getCreatedAt(), result.getCreatedAt());
+        assertEquals(originalCreatedAt, result.getCreatedAt());
         assertNotNull(result.getUpdatedAt());
         verify(dietRepository).findById(TEST_ID);
         verify(dietRepository).update(eq(TEST_ID), any(Diet.class));
@@ -404,5 +446,240 @@ class DietServiceTest {
     void refreshDietsCache_ShouldNotThrowException() {
         // when, then
         assertDoesNotThrow(() -> dietService.refreshDietsCache());
+    }
+
+    @Test
+    void createDiet_WithEmptyDays_ShouldThrowIllegalArgumentException() {
+        // given
+        Diet dietWithNoDays = Diet.builder()
+                .userId(TEST_USER_ID)
+                .days(new ArrayList<>())
+                .build();
+
+        // when, then
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> dietService.createDiet(dietWithNoDays)
+        );
+        assertEquals("Dieta musi zawierać przynajmniej jeden dzień", exception.getMessage());
+    }
+
+    @Test
+    void createDiet_WithNullDays_ShouldThrowIllegalArgumentException() {
+        // given
+        Diet dietWithNullDays = Diet.builder()
+                .userId(TEST_USER_ID)
+                .days(null)
+                .build();
+
+        // when, then
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> dietService.createDiet(dietWithNullDays)
+        );
+        assertEquals("Dieta musi zawierać przynajmniej jeden dzień", exception.getMessage());
+    }
+
+    @Test
+    void hasDietOverlapForUser_WithOverlappingDates_ShouldReturnTrue() {
+        // given
+        Timestamp startDate = Timestamp.ofTimeSecondsAndNanos(1646092800, 0); // 2022-03-01
+        Timestamp endDate = Timestamp.ofTimeSecondsAndNanos(1646265600, 0);   // 2022-03-03
+
+        Day existingDay1 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646179200, 0)) // 2022-03-02
+                .build();
+        Day existingDay2 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646265600, 0)) // 2022-03-03
+                .build();
+
+        Diet existingDiet = Diet.builder()
+                .id("existing-diet")
+                .userId(TEST_USER_ID)
+                .days(Arrays.asList(existingDay1, existingDay2))
+                .build();
+
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(Collections.singletonList(existingDiet));
+
+        // when
+        boolean hasOverlap = dietService.hasDietOverlapForUser(TEST_USER_ID, startDate, endDate, null);
+
+        // then
+        assertTrue(hasOverlap);
+        verify(dietRepository).findByUserId(TEST_USER_ID);
+    }
+
+    @Test
+    void hasDietOverlapForUser_WithNonOverlappingDates_ShouldReturnFalse() {
+        // given
+        Timestamp startDate = Timestamp.ofTimeSecondsAndNanos(1645488000, 0); // 2022-02-22
+        Timestamp endDate = Timestamp.ofTimeSecondsAndNanos(1645574400, 0);   // 2022-02-23
+
+        Day existingDay1 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646179200, 0)) // 2022-03-02
+                .build();
+        Day existingDay2 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646265600, 0)) // 2022-03-03
+                .build();
+
+        Diet existingDiet = Diet.builder()
+                .id("existing-diet")
+                .userId(TEST_USER_ID)
+                .days(Arrays.asList(existingDay1, existingDay2))
+                .build();
+
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(Collections.singletonList(existingDiet));
+
+        // when
+        boolean hasOverlap = dietService.hasDietOverlapForUser(TEST_USER_ID, startDate, endDate, null);
+
+        // then
+        assertFalse(hasOverlap);
+        verify(dietRepository).findByUserId(TEST_USER_ID);
+    }
+
+    @Test
+    void hasDietOverlapForUser_WithExcludedDiet_ShouldReturnFalse() {
+        // given
+        Timestamp startDate = Timestamp.ofTimeSecondsAndNanos(1646092800, 0); // 2022-03-01
+        Timestamp endDate = Timestamp.ofTimeSecondsAndNanos(1646265600, 0);   // 2022-03-03
+
+        Day existingDay1 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646179200, 0)) // 2022-03-02
+                .build();
+        Day existingDay2 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646265600, 0)) // 2022-03-03
+                .build();
+
+        Diet existingDiet = Diet.builder()
+                .id("existing-diet")
+                .userId(TEST_USER_ID)
+                .days(Arrays.asList(existingDay1, existingDay2))
+                .build();
+
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(Collections.singletonList(existingDiet));
+
+        // when
+        boolean hasOverlap = dietService.hasDietOverlapForUser(TEST_USER_ID, startDate, endDate, "existing-diet");
+
+        // then
+        assertFalse(hasOverlap);
+        verify(dietRepository).findByUserId(TEST_USER_ID);
+    }
+
+    @Test
+    void getDietStartDate_WithNullDays_ShouldReturnNull() {
+        // given
+        Diet dietWithNullDays = Diet.builder()
+                .id(TEST_ID)
+                .userId(TEST_USER_ID)
+                .days(null)
+                .build();
+
+        // when
+        Timestamp result = dietService.getDietStartDate(dietWithNullDays);
+
+        // then
+        assertNull(result);
+    }
+
+    @Test
+    void getDietEndDate_WithEmptyDays_ShouldReturnNull() {
+        // given
+        Diet dietWithEmptyDays = Diet.builder()
+                .id(TEST_ID)
+                .userId(TEST_USER_ID)
+                .days(new ArrayList<>())
+                .build();
+
+        // when
+        Timestamp result = dietService.getDietEndDate(dietWithEmptyDays);
+
+        // then
+        assertNull(result);
+    }
+
+    @Test
+    void createDiet_WithOverlappingDates_ShouldThrowDietOverlapException() {
+        // given
+        Timestamp date = Timestamp.ofTimeSecondsAndNanos(1646092800, 0); // 2022-03-01
+        Day newDay = Day.builder().date(date).build();
+        Diet newDiet = Diet.builder()
+                .userId(TEST_USER_ID)
+                .days(Collections.singletonList(newDay))
+                .build();
+
+        Diet existingDiet = Diet.builder()
+                .id("existing-diet")
+                .userId(TEST_USER_ID)
+                .days(Collections.singletonList(newDay))
+                .build();
+
+        when(dietRepository.findByUserId(TEST_USER_ID)).thenReturn(Collections.singletonList(existingDiet));
+
+        // when, then
+        DietOverlapException exception = assertThrows(
+                DietOverlapException.class,
+                () -> dietService.createDiet(newDiet)
+        );
+        assertEquals("Użytkownik posiada już dietę w podanym okresie. Usuń istniejącą dietę lub zmień datę rozpoczęcia.",
+                exception.getMessage());
+    }
+
+    @Test
+    void updateDiet_WithEmptyDays_ShouldThrowIllegalArgumentException() {
+        // given
+        Diet existingDiet = Diet.builder()
+                .id(TEST_ID)
+                .userId(TEST_USER_ID)
+                .days(testDiet.getDays())
+                .build();
+
+        Diet dietToUpdate = Diet.builder()
+                .id(TEST_ID)
+                .userId(TEST_USER_ID)
+                .days(new ArrayList<>())
+                .build();
+
+        when(dietRepository.findById(TEST_ID)).thenReturn(Optional.of(existingDiet));
+
+        // when, then
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> dietService.updateDiet(dietToUpdate)
+        );
+        assertEquals("Dieta musi zawierać przynajmniej jeden dzień.", exception.getMessage());
+    }
+
+    @Test
+    void getDietsInfoForUsers_WithMultipleUsers_ShouldReturnCorrectInfo() {
+        // given
+        String userId1 = "user1";
+        String userId2 = "user2";
+        List<String> userIds = Arrays.asList(userId1, userId2);
+
+        Day day1 = Day.builder()
+                .date(Timestamp.ofTimeSecondsAndNanos(1646092800, 0)) // 2022-03-01
+                .build();
+        Diet diet1 = Diet.builder()
+                .id("diet1")
+                .userId(userId1)
+                .days(Collections.singletonList(day1))
+                .build();
+
+        when(dietRepository.findByUserId(userId1)).thenReturn(Collections.singletonList(diet1));
+        when(dietRepository.findByUserId(userId2)).thenReturn(Collections.emptyList());
+
+        // when
+        Map<String, DietInfo> result = dietService.getDietsInfoForUsers(userIds);
+
+        // then
+        assertEquals(2, result.size());
+        assertTrue(result.get(userId1).isHasDiet());
+        assertFalse(result.get(userId2).isHasDiet());
+        assertEquals(day1.getDate(), result.get(userId1).getStartDate());
+        assertEquals(day1.getDate(), result.get(userId1).getEndDate());
+        assertNull(result.get(userId2).getStartDate());
+        assertNull(result.get(userId2).getEndDate());
     }
 }

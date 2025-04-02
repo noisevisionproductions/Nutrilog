@@ -5,7 +5,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import ConfirmationDialog from "../../common/ConfirmationDialog";
 import SubscriberDetailsModal from "../../../pages/newsletter/SubscriberDetailsModal";
 import {NewsletterSubscriber} from "../../../types/newsletter";
-import {formatTimestamp} from "../../../utils/dateFormatters";
+import {formatPostgresTimestamp} from "../../../utils/dateFormatters";
 
 interface FilterOptions {
     status: 'all' | 'active' | 'inactive' | 'verified' | 'unverified';
@@ -226,7 +226,7 @@ const SubscribersList: React.FC = () => {
                                         )}
                                     </td>
                                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatTimestamp(subscriber.createdAt)}
+                                        {formatPostgresTimestamp(subscriber.createdAt)}
                                     </td>
                                     <td className="px-3 py-4 whitespace-nowrap text-sm">
                                         <div className="flex space-x-2">

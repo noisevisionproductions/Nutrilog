@@ -57,36 +57,41 @@ class RecipeControllerTest {
     }
 
     @Test
-    void getRecipeById_WhenRecipeDoesNotExist_ShouldThrowNotFoundException() {
+    void getRecipeById_WhenRecipeDoesNotExist_ShouldReturnNotFound() {
         // given
         when(recipeService.getRecipeById(TEST_RECIPE_ID))
                 .thenThrow(new NotFoundException("Recipe not found: " + TEST_RECIPE_ID));
 
-        // when/then
-        assertThatThrownBy(() -> recipeController.getRecipeById(TEST_RECIPE_ID))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("Recipe not found: " + TEST_RECIPE_ID);
+        // when
+        ResponseEntity<RecipeResponse> response = recipeController.getRecipeById(TEST_RECIPE_ID);
+
+        // then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNull();
     }
 
     @Test
     void getRecipesByIds_ShouldReturnListOfRecipeResponses() {
         // given
-        List<String> ids = Arrays.asList(TEST_RECIPE_ID, "test-recipe-id-2");
+        String idsParam = TEST_RECIPE_ID + "," + "test-recipe-id-2";
+        List<String> requestedIds = Arrays.asList(idsParam.split(","));
+
         List<Recipe> recipes = Arrays.asList(
                 createTestRecipe(),
                 createTestRecipe("test-recipe-id-2")
         );
+
         List<RecipeResponse> expectedResponses = Arrays.asList(
                 createTestRecipeResponse(),
                 createTestRecipeResponse("test-recipe-id-2")
         );
 
-        when(recipeService.getRecipesByIds(ids)).thenReturn(recipes);
+        when(recipeService.getRecipesByIds(requestedIds)).thenReturn(recipes);
         when(recipeMapper.toResponse(recipes.get(0))).thenReturn(expectedResponses.get(0));
         when(recipeMapper.toResponse(recipes.get(1))).thenReturn(expectedResponses.get(1));
 
         // when
-        ResponseEntity<List<RecipeResponse>> response = recipeController.getRecipesByIds(ids);
+        ResponseEntity<List<RecipeResponse>> response = recipeController.getRecipesByIds(idsParam);
 
         // then
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

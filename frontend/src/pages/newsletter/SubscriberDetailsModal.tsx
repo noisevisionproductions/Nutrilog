@@ -1,7 +1,7 @@
 import {NewsletterSubscriber} from "../../types/newsletter";
 import React from "react";
 import Modal from "../../components/common/Modal";
-import {formatTimestamp} from "../../utils/dateFormatters";
+import {formatPostgresTimestamp} from "../../utils/dateFormatters";
 
 interface SubscriberDetailsModalProps {
     subscriber: NewsletterSubscriber;
@@ -42,21 +42,21 @@ const SubscriberDetailsModal: React.FC<SubscriberDetailsModalProps> = ({
 
                     <div>
                         <p className="text-sm font-medium text-gray-500">Data rejestracji:</p>
-                        <p className="mt-1">{formatTimestamp(subscriber.createdAt)}</p>
+                        <p className="mt-1">{formatPostgresTimestamp(subscriber.createdAt)}</p>
                     </div>
                 </div>
 
                 {subscriber.verified && subscriber.verifiedAt && (
                     <div>
                         <p className="text-sm font-medium text-gray-500">Data weryfikacji:</p>
-                        <p className="mt-1">{formatTimestamp(subscriber.verifiedAt)}</p>
+                        <p className="mt-1">{formatPostgresTimestamp(subscriber.verifiedAt)}</p>
                     </div>
                 )}
 
                 {subscriber.lastEmailSent && (
                     <div>
                         <p className="text-sm font-medium text-gray-500">Ostatni wysłany email:</p>
-                        <p className="mt-1">{formatTimestamp(subscriber.lastEmailSent)}</p>
+                        <p className="mt-1">{formatPostgresTimestamp(subscriber.lastEmailSent)}</p>
                     </div>
                 )}
 

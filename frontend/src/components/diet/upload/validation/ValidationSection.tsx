@@ -11,6 +11,7 @@ interface ValidationSectionProps {
     template: DietTemplate;
     totalMeals: number;
     userId?: string;
+    skipColumnsCount: number;
     onValidationChange: {
         onExcelStructureValidation: (valid: boolean) => void;
         onMealsPerDayValidation: (valid: boolean) => void;
@@ -31,6 +32,7 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
                                                                  template,
                                                                  totalMeals,
                                                                  userId,
+                                                                 skipColumnsCount,
                                                                  onValidationChange,
                                                                  onNavigate
                                                              }) => {
@@ -43,13 +45,15 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
 
     const lastFileRef = useRef<string>('');
     const lastTemplateRef = useRef<string>('');
+    const lastSkipColumnsCountRef = useRef<number>(skipColumnsCount);
 
     const templateSignature = JSON.stringify({
         mealsPerDay: template.mealsPerDay,
         duration: template.duration,
         startDate: template.startDate ? template.startDate.toDate().toISOString() : null,
         mealTimes: Object.entries(template.mealTimes).sort().toString(),
-        mealTypes: template.mealTypes.toString()
+        mealTypes: template.mealTypes.toString(),
+        skipColumnsCount
     });
 
     const debouncedTemplateSignature = useDebounce(templateSignature, 500);
@@ -64,17 +68,24 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
         const fileSignature = `${file.name}-${file.size}-${file.lastModified}`;
         const shouldValidate =
             fileSignature !== lastFileRef.current ||
-            debouncedTemplateSignature !== lastTemplateRef.current;
+            debouncedTemplateSignature !== lastTemplateRef.current ||
+            skipColumnsCount !== lastSkipColumnsCountRef.current;
 
         if (!shouldValidate) return;
 
         lastFileRef.current = fileSignature;
         lastTemplateRef.current = debouncedTemplateSignature;
+        lastSkipColumnsCountRef.current = skipColumnsCount;
 
         const validateTemplate = async () => {
             setIsLoading(true);
             try {
-                const response = await DietUploadService.validateDietTemplateWithUser(file, template, userId);
+                const response = await DietUploadService.validateDietTemplateWithUser(
+                    file,
+                    template,
+                    userId,
+                    skipColumnsCount
+                );
 
                 // Safely handle the response
                 const validationResults = response?.validationResults || [];
@@ -91,7 +102,7 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
 
                 // Update validation states with safe defaults
                 onValidationChange.onExcelStructureValidation(
-                    !hasErrorOfType(['excel', 'struktura', 'pliku'])
+                    !hasErrorOfType(['excel', 'struktura', 'pliku', 'wiersz', 'kolumn'])
                 );
 
                 onValidationChange.onMealsPerDayValidation(
@@ -127,7 +138,7 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
         };
 
         validateTemplate().catch(console.error);
-    }, [file, debouncedTemplateSignature, onValidationChange, template, userId]);
+    }, [file, debouncedTemplateSignature, onValidationChange, template, userId, skipColumnsCount]);
 
     const getErrorType = (result: ValidationResult): ValidationErrorType => {
         const message = result.message.toLowerCase();
@@ -135,6 +146,10 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
         if (message.includes('konflikt') || message.includes('już dietę') || message.includes('okresie') ||
             (message.includes('daty') && message.includes('rozpoczęcia'))) {
             return 'diet-overlap';
+        }
+
+        if (message.includes('wiersz') || message.includes('kolumn') || message.includes('pomijanych')) {
+            return 'parser-settings';
         }
 
         if (message.includes('excel') || message.includes('pliku') || message.includes('struktura')) {

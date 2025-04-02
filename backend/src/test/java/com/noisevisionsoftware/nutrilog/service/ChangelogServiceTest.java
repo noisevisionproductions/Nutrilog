@@ -41,7 +41,6 @@ class ChangelogServiceTest {
 
         testEntry1 = ChangelogEntry.builder()
                 .id("entry1")
-                .title("Nowa funkcja")
                 .description("Dodano nową funkcję")
                 .createdAt(olderTimestamp)
                 .author("admin")
@@ -50,7 +49,6 @@ class ChangelogServiceTest {
 
         testEntry2 = ChangelogEntry.builder()
                 .id("entry2")
-                .title("Poprawka błędu")
                 .description("Naprawiono błąd w aplikacji")
                 .createdAt(newerTimestamp)
                 .author("admin")
@@ -76,7 +74,6 @@ class ChangelogServiceTest {
     void createEntry_ShouldSaveAndReturnEntry() {
         // given
         ChangelogEntry newEntry = ChangelogEntry.builder()
-                .title("Ulepszenie")
                 .description("Ulepszono wydajność aplikacji")
                 .createdAt(Timestamp.now())
                 .author("developer")

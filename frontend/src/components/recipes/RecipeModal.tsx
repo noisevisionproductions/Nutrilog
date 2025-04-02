@@ -20,7 +20,7 @@ import {
 import {ScrollArea} from "../ui/scroll-area";
 import NutritionalValues from "../common/NutritionalValues";
 import RecipeImageGallery from "./RecipeImageGallery";
-import ImageUploadDialog from "../common/ImageUploadDialog";
+import ImageUploadDialog from "../common/image/ImageUploadDialog";
 
 interface RecipeModalProps {
     recipeId: string | null;

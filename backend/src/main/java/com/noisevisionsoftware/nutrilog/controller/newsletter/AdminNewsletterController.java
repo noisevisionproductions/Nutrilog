@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/admin/newsletter")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('OWNER')")
 @RequiredArgsConstructor
 public class AdminNewsletterController {
 
@@ -27,19 +27,19 @@ public class AdminNewsletterController {
     }
 
     @PostMapping("/subscribers/{id}/activate")
-    public ResponseEntity<?> activateSubscriber(@PathVariable String id) throws ExecutionException, InterruptedException {
+    public ResponseEntity<?> activateSubscriber(@PathVariable Long id) throws ExecutionException, InterruptedException {
         newsletterService.activateSubscriber(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/subscribers/{id}/verify")
-    public ResponseEntity<?> verifySubscriber(@PathVariable String id) throws ExecutionException, InterruptedException {
+    public ResponseEntity<?> verifySubscriber(@PathVariable Long id) throws ExecutionException, InterruptedException {
         newsletterService.verifySubscriberManually(id);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/subscribers/{id}")
-    public ResponseEntity<?> deleteSubscriber(@PathVariable String id) throws ExecutionException, InterruptedException {
+    public ResponseEntity<?> deleteSubscriber(@PathVariable Long id) throws ExecutionException, InterruptedException {
         newsletterService.deleteSubscriber(id);
         return ResponseEntity.ok().build();
     }
@@ -56,7 +56,7 @@ public class AdminNewsletterController {
     }
 
     @PostMapping("/subscribers/{id}/deactivate")
-    public ResponseEntity<?> deactivateSubscriber(@PathVariable String id) throws ExecutionException, InterruptedException {
+    public ResponseEntity<?> deactivateSubscriber(@PathVariable Long id) throws ExecutionException, InterruptedException {
         newsletterService.deactivateSubscriber(id);
         return ResponseEntity.ok().build();
     }

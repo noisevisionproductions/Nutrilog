@@ -91,7 +91,7 @@ const Header: FC = () => {
         <header className={headerClassName}>
             <Container>
                 <div className="flex items-center justify-between">
-                    <Logo/>
+                    <Logo variant="full"/>
 
                     {/* Desktop navigation */}
                     <nav className="hidden md:flex items-center gap-8">

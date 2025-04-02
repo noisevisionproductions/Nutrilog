@@ -2,6 +2,7 @@ package com.noisevisionsoftware.nutrilog.utils.excelParser.service;
 
 import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import com.noisevisionsoftware.nutrilog.service.category.ProductCategorizationService;
+import com.noisevisionsoftware.nutrilog.utils.excelParser.config.ExcelParserConfig;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedMeal;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedProduct;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsingResult;
@@ -42,6 +43,9 @@ class ExcelParserServiceTest {
 
     @Mock
     private UnitService unitService;
+
+    @Mock
+    private ExcelParserConfig excelParserConfig;
 
     @InjectMocks
     private ExcelParserService excelParserService;
@@ -298,7 +302,7 @@ class ExcelParserServiceTest {
     void findBestMatch_shouldFindBestMatch() throws Exception {
 
         ExcelParserService testService = new ExcelParserService(
-                productParsingService, categorizationService, unitService) {
+                productParsingService, categorizationService, unitService, excelParserConfig) {
 
             @Override
             double calculateSimilarity(String str1, String str2) {

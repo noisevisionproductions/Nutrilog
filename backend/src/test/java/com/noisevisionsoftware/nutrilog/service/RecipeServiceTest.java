@@ -1,14 +1,16 @@
 package com.noisevisionsoftware.nutrilog.service;
 
 import com.google.cloud.Timestamp;
+import com.google.cloud.storage.Storage;
 import com.noisevisionsoftware.nutrilog.exception.NotFoundException;
 import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
-import com.noisevisionsoftware.nutrilog.repository.FirestoreRecipeRepository;
+import com.noisevisionsoftware.nutrilog.repository.RecipeRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Arrays;
 import java.util.List;
@@ -25,10 +27,16 @@ import static org.mockito.Mockito.when;
 class RecipeServiceTest {
 
     @Mock
-    private FirestoreRecipeRepository firestoreRecipeRepository;
+    private RecipeRepository recipeRepository;
 
     @InjectMocks
     private RecipeService recipeService;
+
+    @Mock
+    private Storage storage;
+
+    @Value("${firebase.storage.bucket-name:test-bucket}")
+    private String storageBucket;
 
     private static final String TEST_RECIPE_ID = "test-recipe-id";
 
@@ -36,7 +44,7 @@ class RecipeServiceTest {
     void getRecipeById_WhenRecipeExists_ShouldReturnRecipe() {
         // given
         Recipe expectedRecipe = createTestRecipe();
-        when(firestoreRecipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(expectedRecipe));
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(expectedRecipe));
 
         // when
         Recipe actualRecipe = recipeService.getRecipeById(TEST_RECIPE_ID);
@@ -51,7 +59,7 @@ class RecipeServiceTest {
     @Test
     void getRecipeById_WhenRecipeDoesNotExist_ShouldThrowNotFoundException() {
         // given
-        when(firestoreRecipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.empty());
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.empty());
 
         // when/then
         // Używamy contains() zamiast hasMessage(), aby sprawdzić tylko część komunikatu
@@ -69,7 +77,7 @@ class RecipeServiceTest {
                 createTestRecipe(),
                 createTestRecipe("test-recipe-id-2")
         );
-        when(firestoreRecipeRepository.findAllByIds(recipeIds)).thenReturn(expectedRecipes);
+        when(recipeRepository.findAllByIds(recipeIds)).thenReturn(expectedRecipes);
 
         // when
         List<Recipe> actualRecipes = recipeService.getRecipesByIds(recipeIds);
@@ -90,10 +98,10 @@ class RecipeServiceTest {
         updateRecipe.setCreatedAt(null);
         updateRecipe.setPhotos(null);
 
-        when(firestoreRecipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(existingRecipe));
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(existingRecipe));
 
         // Konfigurujemy mock, aby zwracał przekazany obiekt
-        when(firestoreRecipeRepository.update(eq(TEST_RECIPE_ID), any(Recipe.class)))
+        when(recipeRepository.update(eq(TEST_RECIPE_ID), any(Recipe.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
 
         // when
@@ -105,14 +113,14 @@ class RecipeServiceTest {
         // Nie sprawdzamy pozostałych pól, ponieważ w aktualnej implementacji
         // RecipeService.updateRecipe() nie zmienia tych pól
 
-        verify(firestoreRecipeRepository).update(eq(TEST_RECIPE_ID), any(Recipe.class));
+        verify(recipeRepository).update(eq(TEST_RECIPE_ID), any(Recipe.class));
     }
 
     @Test
     void updateRecipe_WhenRecipeDoesNotExist_ShouldThrowNotFoundException() {
         // given
         Recipe updateRecipe = createTestRecipe();
-        when(firestoreRecipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.empty());
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.empty());
 
         // when/then
         // Używamy contains() zamiast hasMessage(), aby sprawdzić tylko część komunikatu

@@ -39,6 +39,7 @@ public class RecipeEntity {
     @ElementCollection
     @CollectionTable(name = "recipe_photos", joinColumns = @JoinColumn(name = "recipe_id"))
     @Column(name = "photo_url")
+    @Builder.Default
     private List<String> photos = new ArrayList<>();
 
     @Embedded

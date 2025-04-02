@@ -1,4 +1,4 @@
-import { BulkEmailRequest, NewsletterStatsData, NewsletterSubscriber } from "../../types/newsletter";
+import {BulkEmailRequest, NewsletterStatsData, NewsletterSubscriber} from "../../types/newsletter";
 import api from "../../config/axios";
 
 interface ApiResponse {

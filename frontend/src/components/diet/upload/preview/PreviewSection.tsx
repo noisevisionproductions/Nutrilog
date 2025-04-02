@@ -10,6 +10,7 @@ import {formatTimestamp} from "../../../../utils/dateFormatters";
 import DietMealPreview from "./DietMealPreview";
 import {getPolishDayForm, getPolishMealForm, getPolishProductForm} from "../../../../utils/declensionsOfNouns";
 import {v4 as uuidv4} from "uuid";
+import {FloatingActionButton, FloatingActionButtonGroup} from "../../../common/FloatingActionButton";
 
 interface PreviewSectionProps {
     parsedData: ParsedDietData;
@@ -66,7 +67,7 @@ const PreviewSection: React.FC<PreviewSectionProps> = ({
         .reduce((sum, products) => sum + products.length, 0);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-16 relative">
             {/* Nagłówek z informacjami o użytkowniku */}
             <div
                 className="bg-white p-6 rounded-lg shadow-sm flex flex-col md:flex-row md:justify-between md:items-center gap-4">
@@ -208,32 +209,25 @@ const PreviewSection: React.FC<PreviewSectionProps> = ({
                 )}
             </div>
 
-            {/* Przyciski akcji */}
-            <div className="flex justify-end space-x-4 pt-4 sticky bottom-0 bg-white p-4 border-t shadow-md">
-                <button
-                    onClick={onCancel}
-                    disabled={disabled || isSaving}
-                    className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Anuluj
-                </button>
-                <button
-                    onClick={handleSaveWithImages}
-                    disabled={isSaving || disabled}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                    {isSaving ? (
-                        <>
-                            <Loader2 className="h-5 w-5 animate-spin"/>
-                            <span>Zapisywanie...</span>
-                        </>
-                    ) : (
-                        <>
-                            <ShoppingBag className="h-5 w-5"/>
-                            <span>Zapisz dietę</span>
-                        </>
-                    )}
-                </button>
+            <div className="fixed bottom-6 right-6 flex gap-3 z-10">
+                <FloatingActionButtonGroup position="bottom-right">
+                    <FloatingActionButton
+                        label="Anuluj"
+                        onClick={onCancel}
+                        disabled={disabled || isSaving}
+                        variant="secondary"
+                    />
+                    <FloatingActionButton
+                        label="Zapisz dietę"
+                        onClick={handleSaveWithImages}
+                        disabled={disabled || isSaving}
+                        isLoading={isSaving}
+                        loadingLabel="Zapisywanie..."
+                        icon={<ShoppingBag className="h-5 w-5"/>}
+                        loadingIcon={<Loader2 className="h-5 w-5 animate-spin"/>}
+                        variant="primary"
+                    />
+                </FloatingActionButtonGroup>
             </div>
         </div>
     );
