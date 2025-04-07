@@ -1,5 +1,5 @@
 import React from 'react';
-import {AlertCircle, AlertTriangle, Calendar, CheckCircle, Clock, FileText, List} from 'lucide-react';
+import {AlertCircle, AlertTriangle, Calculator, Calendar, CheckCircle, Clock, FileText, List} from 'lucide-react';
 
 export type ValidationSeverity = 'error' | 'warning' | 'success' | 'ERROR' | 'WARNING' | 'SUCCESS';
 
@@ -10,6 +10,7 @@ export type ValidationErrorType =
     | 'meals-config'
     | 'diet-overlap'
     | 'parser-settings'
+    | 'calorie-validation'
     | 'unknown';
 
 interface ValidationMessageProps {
@@ -66,6 +67,8 @@ const ValidationMessage: React.FC<ValidationMessageProps> = ({
                 return 'Przejdź do daty rozpoczęcia';
             case 'meals-config':
                 return 'Przejdź do konfiguracji posiłków';
+            case 'calorie-validation':
+                return 'Przejdź do walidacji kalorii';
             default:
                 return 'Przejdź do pola';
         }
@@ -82,6 +85,8 @@ const ValidationMessage: React.FC<ValidationMessageProps> = ({
                 return <List className="h-4 w-4 mr-1"/>;
             case 'meals-config':
                 return <Clock className="h-4 w-4 mr-1"/>;
+            case 'calorie-validation':
+                return <Calculator className="h-4 w-4 mr-1"/>;
             default:
                 return <AlertCircle className="h-4 w-4 mr-1"/>;
         }

@@ -33,6 +33,7 @@ public class TestSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/public/**", "/api/auth/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/diets/parser-settings/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 

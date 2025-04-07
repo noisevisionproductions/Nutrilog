@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from "react";
-import {User} from "../../../types/user";
-import useUsers from "../../../hooks/useUsers";
-import UserSelectorTable from "../../users/UserSelectorTable";
-import SearchInput from "../../common/SearchInput";
+import {User} from "../../../../../types/user";
+import useUsers from "../../../../../hooks/useUsers";
+import UserSelectorTable from "../../../../users/UserSelectorTable";
+import SearchInput from "../../../../common/SearchInput";
 
 interface UserSelectorProps {
     selectedUser: User | null,
@@ -38,7 +38,7 @@ const UserSelector: React.FC<UserSelectorProps> = ({selectedUser, onUserSelect})
         : `Znaleziono ${filteredUsers.length} z ${users.length} użytkowników`;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 py-5">
             <SearchInput
                 value={searchQuery}
                 onChange={setSearchQuery}

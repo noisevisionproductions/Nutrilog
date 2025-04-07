@@ -1,7 +1,6 @@
 package com.noisevisionsoftware.nutrilog.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

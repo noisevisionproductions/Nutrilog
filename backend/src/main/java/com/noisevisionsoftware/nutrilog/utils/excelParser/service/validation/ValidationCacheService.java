@@ -1,6 +1,6 @@
 package com.noisevisionsoftware.nutrilog.utils.excelParser.service.validation;
 
-import com.noisevisionsoftware.nutrilog.dto.request.DietTemplateRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.diet.DietTemplateRequest;
 import com.noisevisionsoftware.nutrilog.dto.response.ValidationResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

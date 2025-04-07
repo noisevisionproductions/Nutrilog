@@ -1,0 +1,1 @@
+ALTER TABLE newsletter_subscribers ADD COLUMN IF NOT EXISTS verification_token VARCHAR(255);

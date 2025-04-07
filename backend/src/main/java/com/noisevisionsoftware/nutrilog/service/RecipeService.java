@@ -251,7 +251,8 @@ public class RecipeService {
                 extension = ".gif";
             }
 
-            String filename = UUID.randomUUID() + extension;
+            UUID uuid = UUID.randomUUID();
+            String filename = uuid + extension;
 
             String objectName = "temp-recipes/images/" + filename;
 

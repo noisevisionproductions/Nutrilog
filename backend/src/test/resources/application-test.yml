@@ -5,7 +5,22 @@ spring:
     filter:
       order: 10
 
+  mail:
+    host: localhost
+    port: 3025
+    username: test@nutrilog.pl
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: false
+
+app:
+  frontend:
+    url: https://test-nutrilog.pl
+
 logging:
   level:
     org.springframework.security: DEBUG
     com.noisevisionsoftware.nutrilog: DEBUG
+

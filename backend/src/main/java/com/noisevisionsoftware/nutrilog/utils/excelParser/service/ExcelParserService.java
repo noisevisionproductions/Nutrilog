@@ -81,42 +81,68 @@ public class ExcelParserService {
         for (int i = 1; i < rows.size(); i++) {
             List<String> row = rows.get(i);
 
-            // Upewnij się, że wiersz ma wystarczającą liczbę kolumn po uwzględnieniu pomijanych
-            if (row.size() <= skipColumnsCount + 1 || row.get(skipColumnsCount + 1).trim().isEmpty()) {
+            if (row.size() <= skipColumnsCount + 1) {
+                continue;
+            }
+
+            String mealName = row.get(skipColumnsCount).trim();
+            if (mealName.isEmpty()) {
                 continue;
             }
 
             ParsedMeal meal = new ParsedMeal();
-            meal.setName(row.get(skipColumnsCount + 1).trim());
-            meal.setInstructions(row.size() > skipColumnsCount + 2 ? row.get(skipColumnsCount + 2).trim() : "");
+            meal.setName(mealName);
 
-            // Parsowanie składników
+            String instructions = "";
+            if (row.size() > skipColumnsCount + 1) {
+                instructions = row.get(skipColumnsCount + 1).trim();
+            }
+            meal.setInstructions(instructions);
+
+            // Parsowanie składników-trzecia kolumna po pominiętych
             List<ParsedProduct> ingredients = new ArrayList<>();
-            if (row.size() > skipColumnsCount + 3 && !row.get(skipColumnsCount + 3).trim().isEmpty()) {
-                List<String> ingredientsList = splitIngredientsList(row.get(3));
+            if (row.size() > skipColumnsCount + 2 && !row.get(skipColumnsCount + 2).trim().isEmpty()) {
+                List<String> ingredientsList = splitIngredientsList(row.get(skipColumnsCount + 2));
                 for (String ingredient : ingredientsList) {
                     ingredient = ingredient.trim();
                     if (!ingredient.isEmpty()) {
-                        ParsedProduct product = parseProduct(ingredient);
-                        ingredients.add(product);
+                        try {
+                            ParsedProduct product = parseProduct(ingredient);
+                            ingredients.add(product);
 
-                        // Agregacja do listy zakupów
-                        String key = product.getOriginal().toLowerCase().trim();
-                        uniqueItems.merge(key, product, (existing, newProduct) -> {
-                            if (existing.getUnit().equals(newProduct.getUnit())) {
-                                existing.setQuantity(existing.getQuantity() + newProduct.getQuantity());
-                                return existing;
-                            }
-                            return newProduct;
-                        });
+                            // Agregacja do listy zakupów
+                            String key = product.getOriginal().toLowerCase().trim();
+                            uniqueItems.merge(key, product, (existing, newProduct) -> {
+                                if (existing.getUnit().equals(newProduct.getUnit())) {
+                                    existing.setQuantity(existing.getQuantity() + newProduct.getQuantity());
+                                    return existing;
+                                }
+                                return newProduct;
+                            });
+                        } catch (Exception e) {
+                            log.error("Błąd podczas parsowania produktu: {}", ingredient, e);
+                            // Tworzymy podstawowy produkt, gdy parsowanie się nie powiedzie
+                            ParsedProduct fallbackProduct = ParsedProduct.builder()
+                                    .name(ingredient)
+                                    .quantity(1.0)
+                                    .unit("szt")
+                                    .original(ingredient)
+                                    .hasCustomUnit(false)
+                                    .build();
+                            ingredients.add(fallbackProduct);
+                        }
                     }
                 }
             }
             meal.setIngredients(ingredients);
 
-            // Parsowanie wartości odżywczych
-            if (row.size() > skipColumnsCount + 4 && !row.get(skipColumnsCount + 4).trim().isEmpty()) {
-                meal.setNutritionalValues(parseNutritionalValues(row.get(skipColumnsCount + 4)));
+            // Parsowanie wartości odżywczych-czwarta kolumna po pominiętych
+            if (row.size() > skipColumnsCount + 3 && !row.get(skipColumnsCount + 3).trim().isEmpty()) {
+                try {
+                    meal.setNutritionalValues(parseNutritionalValues(row.get(skipColumnsCount + 3)));
+                } catch (Exception e) {
+                    log.error("Błąd podczas parsowania wartości odżywczych: {}", row.get(skipColumnsCount + 3), e);
+                }
             }
 
             meal.setMealType(MealType.BREAKFAST);
@@ -125,15 +151,17 @@ public class ExcelParserService {
             meals.add(meal);
         }
 
-        List<ParsedProduct> allProducts = new ArrayList<>(uniqueItems.values());
-        List<ParsedProduct> combinedProducts = combineSimilarProducts(allProducts);
+//        List<ParsedProduct> allProducts = new ArrayList<>(uniqueItems.values());
+//        List<ParsedProduct> combinedProducts = combineSimilarProducts(allProducts);
+
+        List<Map.Entry<String, ParsedProduct>> shoppingList = uniqueItems.values().stream()
+                .map(product -> Map.entry(product.getOriginal(), product))
+                .collect(Collectors.toList());
 
         return new ParsedExcelResult(
                 meals,
                 meals.size(),
-                uniqueItems.values().stream()
-                        .map(product -> Map.entry(product.getOriginal(), product))
-                        .collect(Collectors.toList())
+                shoppingList
         );
     }
 

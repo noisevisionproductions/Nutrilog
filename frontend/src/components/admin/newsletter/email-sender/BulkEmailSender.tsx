@@ -1,13 +1,10 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useState, useEffect} from 'react';
 import {toast} from "../../../../utils/toast";
 import {SendGridService} from "../../../../services/newsletter/SendGridService";
-import {EmailTemplate, EmailTemplateType, SavedEmailTemplate, TargetedEmailParams} from "../../../../types/send-grid";
+import {TargetedEmailParams} from "../../../../types/send-grid";
 import LoadingSpinner from "../../../common/LoadingSpinner";
-import EmailTemplateSelector from "./EmailTemplateSelector";
-import {EmailTemplateService} from "../../../../services/newsletter/temlates/EmailTemplateService";
-import debounce from "lodash/debounce";
-import EmailPreview from './EmailPreview';
 import EmailContentEditor from "./EmailContentEditor";
+import EmailPreview from './EmailPreview';
 import {AdminNewsletterService} from "../../../../services/newsletter";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "../../../ui/Tabs";
 import {Settings} from "lucide-react";
@@ -16,25 +13,17 @@ import ExternalRecipientFilters from "./filters/ExternalRecipientFilters";
 import RecipientTypeSelector from "./RecipientTypeSelector";
 import SubscriberFilters from "./filters/SubscriberFilters";
 import {ExternalRecipientService} from "../../../../services/newsletter/ExternalRecipientService";
-import {SavedTemplateService} from "../../../../services/newsletter/temlates/SavedTemplateService";
+import EmailTemplateSelector from "./EmailTemplateSelector";
+import {useEmailComposer} from "../../../../hooks/email/useEmailComposer";
+import SingleEmailSender from "./SingleEmailSender";
 
 const BulkEmailSender = () => {
-    // Podstawowe stany
-    const [subject, setSubject] = useState('');
-    const [content, setContent] = useState('');
-    const [useTemplate, setUseTemplate] = useState(true);
-    const [templateType, setTemplateType] = useState<EmailTemplateType>('basic');
+    // Używamy naszego hook dla logiki emaila
+    const emailComposer = useEmailComposer();
+
+    // Stany specyficzne dla masowej wysyłki
     const [recipientType, setRecipientType] = useState<'subscribers' | 'external' | 'mixed'>('subscribers');
     const [isSending, setIsSending] = useState(false);
-    const [previewContent, setPreviewContent] = useState('');
-    const [isLoadingPreview, setIsLoadingPreview] = useState(false);
-
-    // Stany szablonów
-    const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
-    const [availableTemplates, setAvailableTemplates] = useState<EmailTemplate[]>([]);
-    const [savedTemplates, setSavedTemplates] = useState<SavedEmailTemplate[]>([]);
-    const [selectedSavedTemplateId, setSelectedSavedTemplateId] = useState<string | null>(null);
-    const [isLoadingSavedTemplates, setIsLoadingSavedTemplates] = useState(false);
 
     // Stany filtrów
     const [subscriberFilters, setSubscriberFilters] = useState({
@@ -67,75 +56,14 @@ const BulkEmailSender = () => {
 
     // Zbieramy dane przy inicjalizacji
     useEffect(() => {
-        fetchTemplates().catch(console.error);
-        fetchSavedTemplates().catch(console.error);
         fetchCategories().catch(console.error);
         updateRecipientCounts().catch(console.error);
     }, []);
-
-    const debouncedPreview = useCallback(
-        debounce(() => {
-            if (content.trim()) {
-                handlePreview()
-                    .catch(error => console.error('Błąd podczas generowania podglądu:', error));
-            }
-            return Promise.resolve();
-        }, 500),
-        [useTemplate, templateType, content, selectedSavedTemplateId]
-    );
-
-    useEffect(() => {
-        let isMounted = true;
-
-        if (content.trim()) {
-            setIsLoadingPreview(true);
-
-            const previewPromise = debouncedPreview();
-            if (previewPromise) {
-                previewPromise.catch(error => {
-                    if (isMounted) {
-                        console.error('Błąd podczas obsługi podglądu:', error);
-                    }
-                });
-            }
-        }
-
-        return () => {
-            isMounted = false;
-            debouncedPreview.cancel();
-        };
-    }, [useTemplate, templateType, content, selectedSavedTemplateId, debouncedPreview]);
 
     // Aktualizacja liczby potencjalnych odbiorców
     useEffect(() => {
         updateRecipientCounts().catch(console.error);
     }, [recipientType, subscriberFilters, externalFilters, useSelectedExternalIds, externalRecipientIds]);
-
-    // Pobieranie listy dostępnych szablonów
-    const fetchTemplates = async () => {
-        try {
-            setIsLoadingTemplates(true);
-            const templates = await EmailTemplateService.getTemplates();
-            setAvailableTemplates(templates);
-        } catch (error) {
-            console.error('Błąd podczas pobierania szablonów:', error);
-        } finally {
-            setIsLoadingTemplates(false);
-        }
-    };
-
-    // Pobieranie zapisanych szablonów
-    const fetchSavedTemplates = async () => {
-        try {
-            setIsLoadingSavedTemplates(true);
-            const response = await SavedTemplateService.getAllTemplates();
-            setSavedTemplates(response);
-        } catch (error) {
-            console.error('Błąd podczas pobierania zapisanych szablonów:', error);
-        } finally {
-            setIsLoadingSavedTemplates(false);
-        }
-    };
 
     // Pobieranie kategorii dla zewnętrznych odbiorców
     const fetchCategories = async () => {
@@ -161,7 +89,6 @@ const BulkEmailSender = () => {
                     if (subscriberFilters.active && !sub.active) return false;
                     if (subscriberFilters.verified && !sub.verified) return false;
                     return !(subscriberFilters.role !== 'all' && sub.role !== subscriberFilters.role);
-
                 });
                 setSubscribersCount(filteredSubscribers.length);
             } else {
@@ -177,7 +104,6 @@ const BulkEmailSender = () => {
                         if (externalFilters.category !== 'all' && rec.category !== externalFilters.category) return false;
                         if (externalFilters.status !== 'all' && rec.status !== externalFilters.status) return false;
                         return !(externalFilters.tags.length > 0 && (!rec.tags || !rec.tags.some(tag => externalFilters.tags.includes(tag))));
-
                     });
                     setExternalCount(filteredRecipients.length);
                 }
@@ -191,31 +117,10 @@ const BulkEmailSender = () => {
         }
     };
 
-    // Obsługa wyboru zapisanego szablonu
-    const handleSelectSavedTemplate = async (templateId: string | null) => {
-        setSelectedSavedTemplateId(templateId);
-
-        if (templateId) {
-            try {
-                const template = await SavedTemplateService.getTemplateById(templateId);
-
-                if (template) {
-                    setSubject(template.subject);
-                    setContent(template.content);
-                    setUseTemplate(template.useTemplate);
-                    setTemplateType(template.templateType as EmailTemplateType);
-                } else {
-                    toast.error('Nie znaleziono szablonu');
-                }
-            } catch (error) {
-                console.error('Błąd podczas pobierania szablonu:', error);
-                toast.error('Nie udało się pobrać szablonu');
-            }
-        }
-    };
-
     // Obsługa wysyłania emaila
     const handleSendEmail = async () => {
+        const {subject, content, useTemplate, templateType, selectedSavedTemplateId} = emailComposer;
+
         if (!subject.trim()) {
             toast.error('Podaj temat wiadomości');
             return;
@@ -266,10 +171,7 @@ const BulkEmailSender = () => {
             toast.success(response.data.message || `Wiadomość została wysłana do ${response.data.sentCount} odbiorców`);
 
             // Resetowanie formularza
-            setSubject('');
-            setContent('');
-            setPreviewContent('');
-            setSelectedSavedTemplateId(null);
+            emailComposer.resetForm();
         } catch (error) {
             console.error('Error sending bulk email:', error);
             toast.error('Wystąpił błąd podczas wysyłania wiadomości');
@@ -278,88 +180,7 @@ const BulkEmailSender = () => {
         }
     };
 
-    // Obsługa zapisywania szablonu
-    const handleSaveTemplate = async () => {
-        if (!subject.trim()) {
-            toast.error('Podaj temat wiadomości przed zapisaniem szablonu');
-            return;
-        }
-
-        if (!content.trim()) {
-            toast.error('Wpisz treść wiadomości przed zapisaniem szablonu');
-            return;
-        }
-
-        const templateName = prompt('Podaj nazwę dla zapisywanego szablonu:');
-        if (!templateName) return;
-
-        try {
-            setIsSending(true);
-
-            await SavedTemplateService.saveTemplate({
-                name: templateName,
-                subject,
-                content,
-                description: 'Szablon zapisany ' + new Date().toLocaleDateString(),
-                useTemplate,
-                templateType: useTemplate ? templateType : 'basic'
-            });
-
-            toast.success('Szablon został zapisany');
-            fetchSavedTemplates().catch(console.error);
-        } catch (error) {
-            console.error('Error saving template:', error);
-            toast.error('Wystąpił błąd podczas zapisywania szablonu');
-        } finally {
-            setIsSending(false);
-        }
-    };
-
-    // Generowanie podglądu
-    const handlePreview = async () => {
-        try {
-            if (selectedSavedTemplateId) {
-                // Jeśli wybrany zapisany szablon, używamy go jako bazy
-                try {
-                    const template = await SavedTemplateService.getTemplateById(selectedSavedTemplateId);
-
-                    if (template) {
-                        let updatedContent = template.content;
-                        if (updatedContent.includes('{{content}}')) {
-                            updatedContent = updatedContent.replace('{{content}}', content);
-                        } else {
-                            // Jeśli nie ma tokenu {{content}}, używamy po prostu aktualnej treści
-                            updatedContent = content;
-                        }
-
-                        setPreviewContent(updatedContent);
-                    } else {
-                        toast.error('Nie znaleziono szablonu');
-                    }
-                } catch (error) {
-                    console.error('Błąd podczas pobierania zapisanego szablonu:', error);
-                    toast.error('Nie można wygenerować podglądu zapisanego szablonu');
-                }
-            } else if (useTemplate) {
-                try {
-                    const preview = await EmailTemplateService.previewTemplate(content, templateType);
-                    setPreviewContent(preview);
-                } catch (error) {
-                    console.error('Błąd podczas pobierania podglądu:', error);
-                    toast.error('Nie można wygenerować podglądu. Spróbuj ponownie później.');
-                }
-            } else {
-                setPreviewContent(content);
-            }
-        } catch (error) {
-            console.error('Error generating preview:', error);
-            toast.error('Wystąpił błąd podczas generowania podglądu. Spróbuj ponownie później.');
-        } finally {
-            setIsLoadingPreview(false);
-        }
-    };
-
-    const isLoading = isLoadingTemplates || isSending || isLoadingSavedTemplates || isLoadingCategories;
+    const isLoading = emailComposer.isLoadingTemplates || isSending || emailComposer.isLoadingSavedTemplates || isLoadingCategories;
     const totalRecipientsCount = subscribersCount + externalCount;
 
     return (
@@ -380,8 +201,8 @@ const BulkEmailSender = () => {
                                     Liczba odbiorców: <span className="text-primary">{totalRecipientsCount}</span>
                                     {recipientType === 'mixed' && (
                                         <span className="text-gray-500 ml-1">
-                                            (subskrybenci: {subscribersCount}, zewnętrzni: {externalCount})
-                                        </span>
+                      (subskrybenci: {subscribersCount}, zewnętrzni: {externalCount})
+                    </span>
                                     )}
                                 </div>
                             )}
@@ -393,6 +214,7 @@ const BulkEmailSender = () => {
                             <TabsTrigger value="compose">Treść</TabsTrigger>
                             <TabsTrigger value="recipients">Odbiorcy</TabsTrigger>
                             <TabsTrigger value="templates">Szablony</TabsTrigger>
+                            <TabsTrigger value="singleEmail">Pojedynczy email</TabsTrigger>
                             <TabsTrigger value="options" className="flex items-center">
                                 <Settings size={14} className="mr-1"/>
                                 Opcje
@@ -404,21 +226,21 @@ const BulkEmailSender = () => {
                                 {/* Lewa kolumna-edytor */}
                                 <div className="space-y-4">
                                     <EmailContentEditor
-                                        subject={subject}
-                                        content={content}
-                                        onSubjectChange={setSubject}
-                                        onContentChange={setContent}
+                                        subject={emailComposer.subject}
+                                        content={emailComposer.content}
+                                        onSubjectChange={emailComposer.setSubject}
+                                        onContentChange={emailComposer.setContent}
                                         isLoading={isLoading}
-                                        useTemplate={useTemplate}
+                                        useTemplate={emailComposer.useTemplate}
                                     />
                                 </div>
 
                                 {/* Prawa kolumna-podgląd */}
                                 <div className="lg:block">
                                     <EmailPreview
-                                        subject={subject}
-                                        content={previewContent}
-                                        isLoading={isLoadingPreview}
+                                        subject={emailComposer.subject}
+                                        content={emailComposer.previewContent}
+                                        isLoading={emailComposer.isLoadingPreview}
                                     />
                                 </div>
                             </div>
@@ -464,11 +286,11 @@ const BulkEmailSender = () => {
                             <div className="space-y-6">
                                 {/* Wybór zapisanych szablonów */}
                                 <SavedTemplatesSelector
-                                    templates={savedTemplates}
-                                    selectedId={selectedSavedTemplateId}
-                                    onSelect={handleSelectSavedTemplate}
-                                    isLoading={isLoadingSavedTemplates}
-                                    onRefresh={fetchSavedTemplates}
+                                    templates={emailComposer.savedTemplates}
+                                    selectedId={emailComposer.selectedSavedTemplateId}
+                                    onSelect={emailComposer.handleSelectSavedTemplate}
+                                    isLoading={emailComposer.isLoadingSavedTemplates}
+                                    onRefresh={emailComposer.fetchSavedTemplates}
                                 />
 
                                 {/* Wybór systemowego typu szablonu */}
@@ -477,8 +299,8 @@ const BulkEmailSender = () => {
                                         <input
                                             type="checkbox"
                                             id="useTemplate"
-                                            checked={useTemplate}
-                                            onChange={(e) => setUseTemplate(e.target.checked)}
+                                            checked={emailComposer.useTemplate}
+                                            onChange={(e) => emailComposer.setUseTemplate(e.target.checked)}
                                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                             disabled={isSending}
                                         />
@@ -487,17 +309,21 @@ const BulkEmailSender = () => {
                                         </label>
                                     </div>
 
-                                    {useTemplate && (
+                                    {emailComposer.useTemplate && (
                                         <EmailTemplateSelector
-                                            templates={availableTemplates}
-                                            selectedTemplate={templateType}
-                                            onTemplateSelect={setTemplateType}
+                                            templates={emailComposer.availableTemplates}
+                                            selectedTemplate={emailComposer.templateType}
+                                            onTemplateSelect={emailComposer.setTemplateType}
                                             disabled={isLoading}
-                                            isLoading={isLoadingTemplates}
+                                            isLoading={emailComposer.isLoadingTemplates}
                                         />
                                     )}
                                 </div>
                             </div>
+                        </TabsContent>
+
+                        <TabsContent value="singleEmail">
+                            <SingleEmailSender/>
                         </TabsContent>
 
                         <TabsContent value="options">
@@ -549,9 +375,9 @@ const BulkEmailSender = () => {
                                     </p>
                                     <button
                                         type="button"
-                                        onClick={handleSaveTemplate}
+                                        onClick={() => emailComposer.handleSaveTemplate()}
                                         className="px-4 py-2 border border-gray-300 rounded shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                                        disabled={isSending || !subject || !content}
+                                        disabled={isSending || !emailComposer.subject || !emailComposer.content}
                                     >
                                         Zapisz jako szablon
                                     </button>
@@ -560,13 +386,13 @@ const BulkEmailSender = () => {
                         </TabsContent>
                     </Tabs>
 
-                    {/* Przyciski akcji - zawsze widoczne */}
+                    {/* Przyciski akcji-zawsze widoczne */}
                     <div className="mt-6 flex justify-end space-x-3 pt-4 border-t">
                         <button
                             type="button"
                             onClick={handleSendEmail}
                             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark disabled:opacity-50 flex items-center space-x-2"
-                            disabled={isLoading || !subject || !content || totalRecipientsCount === 0}
+                            disabled={isLoading || !emailComposer.subject || !emailComposer.content || totalRecipientsCount === 0}
                         >
                             {isSending ? (
                                 <>

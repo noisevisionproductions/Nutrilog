@@ -36,7 +36,6 @@ public class FirebaseConfig {
                     File file = new File(firebaseConfigPath);
                     if (file.exists()) {
                         serviceAccount = new FileInputStream(file);
-                        log.info("Loading Firebase config from absolute path: {}", file.getAbsolutePath());
                     } else {
                         throw new FileNotFoundException("Firebase config file not found at: " + firebaseConfigPath);
                     }

@@ -29,6 +29,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -100,41 +101,79 @@ class ExcelParserServiceTest {
         );
     }
 
-    @Test
-    @DisplayName("Powinien poprawnie parsować plik Excel z dietą")
-    void parseDietExcel_shouldParseExcelFile() throws IOException {
-        // given
-        MultipartFile file = createMockExcelFile();
+    private MultipartFile createMockExcelFileWithExtraColumns() throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("DietTemplate");
 
-        // when
-        ExcelParserService.ParsedExcelResult result = excelParserService.parseDietExcel(file);
+        // Wiersz nagłówkowy
+        Row headerRow = sheet.createRow(0);
+        headerRow.createCell(0).setCellValue("Lp.");
+        headerRow.createCell(1).setCellValue("Nazwa posiłku");
+        headerRow.createCell(2).setCellValue("Przygotowanie");
+        headerRow.createCell(3).setCellValue("Składniki");
+        headerRow.createCell(4).setCellValue("Wartości odżywcze (kcal,białko,tłuszcz,węglowodany)");
+
+        // Dane posiłków
+        // Posiłek 1
+        Row mealRow1 = sheet.createRow(1);
+        mealRow1.createCell(0).setCellValue(1);
+        mealRow1.createCell(1).setCellValue("Owsianka z owocami");
+        mealRow1.createCell(2).setCellValue("Ugotować płatki na mleku, dodać owoce");
+        mealRow1.createCell(3).setCellValue("50g płatki owsiane, 200ml mleko 2%, 1 banan");
+        mealRow1.createCell(4).setCellValue("350,15,7,60");
+
+        // Posiłek 2
+        Row mealRow2 = sheet.createRow(2);
+        mealRow2.createCell(0).setCellValue(2);
+        mealRow2.createCell(1).setCellValue("Sałatka z kurczakiem");
+        mealRow2.createCell(2).setCellValue("Wymieszać składniki");
+        mealRow2.createCell(3).setCellValue("100g pierś z kurczaka, 50g sałata, 20g pomidor");
+        mealRow2.createCell(4).setCellValue("250,30,10,5");
+
+        // Zapisanie do strumienia bajtów
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        workbook.write(bos);
+        workbook.close();
+
+        return new MockMultipartFile(
+                "diet_template.xlsx",
+                "diet_template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                bos.toByteArray()
+        );
+    }
+
+    @Test
+    @DisplayName("Powinien poprawnie pomijać określoną liczbę kolumn")
+    void parseDietExcel_shouldSkipSpecifiedNumberOfColumns() throws IOException {
+        // given
+        MultipartFile file = createMockExcelFileWithExtraColumns();
+        when(excelParserConfig.getSkipColumnsCount()).thenReturn(1);
+        when(excelParserConfig.getMaxSkipColumnsCount()).thenReturn(3);
+
+        ExcelParserService.ParsedExcelResult result1 = excelParserService.parseDietExcel(file);
+
+        ExcelParserService.ParsedExcelResult result2 = excelParserService.parseDietExcel(file, 2);
+
+        ExcelParserService.ParsedExcelResult result3 = excelParserService.parseDietExcel(file, 0);
 
         // then
-        assertNotNull(result);
-        assertNotNull(result.meals());
-        assertEquals(3, result.totalMeals()); // 3 posiłki
-        assertNotNull(result.shoppingList());
+        // Dla domyślnej wartości skipColumnsCount (1)
+        assertNotNull(result1);
+        assertFalse(result1.meals().isEmpty());
+        assertEquals("Owsianka z owocami", result1.meals().getFirst().getName());
 
-        // Sprawdzenie pierwszego posiłku
-        ParsedMeal meal1 = result.meals().getFirst();
-        assertEquals("Owsianka z owocami", meal1.getName());
-        assertEquals("Ugotować płatki na mleku, dodać owoce", meal1.getInstructions());
-        assertEquals(3, meal1.getIngredients().size());
+        // Dla skipColumnsCount = 2
+        assertNotNull(result2);
+        assertFalse(result2.meals().isEmpty());
+        // Powinien odczytać wartość z kolumny 2 (po przeskoczeniu 2 kolumn)
+        assertEquals("Ugotować płatki na mleku, dodać owoce", result2.meals().getFirst().getName());
 
-        // Sprawdzenie wartości odżywczych
-        NutritionalValues nutritionalValues1 = meal1.getNutritionalValues();
-        assertNotNull(nutritionalValues1);
-        assertEquals(350.0, nutritionalValues1.getCalories());
-        assertEquals(15.0, nutritionalValues1.getProtein());
-        assertEquals(7.0, nutritionalValues1.getFat());
-        assertEquals(60.0, nutritionalValues1.getCarbs());
-
-        // Sprawdzenie trzeciego posiłku (niepełnego)
-        ParsedMeal meal3 = result.meals().get(2);
-        assertEquals("Koktajl proteinowy", meal3.getName());
-        assertTrue(meal3.getInstructions().isEmpty());
-        assertTrue(meal3.getIngredients().isEmpty());
-        assertNull(meal3.getNutritionalValues());
+        // Dla skipColumnsCount = 0
+        assertNotNull(result3);
+        assertFalse(result3.meals().isEmpty());
+        // Powinien odczytać wartość z kolumny 0
+        assertEquals("1", result3.meals().getFirst().getName());
     }
 
     @Test
@@ -366,5 +405,78 @@ class ExcelParserServiceTest {
         // then
         assertNotNull(result);
         assertEquals(2, result.size());
+    }
+
+    @Test
+    @DisplayName("Powinien poprawnie parsować składniki i wartości odżywcze z uwzględnieniem pomijanych kolumn")
+    void parseDietExcel_shouldParseIngredientsAndNutritionalValuesWithSkippedColumns() throws IOException {
+        // given
+        MultipartFile file = createMockExcelFileWithExtraColumns();
+        when(excelParserConfig.getSkipColumnsCount()).thenReturn(1);
+
+        when(productParsingService.parseProduct(anyString())).thenAnswer(invocation -> {
+            String ingredient = invocation.getArgument(0);
+
+            // Bardzo uproszczone parsowanie na potrzeby testu
+            ParsedProduct product = ParsedProduct.builder()
+                    .name(ingredient.replaceAll("\\d+[gml]+\\s*", ""))
+                    .quantity(1.0)
+                    .unit("g")
+                    .original(ingredient)
+                    .hasCustomUnit(false)
+                    .build();
+
+            return new ParsingResult(product);
+        });
+
+        when(categorizationService.suggestCategory(any(ParsedProduct.class))).thenReturn("testowa-kategoria");
+
+        // when
+        ExcelParserService.ParsedExcelResult result = excelParserService.parseDietExcel(file, 1);
+
+        // then
+        assertNotNull(result);
+        assertFalse(result.meals().isEmpty());
+
+        // Sprawdzenie pierwszego posiłku
+        ParsedMeal firstMeal = result.meals().getFirst();
+        assertEquals("Owsianka z owocami", firstMeal.getName());
+        assertEquals("Ugotować płatki na mleku, dodać owoce", firstMeal.getInstructions());
+
+        // Sprawdzenie składników
+        assertNotNull(firstMeal.getIngredients());
+        assertFalse(firstMeal.getIngredients().isEmpty());
+
+        // Sprawdzenie wartości odżywczych
+        assertNotNull(firstMeal.getNutritionalValues());
+        assertEquals(350.0, firstMeal.getNutritionalValues().getCalories());
+        assertEquals(15.0, firstMeal.getNutritionalValues().getProtein());
+        assertEquals(7.0, firstMeal.getNutritionalValues().getFat());
+        assertEquals(60.0, firstMeal.getNutritionalValues().getCarbs());
+    }
+
+    @Test
+    @DisplayName("Powinien obsłużyć niepoprawne wartości skipColumnsCount")
+    void parseDietExcel_shouldHandleInvalidSkipColumnsCount() throws IOException {
+        // given
+        MultipartFile file = createMockExcelFileWithExtraColumns();
+        int defaultSkipColumnsCount = 1;
+        int maxSkipColumnsCount = 3;
+
+        when(excelParserConfig.getSkipColumnsCount()).thenReturn(defaultSkipColumnsCount);
+        when(excelParserConfig.getMaxSkipColumnsCount()).thenReturn(maxSkipColumnsCount);
+
+        ExcelParserService.ParsedExcelResult result1 = excelParserService.parseDietExcel(file, -1);
+
+        ExcelParserService.ParsedExcelResult result2 = excelParserService.parseDietExcel(file, maxSkipColumnsCount + 1);
+
+        // then
+        assertNotNull(result1);
+        assertFalse(result1.meals().isEmpty());
+        assertEquals("Owsianka z owocami", result1.meals().getFirst().getName());
+
+        assertNotNull(result2);
+        assertFalse(result2.meals().isEmpty());
+        assertEquals("Owsianka z owocami", result2.meals().getFirst().getName());
     }
 }

@@ -1,7 +1,7 @@
 import {useState} from "react";
-import {toast} from "../utils/toast";
-import {NewsletterFormData} from "../types/newsletter";
-import {PublicNewsletterService} from "../services/newsletter";
+import {toast} from "../../utils/toast";
+import {NewsletterFormData} from "../../types/newsletter";
+import {PublicNewsletterService} from "../../services/newsletter";
 
 interface UseNewsletterSubscriptionResult {
     isSubmitting: boolean;

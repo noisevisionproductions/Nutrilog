@@ -3,13 +3,15 @@ package com.noisevisionsoftware.nutrilog.model.newsletter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "external_recipient_tags")
+@Table(name = "external_recipients_tags")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = {"recipient"})
 public class ExternalRecipientTag {
 
     @Id

@@ -2,7 +2,7 @@ import React, {useMemo} from "react";
 import {User} from "../../types/user";
 import LoadingSpinner from "../common/LoadingSpinner";
 import {useDietInfo} from "../../hooks/diet/useDietInfo";
-import {formatTimestamp} from "../../utils/dateFormatters";
+import {formatTimestamp, timestampToDate} from "../../utils/dateFormatters";
 import {StickyNote} from "lucide-react";
 
 interface UserSelectorTableProps {
@@ -23,7 +23,7 @@ const UserSelectorTable: React.FC<UserSelectorTableProps> = ({
 
     if (loading || dietLoading) {
         return (
-            <div className="flex justify-center p-4">
+            <div className="flex justify-center p-2">
                 <LoadingSpinner/>
             </div>
         );
@@ -31,118 +31,126 @@ const UserSelectorTable: React.FC<UserSelectorTableProps> = ({
 
     const renderDietStatus = (userId: string) => {
         if (loadingStates?.[userId]) {
-            return (
-                <div className="flex justify-start items-center h-8">
-                    <LoadingSpinner size="sm"/>
-                </div>
-            );
+            return <LoadingSpinner size="sm"/>;
         }
 
         const info = dietInfo[userId];
         if (!info || !info.hasDiet) {
-            return (
-                <span className="text-gray-500 text-xs">
-                    Brak przypisanej diety
-                </span>
-            );
+            return <span className="text-xs text-gray-500">Brak diety</span>;
+        }
+
+        // Bezpieczna konwersja dat
+        const now = new Date();
+        const startDate = timestampToDate(info.startDate);
+        const endDate = timestampToDate(info.endDate);
+
+        // Bezpieczne formatowanie dla wyświetlania
+        const formattedStartDate = startDate ? formatTimestamp(startDate, false) : "Nieprawidłowa data";
+        const formattedEndDate = endDate ? formatTimestamp(endDate, false) : "Nieprawidłowa data";
+
+        // Określenie statusu diety
+        let statusStyle = "text-gray-600";
+        let statusText = "Dieta przypisana";
+        let daysMessage = "";
+
+        if (startDate && endDate) {
+            if (startDate <= now && endDate >= now) {
+                // Aktywna dieta
+                statusStyle = "text-green-600 font-medium";
+                statusText = "Aktywna dieta";
+                const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                daysMessage = `Pozostało ${daysLeft} dni`;
+            } else if (startDate > now) {
+                // Przyszła dieta
+                statusStyle = "text-blue-600";
+                statusText = "Zaplanowana dieta";
+                const daysToStart = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                daysMessage = `Za ${daysToStart} dni`;
+            } else {
+                // Zakończona dieta
+                statusStyle = "text-gray-400";
+                statusText = "Zakończona dieta";
+            }
         }
 
         return (
-            <div className="text-xs">
-                <div className="text-green-600 font-medium">
-                    Dieta przypisana
+            <div className="flex flex-col text-xs">
+                <div className={`flex items-center ${statusStyle}`}>
+                    <span>{statusText}</span>
                 </div>
-                {info.startDate && info.endDate && (
-                    <div className="text-gray-500 text-xs">
-                        {formatTimestamp(info.startDate)} - {formatTimestamp(info.endDate)}
-                    </div>
-                )}
+                {daysMessage && <span className="text-xs text-gray-500">{daysMessage}</span>}
+                <div className="text-xs text-gray-400 cursor-help"
+                     title={`${formattedStartDate} - ${formattedEndDate}`}>
+                    {formattedStartDate}
+                </div>
             </div>
         );
     };
 
-    const renderNote = (note?: string) => {
-        if (!note) return null;
-
-        return (
-            <div className="flex items-center gap-1 text-xs text-gray-600">
-                <StickyNote className="w-3 h-3"/>
-                <span className="truncate max-w-[200px]" title={note}>
-                    {note}
-                </span>
-            </div>
-        )
-    }
-
     return (
-        <div className="h-100 overflow-y-auto"> {/* Zwiększona wysokość kontenera */}
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-10">
-                <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Wybór
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email/Nick
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status profilu
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status diety
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Notatka
-                    </th>
+        <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 sticky top-0 z-10">
+            <tr>
+                <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+
+                </th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Użytkownik
+                </th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status diety
+                </th>
+                <th className="px-2 py-1 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Notatka
+                </th>
+            </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+            {users.map((user) => (
+                <tr
+                    key={user.id}
+                    className={`hover:bg-gray-50 cursor-pointer ${
+                        selectedUser?.id === user.id ? 'bg-blue-50' : ''
+                    }`}
+                    onClick={() => onUserSelect(user)}
+                >
+                    <td className="px-2 py-1.5">
+                        <input
+                            type="radio"
+                            name="selectedUser"
+                            checked={selectedUser?.id === user.id}
+                            onChange={() => onUserSelect(user)}
+                            className="h-3 w-3 text-blue-600"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </td>
+                    <td className="px-2 py-1.5">
+                        <div className="text-xs font-medium text-gray-900 truncate max-w-[180px]" title={user.email}>
+                            {user.email || "Brak adresu e-mail"}
+                        </div>
+                        {user.nickname && (
+                            <div className="text-xs text-gray-500 truncate max-w-[180px]" title={user.nickname}>
+                                {user.nickname}
+                            </div>
+                        )}
+                    </td>
+                    <td className="px-2 py-1.5">
+                        {renderDietStatus(user.id)}
+                    </td>
+                    <td className="px-2 py-1.5">
+                        {user.note && (
+                            <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <StickyNote className="w-3 h-3 flex-shrink-0"/>
+                                <span className="truncate max-w-[120px]" title={user.note}>
+                                        {user.note}
+                                    </span>
+                            </div>
+                        )}
+                    </td>
                 </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                    <tr
-                        key={user.id}
-                        className={`hover:bg-gray-50 cursor-pointer ${
-                            selectedUser?.id === user.id ? 'bg-blue-50' : ''
-                        }`}
-                        onClick={() => onUserSelect(user)}
-                    >
-                        <td className="px-4 py-2">
-                            <input
-                                type="radio"
-                                name="selectedUser"
-                                checked={selectedUser?.id === user.id}
-                                onChange={() => onUserSelect(user)}
-                                className="h-3 w-3 text-blue-600"
-                                onClick={(e) => e.stopPropagation()}
-                            />
-                        </td>
-                        <td className="px-4 py-2">
-                            <div className="text-xs font-medium text-gray-900">
-                                {user.email || "Brak adresu e-mail"}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                                {user.nickname || "Brak pseudonimu"}
-                            </div>
-                        </td>
-                        <td className="px-4 py-2">
-                                <span className={`px-2 inline-flex text-xs leading-4 font-semibold rounded-full ${
-                                    user.profileCompleted
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-yellow-100 text-yellow-800'
-                                }`}>
-                                    {user.profileCompleted ? 'Kompletny' : 'Niekompletny'}
-                                </span>
-                        </td>
-                        <td className="px-4 py-2">
-                            {renderDietStatus(user.id)}
-                        </td>
-                        <td className="px-4 py-2">
-                            {renderNote(user.note)}
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
+            ))}
+            </tbody>
+        </table>
     );
 };
 

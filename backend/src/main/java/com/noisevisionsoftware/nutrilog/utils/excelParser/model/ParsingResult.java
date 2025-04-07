@@ -8,6 +8,9 @@ public class ParsingResult {
     private ParsedProduct product;
     private String error;
 
+    public ParsingResult() {
+    }
+
     public ParsingResult(ParsedProduct product) {
         this.product = product;
         this.success = true;

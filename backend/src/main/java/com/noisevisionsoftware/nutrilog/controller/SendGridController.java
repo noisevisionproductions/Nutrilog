@@ -2,6 +2,7 @@ package com.noisevisionsoftware.nutrilog.controller;
 
 import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.EmailRequest;
 import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.SavedTemplateRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.SingleEmailRequest;
 import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.TargetedEmailRequest;
 import com.noisevisionsoftware.nutrilog.model.newsletter.EmailTemplate;
 import com.noisevisionsoftware.nutrilog.service.email.EmailTemplateService;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,13 +22,36 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/admin/email")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('OWNER')")
 @RequiredArgsConstructor
 @Slf4j
 public class SendGridController {
 
     private final SendGridService sendGridService;
     private final EmailTemplateService emailTemplateService;
+
+    @PostMapping("/single")
+    public ResponseEntity<?> sendSingleEmail(@Valid @RequestBody SingleEmailRequest request) {
+        try {
+            sendGridService.sendSingleEmail(request);
+
+            String responseMessage = "Wiadomość została wysłana do: " + request.getRecipientEmail();
+            if (request.getExternalRecipientId() != null) {
+                responseMessage += " (ID zewnętrznego odbiorcy: " + request.getExternalRecipientId() + ")";
+            }
+
+            return ResponseEntity.ok().body(Map.of(
+                    "message", responseMessage,
+                    "success", true
+            ));
+        } catch (Exception e) {
+            log.error("Błąd podczas wysyłania pojedynczego emaila do {}", request.getRecipientEmail(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "message", "Wystąpił błąd podczas wysyłania wiadomości: " + e.getMessage(),
+                    "success", false
+            ));
+        }
+    }
 
     @PostMapping("/bulk")
     public ResponseEntity<?> sendBulkEmail(@Valid @RequestBody EmailRequest request) {

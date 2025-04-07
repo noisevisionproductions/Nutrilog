@@ -1,10 +1,7 @@
 package com.noisevisionsoftware.nutrilog.model.newsletter;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -12,12 +9,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Klasa reprezentująca zewnętrznego odbiorcę
+ */
 @Entity
 @Table(name = "external_recipients")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = {"tags"})
 public class ExternalRecipient {
 
     @Id
@@ -49,13 +50,22 @@ public class ExternalRecipient {
     @Builder.Default
     private Set<ExternalRecipientTag> tags = new HashSet<>();
 
+    /**
+     * Pobiera listę tagów jako proste stringi
+     *
+     * @return lista tagów
+     */
     public List<String> getTagList() {
         return tags.stream()
                 .map(ExternalRecipientTag::getTag)
-                .collect(Collectors.toList()    );
+                .collect(Collectors.toList());
     }
 
-
+    /**
+     * Ustawia listę tagów na podstawie listy stringów
+     *
+     * @param tagList lista tagów
+     */
     public void setTagList(List<String> tagList) {
         tags.clear();
 

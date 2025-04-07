@@ -1,6 +1,7 @@
 package com.noisevisionsoftware.nutrilog.service.email;
 
 import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.EmailRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.SingleEmailRequest;
 import com.noisevisionsoftware.nutrilog.dto.request.newsletter.sendgrid.TargetedEmailRequest;
 import com.noisevisionsoftware.nutrilog.model.newsletter.ExternalRecipient;
 import com.noisevisionsoftware.nutrilog.model.newsletter.NewsletterSubscriber;
@@ -21,9 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thymeleaf.TemplateEngine;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,7 +53,51 @@ public class SendGridService {
     private final ExternalRecipientsService externalRecipientsService;
     private final EmailTemplateService emailTemplateService;
     private final AdminNewsletterService adminNewsletterService;
-    private final TemplateEngine templateEngine;
+
+    /*
+     * Wysyła pojedynczy email do wskazanego adresata z opcjonalnym powiązaniem z ExternalRecipient
+     * */
+    @Transactional
+    public void sendSingleEmail(SingleEmailRequest request) throws IOException {
+        String emailContent = "";
+
+        if (request.getSavedTemplateId() != null) {
+            emailContent = emailTemplateService.renderSavedTemplate(
+                    request.getSavedTemplateId(),
+                    request.getContent()
+            );
+        } else if (request.isUseTemplate()) {
+            emailContent = emailTemplateService.applySystemTemplate(request.getContent(), request.getTemplateType());
+        } else {
+            emailContent = request.getContent();
+        }
+
+        Mail mail = createMailWithDirectRecipient(
+                request.getSubject(),
+                emailContent,
+                request.getRecipientEmail(),
+                request.getCategories()
+        );
+
+        if (request.getRecipientName() != null && !request.getRecipientName().isEmpty()) {
+            Personalization personalization = mail.getPersonalization().getFirst();
+            Email to = personalization.getTos().getFirst();
+            to.setName(request.getRecipientName());
+        }
+
+        sendEmail(mail);
+
+        if (request.getExternalRecipientId() != null && request.isUpdateLastContactDate()) {
+            ExternalRecipient recipient = externalRecipientRepository.findById(request.getExternalRecipientId()).orElse(null);
+
+            if (recipient != null) {
+                recipient.setLastContactDate(LocalDateTime.now());
+                externalRecipientRepository.save(recipient);
+            } else {
+                log.warn("External recipient with ID {} not found", request.getExternalRecipientId());
+            }
+        }
+    }
 
     /**
      * Wysyła wiadomość do wszystkich aktywnych i zweryfikowanych subskrybentów

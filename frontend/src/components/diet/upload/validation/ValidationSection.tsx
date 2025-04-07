@@ -12,13 +12,17 @@ interface ValidationSectionProps {
     totalMeals: number;
     userId?: string;
     skipColumnsCount: number;
+    isCalorieValidationEnabled?: boolean;
+    targetCalories?: number;
     onValidationChange: {
         onExcelStructureValidation: (valid: boolean) => void;
         onMealsPerDayValidation: (valid: boolean) => void;
         onDateValidation: (valid: boolean) => void;
         onMealsConfigValidation: (valid: boolean) => void;
+        onCalorieValidation?: (valid: boolean) => void;
     };
     onNavigate?: (section: ValidationErrorType) => void;
+    onCalorieValidationResult?: (result?: ValidationResult) => void;
 }
 
 interface ValidationResult {
@@ -33,19 +37,19 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
                                                                  totalMeals,
                                                                  userId,
                                                                  skipColumnsCount,
+                                                                 isCalorieValidationEnabled = false,
+                                                                 targetCalories = 2000,
                                                                  onValidationChange,
-                                                                 onNavigate
+                                                                 onNavigate,
+                                                                 onCalorieValidationResult
                                                              }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [validationResults, setValidationResults] = useState<Array<{
-        isValid: boolean;
-        message: string;
-        severity: 'error' | 'warning' | 'success';
-    }>>([]);
+    const [validationResults, setValidationResults] = useState<ValidationResult[]>([]);
 
     const lastFileRef = useRef<string>('');
     const lastTemplateRef = useRef<string>('');
     const lastSkipColumnsCountRef = useRef<number>(skipColumnsCount);
+    const lastCalorieSettingsRef = useRef<string>('');
 
     const templateSignature = JSON.stringify({
         mealsPerDay: template.mealsPerDay,
@@ -56,12 +60,20 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
         skipColumnsCount
     });
 
+    const calorieSettingsSignature = JSON.stringify({
+        isCalorieValidationEnabled,
+        targetCalories
+    });
+
     const debouncedTemplateSignature = useDebounce(templateSignature, 500);
+    const debouncedCalorieSettings = useDebounce(calorieSettingsSignature, 500);
 
     useEffect(() => {
         if (!file) {
             setValidationResults([]);
-            Object.values(onValidationChange).forEach(callback => callback(false));
+            Object.values(onValidationChange).forEach(callback => {
+                if (typeof callback === 'function') callback(false);
+            });
             return;
         }
 
@@ -69,22 +81,33 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
         const shouldValidate =
             fileSignature !== lastFileRef.current ||
             debouncedTemplateSignature !== lastTemplateRef.current ||
-            skipColumnsCount !== lastSkipColumnsCountRef.current;
+            skipColumnsCount !== lastSkipColumnsCountRef.current ||
+            debouncedCalorieSettings !== lastCalorieSettingsRef.current;
 
         if (!shouldValidate) return;
 
         lastFileRef.current = fileSignature;
         lastTemplateRef.current = debouncedTemplateSignature;
         lastSkipColumnsCountRef.current = skipColumnsCount;
+        lastCalorieSettingsRef.current = debouncedCalorieSettings;
 
         const validateTemplate = async () => {
             setIsLoading(true);
             try {
+                // Przygotowanie parametrów walidacji kalorii
+                const extraParams: any = {};
+                if (isCalorieValidationEnabled) {
+                    extraParams.calorieValidationEnabled = true;
+                    extraParams.targetCalories = targetCalories;
+                    extraParams.calorieErrorMargin = 5;
+                }
+
                 const response = await DietUploadService.validateDietTemplateWithUser(
                     file,
                     template,
                     userId,
-                    skipColumnsCount
+                    skipColumnsCount,
+                    extraParams
                 );
 
                 // Safely handle the response
@@ -117,6 +140,27 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
                     !hasErrorOfType(['posiłku', 'posilku', 'godziny', 'time'])
                 );
 
+                // Sprawdzanie wyników walidacji kalorii
+                if (isCalorieValidationEnabled && onValidationChange.onCalorieValidation) {
+                    const calorieResult = validationResults.find(
+                        result => result.message.toLowerCase().includes('kalori')
+                    );
+
+                    if (calorieResult) {
+                        onValidationChange.onCalorieValidation(calorieResult.isValid);
+
+                        // Przekazanie wyniku walidacji kalorii do rodzica
+                        if (onCalorieValidationResult) {
+                            onCalorieValidationResult(calorieResult);
+                        }
+                    } else {
+                        onValidationChange.onCalorieValidation(true);
+                        if (onCalorieValidationResult) {
+                            onCalorieValidationResult(undefined);
+                        }
+                    }
+                }
+
             } catch (error: unknown) {
                 console.error("Błąd podczas walidacji:", error);
 
@@ -131,17 +175,34 @@ const ValidationSection: React.FC<ValidationSectionProps> = ({
                 setValidationResults([errorResult]);
 
                 // Reset all validations on error
-                Object.values(onValidationChange).forEach(callback => callback(false));
+                Object.values(onValidationChange).forEach(callback => {
+                    if (typeof callback === 'function') callback(false);
+                });
             } finally {
                 setIsLoading(false);
             }
         };
 
         validateTemplate().catch(console.error);
-    }, [file, debouncedTemplateSignature, onValidationChange, template, userId, skipColumnsCount]);
+    }, [
+        file,
+        debouncedTemplateSignature,
+        debouncedCalorieSettings,
+        onValidationChange,
+        template,
+        userId,
+        skipColumnsCount,
+        isCalorieValidationEnabled,
+        targetCalories,
+        onCalorieValidationResult
+    ]);
 
     const getErrorType = (result: ValidationResult): ValidationErrorType => {
         const message = result.message.toLowerCase();
+
+        if (message.includes('kalori')) {
+            return 'calorie-validation';
+        }
 
         if (message.includes('konflikt') || message.includes('już dietę') || message.includes('okresie') ||
             (message.includes('daty') && message.includes('rozpoczęcia'))) {

@@ -14,9 +14,16 @@ interface ValidationResponse {
     }>;
     additionalData: {
         totalMeals?: number;
+        calorieAnalysis?: {
+            averageCalories: number;
+            dailyCalories: number[];
+            hasDailyVariation: boolean;
+            isWithinMargin?: boolean;
+        };
         [key: string]: any;
     };
 }
+
 
 export class DietUploadService {
 
@@ -42,6 +49,7 @@ export class DietUploadService {
 
             let processedData = JSON.parse(JSON.stringify(parsedData));
 
+            // Przetwarzanie listy zakupów
             if (Array.isArray(processedData.shoppingList)) {
                 if (processedData.shoppingList.length > 0 && typeof processedData.shoppingList[0] === 'object') {
                     processedData.shoppingList = processedData.shoppingList.map((item: {
@@ -57,7 +65,6 @@ export class DietUploadService {
                             return item[key].original;
                         }
 
-                        // Fallback
                         return key;
                     });
                 }
@@ -65,6 +72,7 @@ export class DietUploadService {
                 processedData.shoppingList = [];
             }
 
+            // Przetwarzanie skategoryzowanych produktów
             if (processedData.categorizedProducts && typeof processedData.categorizedProducts === 'object') {
                 const converted: Record<string, string[]> = {};
 
@@ -84,6 +92,7 @@ export class DietUploadService {
                 processedData.categorizedProducts = converted;
             }
 
+            // Usuwanie tymczasowych ID przepisów
             processedData.days = processedData.days.map((day: { meals: any[]; }) => ({
                 ...day,
                 meals: day.meals.map(meal => {
@@ -98,8 +107,6 @@ export class DietUploadService {
             for (let dayIndex = 0; dayIndex < processedData.days.length; dayIndex++) {
                 for (let mealIndex = 0; mealIndex < processedData.days[dayIndex].meals.length; mealIndex++) {
                     const meal = processedData.days[dayIndex].meals[mealIndex];
-
-                    // Usuwamy tylko tymczasowe ID
                     if (meal.recipeId && meal.recipeId.startsWith('temp-recipe-')) {
                         delete meal.recipeId;
                     }
@@ -171,10 +178,17 @@ export class DietUploadService {
     static async previewDiet(
         file: File,
         template: DietTemplate,
-        skipColumnsCount?: number
+        skipColumnsCount?: number,
+        extraParams?: Record<string, any>
     ): Promise<ParsedDietData> {
         try {
             const formData = this.prepareDietTemplateFormData(file, template, skipColumnsCount);
+
+            if (extraParams) {
+                Object.entries(extraParams).forEach(([key, value]) => {
+                    formData.append(key, String(value));
+                });
+            }
 
             const response = await api.post('/diets/upload/preview', formData, {
                 headers: {
@@ -183,6 +197,11 @@ export class DietUploadService {
             });
 
             const sanitizedData = this.sanitizeParsedDietData(response.data, template);
+
+            // Dodanie analizy kalorii do danych, jeśli jest dostępna
+            if (response.data.additionalData?.calorieAnalysis) {
+                sanitizedData.calorieAnalysis = response.data.additionalData.calorieAnalysis;
+            }
 
             return await this.enrichDietWithRecipes(sanitizedData);
         } catch (error) {
@@ -202,13 +221,20 @@ export class DietUploadService {
         file: File,
         template: DietTemplate,
         userId?: string,
-        skipColumnsCount?: number
+        skipColumnsCount?: number,
+        extraParams?: Record<string, any>
     ): Promise<ValidationResponse> {
         try {
             const formData = this.prepareDietTemplateFormData(file, template, skipColumnsCount);
 
             if (userId) {
                 formData.append('userId', userId);
+            }
+
+            if (extraParams) {
+                Object.entries(extraParams).forEach(([key, value]) => {
+                    formData.append(key, String(value));
+                });
             }
 
             const response = await api.post('/diets/upload/validate-template-with-user', formData, {

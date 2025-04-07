@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Diet} from "../../../../types";
-import UserSelector from "../../upload/UserSelector";
+import UserSelector from "../../upload/sections/user/UserSelector";
 import {formatTimestamp} from "../../../../utils/dateFormatters";
 import useUsers from "../../../../hooks/useUsers";
 import {User} from "src/types/user";

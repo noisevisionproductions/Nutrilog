@@ -2,6 +2,19 @@ import React from "react";
 
 export type EmailTemplateType = 'basic' | 'promotional' | 'survey' | 'announcement' | string;
 
+export interface SingleEmailRequest {
+    recipientEmail: string;
+    recipientName?: string;
+    externalRecipientId?: string;
+    subject: string;
+    content: string;
+    useTemplate?: boolean;
+    templateType?: EmailTemplateType;
+    savedTemplateId?: string;
+    updateLastContactDate?: boolean;
+    categories?: string[];
+}
+
 export interface TargetedEmailParams {
     subject: string;
     content: string;

@@ -19,6 +19,7 @@ import CookieConsent from "./components/common/CookieConsent";
 import AdminPanel from "./pages/panel/AdminPanel";
 import {UserRole} from "./types/user";
 import Newsletter from './pages/Newsletter';
+import {SettingsProvider} from './contexts/SettingsContextType';
 
 function App() {
     return (
@@ -31,62 +32,64 @@ function App() {
             <ScrollToTop/>
             <ToastProvider>
                 <AuthProvider>
-                        <Routes>
-                            {/* Landing page routes */}
-                            <Route path="/" element={
-                                <LandingLayout>
-                                    <Landing/>
-                                </LandingLayout>
-                            }/>
-                            <Route path="/about" element={
-                                <LandingLayout>
-                                    <About/>
-                                </LandingLayout>
-                            }/>
-                            <Route path="/privacy-policy" element={
-                                <LandingLayout>
-                                    <PrivacyPolicy/>
-                                </LandingLayout>
-                            }/>
+                    <Routes>
+                        {/* Landing page routes */}
+                        <Route path="/" element={
+                            <LandingLayout>
+                                <Landing/>
+                            </LandingLayout>
+                        }/>
+                        <Route path="/about" element={
+                            <LandingLayout>
+                                <About/>
+                            </LandingLayout>
+                        }/>
+                        <Route path="/privacy-policy" element={
+                            <LandingLayout>
+                                <PrivacyPolicy/>
+                            </LandingLayout>
+                        }/>
 
-                            {/* Newsletter routes */}
-                            <Route path="/verify-email" element={<VerifyEmail/>}/>
-                            <Route path="/unsubscribe" element={<Unsubscribe/>}/>
-                            <Route path="/newsletter" element={
-                                <LandingLayout>
-                                    <Newsletter/>
-                                </LandingLayout>
-                            }/>
+                        {/* Newsletter routes */}
+                        <Route path="/verify-email" element={<VerifyEmail/>}/>
+                        <Route path="/unsubscribe" element={<Unsubscribe/>}/>
+                        <Route path="/newsletter" element={
+                            <LandingLayout>
+                                <Newsletter/>
+                            </LandingLayout>
+                        }/>
 
-                            {/* Auth routes */}
-                            <Route path="/login" element={<Login/>}/>
-                            <Route path="/unauthorized" element={<Unauthorized/>}/>
-                            <Route path="/error" element={<ErrorPage/>}/>
+                        {/* Auth routes */}
+                        <Route path="/login" element={<Login/>}/>
+                        <Route path="/unauthorized" element={<Unauthorized/>}/>
+                        <Route path="/error" element={<ErrorPage/>}/>
 
-                            {/* Main Dashboard */}
-                            <Route
-                                path="/dashboard/*"
-                                element={
-                                    <ProtectedRoute requiredRole={UserRole.ADMIN}>
+                        {/* Main Dashboard */}
+                        <Route
+                            path="/dashboard/*"
+                            element={
+                                <ProtectedRoute requiredRole={UserRole.ADMIN}>
+                                    <SettingsProvider>
                                         <SuggestedCategoriesProvider>
                                             <ProductCategoriesProvider>
                                                 <DietitianPanel/>
                                             </ProductCategoriesProvider>
                                         </SuggestedCategoriesProvider>
-                                    </ProtectedRoute>
-                                }
-                            />
+                                    </SettingsProvider>
+                                </ProtectedRoute>
+                            }
+                        />
 
-                            {/* Admin Dashboard */}
-                            <Route
-                                path="/admin/*"
-                                element={
-                                    <ProtectedRoute requiredRole={UserRole.OWNER}>
-                                        <AdminPanel/>
-                                    </ProtectedRoute>
-                                }
-                            />
-                        </Routes>
+                        {/* Admin Dashboard */}
+                        <Route
+                            path="/admin/*"
+                            element={
+                                <ProtectedRoute requiredRole={UserRole.OWNER}>
+                                    <AdminPanel/>
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Routes>
                     <CookieConsent/>
                 </AuthProvider>
             </ToastProvider>

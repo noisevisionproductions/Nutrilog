@@ -1,10 +1,18 @@
-import {SendgridEmailParams, TargetedEmailParams} from "../../types/send-grid";
+import {SendgridEmailParams, SingleEmailRequest, TargetedEmailParams} from "../../types/send-grid";
 import api from "../../config/axios";
 
 /**
  * Usługa obsługująca wysyłkę emaili przez SendGrid
  */
 export const SendGridService = {
+
+    /*
+    * Wysyła pojedynczy email do konkretnego odbiorcy
+    * */
+    sendSingleEmail: async (params: SingleEmailRequest) => {
+        return api.post('/admin/email/single', params);
+    },
+
     /**
      * Wysyła masowy email do wszystkich subskrybentów newslettera
      */

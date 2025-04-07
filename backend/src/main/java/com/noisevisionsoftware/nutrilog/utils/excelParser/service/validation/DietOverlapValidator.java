@@ -27,6 +27,14 @@ public class DietOverlapValidator {
                         ValidationSeverity.WARNING);
             }
 
+            if (startDate == null) {
+                return new ValidationResult(
+                        false,
+                        "Błąd konwersji daty rozpoczęcia",
+                        ValidationSeverity.ERROR
+                );
+            }
+
             // Obliczamy datę zakończenia
             LocalDate endDate = startDate.plusDays(duration - 1);
 

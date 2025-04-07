@@ -8,11 +8,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ErrorResponse {
+    private int status;
     private String message;
     private long timestamp;
 
     public ErrorResponse(String message) {
         this.message = message;
         this.timestamp = System.currentTimeMillis();
+    }
+
+    public ErrorResponse(int status, String message) {
+        this.status = status;
+        this.message = message;
     }
 }

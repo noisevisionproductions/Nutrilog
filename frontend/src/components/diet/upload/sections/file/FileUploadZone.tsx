@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Upload, HelpCircle, FileSpreadsheet, ChevronDown, ChevronUp } from "lucide-react";
-import { toast} from "../../../utils/toast";
-import ExcelExample from "../../guide/ExcelExample";
+import { toast} from "../../../../../utils/toast";
+import ExcelExample from "../../../../guide/ExcelExample";
 
 interface FileUploadZoneProps {
     file: File | null;

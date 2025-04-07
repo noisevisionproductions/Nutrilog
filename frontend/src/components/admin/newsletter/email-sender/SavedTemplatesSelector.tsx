@@ -13,6 +13,7 @@ interface SavedTemplatesSelectorProps {
     onSelect: (id: string | null) => void;
     isLoading: boolean;
     onRefresh: () => void;
+    compact?: boolean;
 }
 
 const SavedTemplatesSelector: React.FC<SavedTemplatesSelectorProps> = ({
@@ -20,7 +21,8 @@ const SavedTemplatesSelector: React.FC<SavedTemplatesSelectorProps> = ({
                                                                            selectedId,
                                                                            onSelect,
                                                                            isLoading,
-                                                                           onRefresh
+                                                                           onRefresh,
+                                                                           compact = false
                                                                        }) => {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
@@ -107,19 +109,22 @@ const SavedTemplatesSelector: React.FC<SavedTemplatesSelectorProps> = ({
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={compact
+                    ? "space-y-2" // Kompaktowy widok (lista pionowa)
+                    : "grid grid-cols-1 md:grid-cols-2 gap-4" // Oryginalny widok (siatka)
+                }>
                     {templates.map(template => (
                         <div
                             key={template.id}
                             onClick={() => handleSelectTemplate(template.id)}
                             className={`
-                                border rounded-md p-4 cursor-pointer hover:bg-gray-50 transition-colors relative
+                                border rounded-md ${compact ? 'p-2' : 'p-4'} cursor-pointer hover:bg-gray-50 transition-colors relative
                                 ${selectedId === template.id ? 'border-primary bg-primary-light/10 bg-opacity-10' : 'border-gray-200'}
                             `}
                         >
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h4 className="font-medium text-gray-900">{template.name}</h4>
+                                    <h4 className={`font-medium text-gray-900 ${compact ? 'text-sm' : ''}`}>{template.name}</h4>
                                     <p className="text-sm text-gray-500 line-clamp-1 mt-1">
                                         {template.subject}
                                     </p>
@@ -131,7 +136,7 @@ const SavedTemplatesSelector: React.FC<SavedTemplatesSelectorProps> = ({
                                         className="p-1 text-gray-500 hover:text-primary rounded hover:bg-gray-100"
                                         title="Podgląd szablonu"
                                     >
-                                        <Eye className="h-4 w-4"/>
+                                        <Eye className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`}/>
                                     </button>
                                     <button
                                         type="button"
@@ -139,15 +144,17 @@ const SavedTemplatesSelector: React.FC<SavedTemplatesSelectorProps> = ({
                                         className="p-1 text-gray-500 hover:text-red-600 rounded hover:bg-gray-100"
                                         title="Usuń szablon"
                                     >
-                                        <Trash className="h-4 w-4"/>
+                                        <Trash className={`${compact ? 'h-3 w-3' : 'h-4 w-4'}`}/>
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="flex items-center mt-3 text-xs text-gray-500">
-                                <Clock className="h-3 w-3 mr-1 inline"/>
-                                Utworzono: {formatPostgresTimestamp(template.createdAt)}
-                            </div>
+                            {!compact && (
+                                <div className="flex items-center mt-3 text-xs text-gray-500">
+                                    <Clock className="h-3 w-3 mr-1 inline"/>
+                                    Utworzono: {formatPostgresTimestamp(template.createdAt)}
+                                </div>
+                            )}
 
                             {selectedId === template.id && (
                                 <span className="absolute inset-y-0 left-0 w-1 bg-primary rounded-l-md"></span>

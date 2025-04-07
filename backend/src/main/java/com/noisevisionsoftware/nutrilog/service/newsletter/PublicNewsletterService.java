@@ -136,7 +136,6 @@ public class PublicNewsletterService {
         NewsletterSubscriber subscriber = subscriberOpt.get();
         log.info("Aktualizacja metadanych dla subskrybenta: {}", subscriber.getEmail());
 
-        // Inicjalizuj kolekcję metadataEntries jeśli jest null
         if (subscriber.getMetadataEntries() == null) {
             subscriber.setMetadataEntries(new HashSet<>());
         }

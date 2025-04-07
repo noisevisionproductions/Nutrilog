@@ -1,6 +1,7 @@
 package com.noisevisionsoftware.nutrilog.utils.excelParser.service;
 
-import com.noisevisionsoftware.nutrilog.dto.request.DietTemplateRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.diet.CalorieValidationRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.diet.DietTemplateRequest;
 import com.noisevisionsoftware.nutrilog.dto.response.ValidationResponse;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.validation.ValidationResult;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.validation.ValidationSeverity;
@@ -24,6 +25,7 @@ public class DietTemplateService {
     private final ExcelParserService excelParserService;
     private final ValidationCacheService cacheService;
     private final DietOverlapValidator dietOverlapValidator;
+    private final CalorieValidator calorieValidator;
 
     /**
      * Waliduje szablon diety na podstawie przesłanych parametrów.
@@ -102,6 +104,44 @@ public class DietTemplateService {
                 }
             }
 
+            // Walidacja kalorii
+            if (request.isCalorieValidationRequired()) {
+                try {
+                    CalorieValidationRequest calorieReq = new CalorieValidationRequest(
+                            request.getCalorieValidationEnabled(),
+                            request.getTargetCalories(),
+                            request.getCalorieErrorMargin() != null ? request.getCalorieErrorMargin() : 5
+                    );
+
+                    ValidationResult calorieValidation = calorieValidator.validateCalories(
+                            parseResult.meals(),
+                            calorieReq,
+                            request.getMealsPerDay()
+                    );
+
+                    allValidations.add(calorieValidation);
+
+                    CalorieValidator.CalorieAnalysisResult calorieAnalysis = calorieValidator.analyzeCalories(parseResult.meals(), request.getMealsPerDay());
+
+                    if (calorieAnalysis != null) {
+                        additionalData.put("calorieAnalysis", calorieAnalysis);
+                    }
+
+                    if (!calorieValidation.isValid()) {
+                        return createErrorResponse(allValidations);
+                    }
+                } catch (Exception e) {
+                    log.error("Error during calorie validation", e);
+                    allValidations.add(new ValidationResult(
+                            false,
+                            "Błąd podczas walidacji kalorii: " + (e.getMessage() != null ? e.getMessage() : "Sprawdź wartości kaloryczne"),
+                            ValidationSeverity.ERROR
+                    ));
+
+                    return createErrorResponse(allValidations);
+                }
+            }
+
             // Dodaj podsumowanie
             allValidations.add(new ValidationResult(
                     true,
@@ -137,7 +177,7 @@ public class DietTemplateService {
             return new ValidationResult(false, "Liczba posiłków musi być większa od 0", ValidationSeverity.ERROR);
         }
 
-        if (request.getMealsPerDay() > 10) { // Górny limit posiłków dziennie
+        if (request.getMealsPerDay() > 10) {
             return new ValidationResult(false, "Zbyt duża liczba posiłków dziennie (maksymalnie 10)", ValidationSeverity.ERROR);
         }
 
@@ -175,6 +215,22 @@ public class DietTemplateService {
                     request.getMealTimes().get(timeKey).trim().isEmpty()) {
                 return new ValidationResult(false,
                         "Czas dla posiłku " + (i + 1) + " jest wymagany",
+                        ValidationSeverity.ERROR);
+            }
+        }
+
+        // Walidacja kalorii
+        if (request.isCalorieValidationRequired()) {
+            if (request.getTargetCalories() <= 0) {
+                return new ValidationResult(false,
+                        "Wartość docelowa kalorii musi być większa od 0",
+                        ValidationSeverity.ERROR);
+            }
+
+            Integer marginPercent = request.getCalorieErrorMargin();
+            if (marginPercent != null && (marginPercent < 1 || marginPercent > 20)) {
+                return new ValidationResult(false,
+                        "Margines błędu musi być z zakresu 1-20%",
                         ValidationSeverity.ERROR);
             }
         }

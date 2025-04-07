@@ -2,7 +2,7 @@ import {useEffect} from 'react';
 import {useForm} from 'react-hook-form';
 import RoleSelector from './RoleSelector';
 import {NewsletterFormData} from "../../../types/newsletter";
-import {useNewsletterSubscription} from "../../../hooks/useNewsletterSubscription";
+import {useNewsletterSubscription} from "../../../hooks/email/useNewsletterSubscription";
 
 interface NewsletterFormProps {
     className?: string;

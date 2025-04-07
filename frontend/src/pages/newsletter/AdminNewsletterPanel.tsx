@@ -4,8 +4,9 @@ import BulkEmailSender from "../../components/admin/newsletter/email-sender/Bulk
 import SubscribersList from "../../components/admin/newsletter/SubscribersList";
 import SurveyResults from "../../components/admin/newsletter/survey/SurveyResults";
 import ExternalRecipientsManager from "../../components/admin/newsletter/external-recipients/ExternalRecipientsManager";
+import SingleEmailSender from "../../components/admin/newsletter/email-sender/SingleEmailSender";
 
-type NewsletterTabType = 'stats' | 'subscribers' | 'bulkEmail' | 'externalRecipients' | 'surveys';
+type NewsletterTabType = 'stats' | 'subscribers' | 'bulkEmail' | 'singleEmail' | 'externalRecipients' | 'surveys';
 
 const AdminNewsletterPanel: React.FC = () => {
     const [activeTab, setActiveTab] = useState<NewsletterTabType>('stats');
@@ -15,6 +16,7 @@ const AdminNewsletterPanel: React.FC = () => {
         {key: 'subscribers', label: 'Subskrybenci'},
         {key: 'externalRecipients', label: 'Zewnętrzni odbiorcy'},
         {key: 'bulkEmail', label: 'Masowa wysyłka'},
+        {key: 'singleEmail', label: 'Pojedynczy email'},
         {key: 'surveys', label: 'Ankiety'}
     ];
 
@@ -28,6 +30,8 @@ const AdminNewsletterPanel: React.FC = () => {
                 return <ExternalRecipientsManager/>;
             case 'bulkEmail':
                 return <BulkEmailSender/>;
+            case 'singleEmail':
+                return <SingleEmailSender/>;
             case 'surveys':
                 return <SurveyResults/>;
             default:

@@ -1,6 +1,7 @@
 package com.noisevisionsoftware.nutrilog.controller.diet;
 
-import com.noisevisionsoftware.nutrilog.dto.request.DietTemplateRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.diet.CalorieValidationRequest;
+import com.noisevisionsoftware.nutrilog.dto.request.diet.DietTemplateRequest;
 import com.noisevisionsoftware.nutrilog.dto.response.DietPreviewResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.ErrorResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.ValidationResponse;
@@ -8,10 +9,12 @@ import com.noisevisionsoftware.nutrilog.exception.DietValidationException;
 import com.noisevisionsoftware.nutrilog.model.diet.MealType;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedDay;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedMeal;
+import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedProduct;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.validation.ValidationResult;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.validation.ValidationSeverity;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.service.DietTemplateService;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.service.ExcelParserService;
+import com.noisevisionsoftware.nutrilog.utils.excelParser.service.validation.CalorieValidator;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.service.validation.ExcelStructureValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +38,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class DietUploadController {
+
     private final ExcelStructureValidator excelStructureValidator;
     private final ExcelParserService excelParserService;
     private final DietTemplateService dietTemplateService;
+    private final CalorieValidator calorieValidator;
 
     @InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -61,8 +66,6 @@ public class DietUploadController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ValidationResponse> validateFile(@RequestParam("file") MultipartFile file) {
         try {
-            log.debug("Rozpoczęcie walidacji pliku: {}", file.getOriginalFilename());
-
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(new ValidationResponse(
@@ -145,6 +148,7 @@ public class DietUploadController {
             @RequestParam(required = false) String userId) {
         try {
             ValidationResponse response = dietTemplateService.validateDietTemplate(request, userId);
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Błąd podczas walidacji szablonu diety", e);
@@ -172,8 +176,11 @@ public class DietUploadController {
             @RequestParam("duration") int duration,
             @RequestParam Map<String, String> allParams,
             @RequestParam("mealTypes") List<String> mealTypes,
-            @RequestParam(value = "skipColumnsCount", required = false) Integer skipColumnsCount) {
-
+            @RequestParam(value = "skipColumnsCount", required = false) Integer skipColumnsCount,
+            @RequestParam(value = "calorieValidationEnabled", required = false) Boolean calorieValidationEnabled,
+            @RequestParam(value = "targetCalories", required = false) Integer targetCalories,
+            @RequestParam(value = "calorieErrorMargin", required = false) Integer calorieErrorMargin
+    ) {
         Map<String, String> mealTimes = new HashMap<>();
         for (int i = 0; i < mealsPerDay; i++) {
             String key = "meal_" + i;
@@ -185,6 +192,13 @@ public class DietUploadController {
 
         try {
             validateInput(file, mealsPerDay, startDate, duration, mealTimes, mealTypes);
+
+            // Walidacja parametrów kalorii
+            if (Boolean.TRUE.equals(calorieValidationEnabled) && (targetCalories == null || targetCalories <= 0)) {
+                return ResponseEntity
+                        .badRequest()
+                        .body(new ErrorResponse("Walidacja kalorii wymaga poprawnej wartości docelowej"));
+            }
 
             ExcelParserService.ParsedExcelResult parseResult;
             if (skipColumnsCount != null) {
@@ -202,11 +216,31 @@ public class DietUploadController {
                     mealTypes
             );
 
+            Map<String, Object> additionalData = new HashMap<>();
+
+            if (Boolean.TRUE.equals(calorieValidationEnabled) && targetCalories != null) {
+                DietPreviewResponse response = validateAndProcessCalories(
+                        parseResult.meals(),
+                        days,
+                        parseResult.shoppingList(),
+                        mealsPerDay,
+                        targetCalories,
+                        calorieErrorMargin
+                );
+
+                if (response != null) {
+                    return ResponseEntity.ok(response);
+                }
+
+                additionalData.put("validCalories", true);
+            }
+
             return ResponseEntity.ok(DietPreviewResponse.builder()
                     .days(days)
                     .shoppingList(parseResult.shoppingList())
+                    .valid(true)
+                    .additionalData(additionalData)
                     .build());
-
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .badRequest()
@@ -267,6 +301,52 @@ public class DietUploadController {
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException(String.join(", ", errors));
         }
+    }
+
+    /*
+     * Waliduje i przetwarza informacje o kaloriach w diecie
+     * */
+    private DietPreviewResponse validateAndProcessCalories(
+            List<ParsedMeal> meals,
+            List<ParsedDay> days,
+            List<Map.Entry<String, ParsedProduct>> shoppingList,
+            int mealsPerDay,
+            int targetCalories,
+            Integer errorMargin
+    ) {
+        Map<String, Object> additionalData = new HashMap<>();
+
+        CalorieValidationRequest calorieValidation = new CalorieValidationRequest(
+                true,
+                targetCalories,
+                errorMargin != null ? errorMargin : 5
+        );
+
+        ValidationResult validationResult = calorieValidator.validateCalories(
+                meals,
+                calorieValidation,
+                mealsPerDay
+        );
+
+        CalorieValidator.CalorieAnalysisResult analysis = calorieValidator.analyzeCalories(meals, mealsPerDay);
+
+        if (analysis != null) {
+            additionalData.put("calorieAnalysis", analysis);
+        }
+
+        additionalData.put("calorieValidation", validationResult);
+
+        if (!validationResult.isValid()) {
+            return DietPreviewResponse.builder()
+                    .days(days)
+                    .shoppingList(shoppingList)
+                    .valid(false)
+                    .validationMessage(validationResult.message())
+                    .additionalData(additionalData)
+                    .build();
+        }
+
+        return null;
     }
 
     private List<ParsedDay> generateDietDays(

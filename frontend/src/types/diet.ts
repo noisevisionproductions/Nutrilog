@@ -37,6 +37,13 @@ export interface ParsedDay {
     meals: ParsedMeal[];
 }
 
+export interface CalorieAnalysis {
+    averageCalories: number;
+    dailyCalories: number[];
+    hasDailyVariation: boolean;
+    isWithinMargin?: boolean;
+}
+
 export interface ParsedDietData {
     days: ParsedDay[];
     categorizedProducts: Record<string, string[]>;
@@ -46,4 +53,5 @@ export interface ParsedDietData {
     startDate: Timestamp;
     duration: number;
     mealTypes: MealType[];
+    calorieAnalysis?: CalorieAnalysis;
 }

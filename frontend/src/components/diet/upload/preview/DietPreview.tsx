@@ -12,13 +12,15 @@ interface DietPreviewProps {
     onConfirm: () => Promise<void>;
     onCancel: () => void;
     selectedUserEmail: string;
+    fileName: string | undefined;
 }
 
 const DietPreview: React.FC<DietPreviewProps> = ({
                                                      parsedData,
                                                      onConfirm,
                                                      onCancel,
-                                                     selectedUserEmail
+                                                     selectedUserEmail,
+                                                     fileName
                                                  }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [step, setStep] = useState<'categorization' | 'preview'>('categorization');
@@ -96,6 +98,7 @@ const DietPreview: React.FC<DietPreviewProps> = ({
             onCancel={onCancel}
             isSaving={isSaving}
             selectedUserEmail={selectedUserEmail}
+            fileName={fileName}
         />
     );
 };

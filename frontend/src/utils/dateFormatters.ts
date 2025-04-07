@@ -2,70 +2,74 @@ import {Timestamp} from 'firebase/firestore';
 import {User} from "../types/user";
 
 /**
- * Uniwersalna funkcja do formatowania dat w aplikacji
+ * Reprezentuje różne formaty timestamp w aplikacji
  */
-interface FirestoreTimestamp {
-    _seconds: number;
-    _nanoseconds: number;
-}
+export type TimestampLike =
+    | Timestamp
+    | Date
+    | number
+    | string
+    | { seconds: number; nanoseconds: number }
+    | { seconds: number; nanos: number }
+    | { _seconds: number; _nanoseconds: number };
 
-export const formatTimestamp = (timestamp: number | Date | Timestamp | FirestoreTimestamp | string, includeTime: boolean = false) => {
-    let date: Date;
+/**
+ * Konwertuje różne formaty timestamp na obiekt Date
+ * Obsługuje Firestore Timestamp, Date, liczby (milliseconds),
+ * stringi oraz obiekty z różnymi formatami timestamp
+ */
+export const timestampToDate = (timestamp: TimestampLike | null | undefined): Date | null => {
+    if (!timestamp) {
+        return null;
+    }
 
-    if (timestamp instanceof Date) {
-        date = timestamp;
-    } else if (typeof timestamp === 'number') {
-        date = new Date(timestamp);
-    } else if (timestamp instanceof Timestamp) {
-        date = timestamp.toDate();
-    } else if (typeof timestamp === 'string') {
-        // Handle string ISO and dd-mm-yyyy format
-        if (timestamp.includes('-')) {
-            const parts = timestamp.split('-');
-            if (parts.length === 3 && parts[0].length === 2) {
-                // dd-mm-yyyy format
-                const [day, month, year] = parts.map(Number);
-                date = new Date(year, month - 1, day);
-            } else {
-                // ISO format
-                date = new Date(timestamp);
+    try {
+        // Obsługa obiektu Timestamp z Firebase
+        if (timestamp instanceof Timestamp) {
+            return timestamp.toDate();
+        }
+
+        // Obsługa obiektu Date
+        if (timestamp instanceof Date) {
+            return timestamp;
+        }
+
+        // Obsługa string (ISO format lub inny)
+        if (typeof timestamp === 'string') {
+            const date = new Date(timestamp);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        // Obsługa liczby (milliseconds)
+        if (typeof timestamp === 'number') {
+            return new Date(timestamp);
+        }
+
+        // Obsługa różnych formatów obiektów timestamp
+        if (typeof timestamp === 'object') {
+            // Format z Firebase Admin SDK: { _seconds, _nanoseconds }
+            if ('_seconds' in timestamp) {
+                return new Date((timestamp as any)._seconds * 1000);
             }
-        } else {
-            date = new Date(timestamp);
+
+            // Format z Firebase Client SDK: { seconds, nanoseconds }
+            if ('seconds' in timestamp && 'nanoseconds' in timestamp) {
+                return new Date((timestamp as any).seconds * 1000);
+            }
+
+            // Alternatywny format: { seconds, nanos }
+            if ('seconds' in timestamp && 'nanos' in timestamp) {
+                return new Date((timestamp as any).seconds * 1000);
+            }
         }
-    } else if (timestamp && typeof timestamp === 'object') {
-        // Handle Firestore timestamp format
-        if ('_seconds' in timestamp && '_nanoseconds' in timestamp) {
-            const firestoreTimestamp = timestamp as FirestoreTimestamp;
-            date = new Date(firestoreTimestamp._seconds * 1000);
-        } else if ('seconds' in timestamp && 'nanoseconds' in timestamp) {
-            date = new Date((timestamp as any).seconds * 1000);
-        } else {
-            console.warn('Invalid timestamp format:', timestamp);
-            date = new Date();
-        }
-    } else {
-        console.warn('Invalid timestamp format:', timestamp);
-        date = new Date();
+
+        // Nie rozpoznany format
+        console.warn('Nieobsługiwany format timestamp:', timestamp);
+        return null;
+    } catch (error) {
+        console.error('Błąd podczas konwersji timestamp:', error, timestamp);
+        return null;
     }
-
-    if (isNaN(date.getTime())) {
-        console.warn('Invalid date created from timestamp:', timestamp);
-        date = new Date();
-    }
-
-    const options: Intl.DateTimeFormatOptions = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
-
-    if (includeTime) {
-        options.hour = '2-digit';
-        options.minute = '2-digit';
-    }
-
-    return date.toLocaleDateString('pl-PL', options);
 };
 
 /**
@@ -98,57 +102,51 @@ export const formatPostgresTimestamp = (postgresTimestamp: any): string => {
     }
 };
 
-export const toFirestoreTimestamp = (date: Date | string | number | Timestamp): Timestamp => {
-    if (date instanceof Timestamp) {
-        return date;
+/**
+ * Konwertuje różne formaty timestamp na Firestore Timestamp
+ */
+export const toFirestoreTimestamp = (timestamp: TimestampLike | null | undefined): Timestamp | null => {
+    if (!timestamp) {
+        return null;
     }
-    if (date instanceof Date) {
-        return Timestamp.fromDate(date);
+
+    if (timestamp instanceof Timestamp) {
+        return timestamp;
     }
-    if (typeof date === 'string') {
-        return Timestamp.fromDate(new Date(date));
+
+    const date = timestampToDate(timestamp);
+    if (!date) {
+        return null;
     }
-    return Timestamp.fromMillis(date);
+
+    return Timestamp.fromDate(date);
 };
 
 /**
- * Konwersja Timestamp na format ISO (YYYY-MM-DD)
+ * Formatuje timestamp do czytelnego formatu lokalnego
  */
-export const toISODate = (timestamp: Timestamp | Date | string | number | null | undefined): string => {
-    if (!timestamp) {
-        return '';
+export const formatTimestamp = (
+    timestamp: TimestampLike | null | undefined,
+    includeTime: boolean = false
+): string => {
+    const date = timestampToDate(timestamp);
+
+    if (!date) {
+        return 'Nieprawidłowa data';
     }
 
-    let date: Date;
+    const options: Intl.DateTimeFormatOptions = {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    };
 
-    try {
-        if (timestamp instanceof Timestamp) {
-            date = timestamp.toDate();
-        } else if (timestamp instanceof Date) {
-            date = timestamp;
-        } else if (typeof timestamp === 'string') {
-            date = new Date(timestamp);
-        } else if (typeof timestamp === 'object' && '_seconds' in timestamp) {
-            const firestoreTimestamp = timestamp as any;
-            date = new Date(firestoreTimestamp._seconds * 1000);
-        } else {
-            date = new Date(timestamp as any);
-        }
-
-        if (isNaN(date.getTime())) {
-            console.warn('Invalid date created from timestamp:', timestamp);
-            return '';
-        }
-
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-
-        return `${year}-${month}-${day}`;
-    } catch (error) {
-        console.error('Error converting timestamp to ISO date:', error, timestamp);
-        return '';
+    if (includeTime) {
+        options.hour = '2-digit';
+        options.minute = '2-digit';
     }
+
+    return date.toLocaleDateString('pl-PL', options);
 };
 
 export const formatMonthYear = (date: Date): string => {
@@ -160,18 +158,33 @@ export const stringToTimestamp = (dateString: string) => {
     return Timestamp.fromDate(date);
 };
 
-export const calculateAge = (birthDate: Timestamp | number | null): number => {
-    if (!birthDate) return 0;
+/**
+ * Konwertuje timestamp na format ISO (YYYY-MM-DD)
+ */
+export const toISODate = (timestamp: TimestampLike | null | undefined): string => {
+    const date = timestampToDate(timestamp);
 
-    const today = new Date();
-    let birthDateObj: Date;
-
-    if (birthDate instanceof Timestamp) {
-        birthDateObj = birthDate.toDate();
-    } else {
-        birthDateObj = new Date(birthDate);
+    if (!date) {
+        return '';
     }
 
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+};
+
+/**
+ * Oblicza wiek na podstawie daty urodzenia
+ */
+export const calculateAge = (birthDate: TimestampLike | null | undefined): number => {
+    if (!birthDate) return 0;
+
+    const birthDateObj = timestampToDate(birthDate);
+    if (!birthDateObj) return 0;
+
+    const today = new Date();
     let age = today.getFullYear() - birthDateObj.getFullYear();
     const monthDiff = today.getMonth() - birthDateObj.getMonth();
 

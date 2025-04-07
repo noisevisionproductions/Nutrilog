@@ -11,15 +11,27 @@ import java.util.Optional;
 @Repository
 public interface ExternalRecipientRepository extends JpaRepository<ExternalRecipient, Long> {
 
-    Optional<ExternalRecipient> findByEmail(String email);
-
+    /**
+     * Znajduje odbiorców posortowanych po dacie utworzenia malejąco
+     *
+     * @return lista odbiorców
+     */
     List<ExternalRecipient> findAllByOrderByCreatedAtDesc();
 
-    List<ExternalRecipient> findAllByCategory(String category);
+    /**
+     * Znajduje odbiorcę po adresie email
+     *
+     * @param email adres email odbiorcy
+     * @return optional zawierający odbiorcę lub pusty
+     */
+    Optional<ExternalRecipient> findByEmail(String email);
 
-    List<ExternalRecipient> findAllByStatus(String status);
-
-    @Query("SELECT DISTINCT e.category FROM ExternalRecipient e ORDER BY e.category")
+    /**
+     * Znajduje wszystkie kategorie odbiorców
+     *
+     * @return lista kategorii
+     */
+    @Query("SELECT DISTINCT e.category FROM ExternalRecipient e")
     List<String> findAllCategories();
 
     @Query("SELECT e FROM ExternalRecipient e JOIN e.tags t WHERE t.tag IN :tags")

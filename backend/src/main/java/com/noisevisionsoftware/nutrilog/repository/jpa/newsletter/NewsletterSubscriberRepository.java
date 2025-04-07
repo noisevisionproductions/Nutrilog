@@ -12,25 +12,58 @@ import java.util.Optional;
 @Repository
 public interface NewsletterSubscriberRepository extends JpaRepository<NewsletterSubscriber, Long> {
 
+    /**
+     * Znajduje subskrybenta po adresie email
+     *
+     * @param email adres email subskrybenta
+     * @return optional zawierający subskrybenta lub pusty
+     */
     Optional<NewsletterSubscriber> findByEmail(String email);
 
+    /**
+     * Znajduje subskrybenta po tokenie weryfikacyjnym
+     *
+     * @param token token weryfikacyjny
+     * @return optional zawierający subskrybenta lub pusty
+     */
     Optional<NewsletterSubscriber> findByVerificationToken(String token);
 
-    List<NewsletterSubscriber> findAllByActiveTrue();
-
+    /**
+     * Znajduje wszystkich aktywnych i zweryfikowanych subskrybentów
+     *
+     * @return lista aktywnych i zweryfikowanych subskrybentów
+     */
     List<NewsletterSubscriber> findAllByActiveTrueAndVerifiedTrue();
 
-    List<NewsletterSubscriber> findAllByRole(SubscriberRole role);
-
-    @Query("SELECT COUNT(s) FROM NewsletterSubscriber s WHERE s.active = true")
-    long countActiveSubscribers();
-
+    /**
+     * Liczy zweryfikowanych subskrybentów
+     *
+     * @return liczba zweryfikowanych subskrybentów
+     */
     @Query("SELECT COUNT(s) FROM NewsletterSubscriber s WHERE s.verified = true")
     long countVerifiedSubscribers();
 
+    /**
+     * Liczy aktywnych subskrybentów
+     *
+     * @return liczba aktywnych subskrybentów
+     */
+    @Query("SELECT COUNT(s) FROM NewsletterSubscriber s WHERE s.active = true")
+    long countActiveSubscribers();
+
+    /**
+     * Liczy aktywnych i zweryfikowanych subskrybentów
+     *
+     * @return liczba aktywnych i zweryfikowanych subskrybentów
+     */
     @Query("SELECT COUNT(s) FROM NewsletterSubscriber s WHERE s.active = true AND s.verified = true")
     long countActiveVerifiedSubscribers();
 
+    /**
+     * Liczy subskrybentów według roli
+     *
+     * @return lista par [rola, liczba]
+     */
     @Query("SELECT s.role, COUNT(s) FROM NewsletterSubscriber s GROUP BY s.role")
     List<Object[]> countByRole();
 }

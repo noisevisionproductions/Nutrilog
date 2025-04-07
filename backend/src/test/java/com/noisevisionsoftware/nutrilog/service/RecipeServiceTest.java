@@ -1,27 +1,33 @@
 package com.noisevisionsoftware.nutrilog.service;
 
 import com.google.cloud.Timestamp;
-import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.*;
 import com.noisevisionsoftware.nutrilog.exception.NotFoundException;
+import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
 import com.noisevisionsoftware.nutrilog.repository.RecipeRepository;
+import org.apache.coyote.BadRequestException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class RecipeServiceTest {
@@ -29,16 +35,32 @@ class RecipeServiceTest {
     @Mock
     private RecipeRepository recipeRepository;
 
-    @InjectMocks
-    private RecipeService recipeService;
-
     @Mock
     private Storage storage;
 
+    @InjectMocks
+    private RecipeService recipeService;
+
+    @Captor
+    private ArgumentCaptor<Recipe> recipeCaptor;
+
+    @Captor
+    private ArgumentCaptor<BlobInfo> blobInfoCaptor;
+
+    @Captor
+    private ArgumentCaptor<byte[]> byteArrayCaptor;
+
     @Value("${firebase.storage.bucket-name:test-bucket}")
-    private String storageBucket;
+    private String storageBucket = "test-bucket";
 
     private static final String TEST_RECIPE_ID = "test-recipe-id";
+    private static final String TEST_BUCKET_NAME = "test-bucket";
+
+    @BeforeEach
+    void setUp() {
+        // Ustawienie wartości dla storageBucket
+        ReflectionTestUtils.setField(recipeService, "storageBucket", TEST_BUCKET_NAME);
+    }
 
     @Test
     void getRecipeById_WhenRecipeExists_ShouldReturnRecipe() {
@@ -54,7 +76,6 @@ class RecipeServiceTest {
                 .isNotNull()
                 .isEqualTo(expectedRecipe);
     }
-
 
     @Test
     void getRecipeById_WhenRecipeDoesNotExist_ShouldThrowNotFoundException() {
@@ -90,17 +111,52 @@ class RecipeServiceTest {
     }
 
     @Test
+    void getRecipesByIds_WhenIdsIsEmpty_ShouldReturnEmptyList() {
+        // when
+        List<Recipe> actualRecipes = recipeService.getRecipesByIds(Collections.emptyList());
+
+        // then
+        assertThat(actualRecipes).isEmpty();
+        verify(recipeRepository, never()).findAllByIds(anyCollection());
+    }
+
+    @Test
+    void getRecipesByIds_WhenIdsIsNull_ShouldReturnEmptyList() {
+        // when
+        List<Recipe> actualRecipes = recipeService.getRecipesByIds(null);
+
+        // then
+        assertThat(actualRecipes).isEmpty();
+        verify(recipeRepository, never()).findAllByIds(anyCollection());
+    }
+
+    @Test
+    void getAllRecipes_ShouldReturnPageOfRecipes() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        List<Recipe> recipes = Arrays.asList(createTestRecipe(), createTestRecipe("test-recipe-id-2"));
+        Page<Recipe> expectedPage = new PageImpl<>(recipes, pageable, recipes.size());
+
+        when(recipeRepository.findAll(pageable)).thenReturn(expectedPage);
+
+        // when
+        Page<Recipe> actualPage = recipeService.getAllRecipes(pageable);
+
+        // then
+        assertThat(actualPage).isEqualTo(expectedPage);
+        assertThat(actualPage.getContent()).hasSize(2);
+    }
+
+    @Test
     void updateRecipe_WhenRecipeExists_ShouldUpdateAndReturnRecipe() {
         // given
         Recipe existingRecipe = createTestRecipe();
         Recipe updateRecipe = createTestRecipe();
         updateRecipe.setId(null);
-        updateRecipe.setCreatedAt(null);
-        updateRecipe.setPhotos(null);
+        updateRecipe.setName("Updated Recipe Name");
+        updateRecipe.setInstructions("Updated instructions");
 
         when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(existingRecipe));
-
-        // Konfigurujemy mock, aby zwracał przekazany obiekt
         when(recipeRepository.update(eq(TEST_RECIPE_ID), any(Recipe.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
 
@@ -110,8 +166,8 @@ class RecipeServiceTest {
         // then
         assertThat(updatedRecipe).isNotNull();
         assertThat(updatedRecipe.getId()).isEqualTo(TEST_RECIPE_ID);
-        // Nie sprawdzamy pozostałych pól, ponieważ w aktualnej implementacji
-        // RecipeService.updateRecipe() nie zmienia tych pól
+        assertThat(updatedRecipe.getName()).isEqualTo("Updated Recipe Name");
+        assertThat(updatedRecipe.getInstructions()).isEqualTo("Updated instructions");
 
         verify(recipeRepository).update(eq(TEST_RECIPE_ID), any(Recipe.class));
     }
@@ -123,11 +179,433 @@ class RecipeServiceTest {
         when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.empty());
 
         // when/then
-        // Używamy contains() zamiast hasMessage(), aby sprawdzić tylko część komunikatu
         assertThatThrownBy(() -> recipeService.updateRecipe(TEST_RECIPE_ID, updateRecipe))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("Recipe not found")
                 .hasMessageContaining(TEST_RECIPE_ID);
+    }
+
+    @Test
+    void createRecipe_ShouldSetCreatedAtAndSave() {
+        // given
+        Recipe recipeToCreate = Recipe.builder()
+                .name("New Recipe")
+                .instructions("New instructions")
+                .build();
+
+        Recipe savedRecipe = Recipe.builder()
+                .id("new-recipe-id")
+                .name("New Recipe")
+                .instructions("New instructions")
+                .createdAt(Timestamp.now())
+                .build();
+
+        when(recipeRepository.save(any(Recipe.class))).thenReturn(savedRecipe);
+
+        // when
+        Recipe result = recipeService.createRecipe(recipeToCreate);
+
+        // then
+        verify(recipeRepository).save(recipeCaptor.capture());
+        Recipe capturedRecipe = recipeCaptor.getValue();
+
+        assertThat(capturedRecipe.getCreatedAt()).isNotNull();
+        assertThat(result).isEqualTo(savedRecipe);
+    }
+
+    @Test
+    void createRecipe_WhenCreatedAtIsAlreadySet_ShouldNotOverwrite() {
+        // given
+        Timestamp existingTimestamp = Timestamp.parseTimestamp("2023-01-01T10:00:00Z");
+        Recipe recipeToCreate = Recipe.builder()
+                .name("New Recipe")
+                .instructions("New instructions")
+                .createdAt(existingTimestamp)
+                .build();
+
+        Recipe savedRecipe = Recipe.builder()
+                .id("new-recipe-id")
+                .name("New Recipe")
+                .instructions("New instructions")
+                .createdAt(existingTimestamp)
+                .build();
+
+        when(recipeRepository.save(any(Recipe.class))).thenReturn(savedRecipe);
+
+        // when
+        Recipe result = recipeService.createRecipe(recipeToCreate);
+
+        // then
+        verify(recipeRepository).save(recipeCaptor.capture());
+        Recipe capturedRecipe = recipeCaptor.getValue();
+
+        assertThat(capturedRecipe.getCreatedAt()).isEqualTo(existingTimestamp);
+        assertThat(result).isEqualTo(savedRecipe);
+    }
+
+    @Test
+    void findOrCreateRecipe_WhenRecipeDoesNotExist_ShouldCreateNewRecipe() {
+        // given
+        Recipe newRecipe = Recipe.builder()
+                .name("New Recipe")
+                .instructions("New instructions")
+                .build();
+
+        Recipe savedRecipe = Recipe.builder()
+                .id("new-recipe-id")
+                .name("New Recipe")
+                .instructions("New instructions")
+                .createdAt(Timestamp.now())
+                .build();
+
+        when(recipeRepository.findByName("New Recipe")).thenReturn(Optional.empty());
+        when(recipeRepository.save(any(Recipe.class))).thenReturn(savedRecipe);
+
+        // when
+        Recipe result = recipeService.findOrCreateRecipe(newRecipe);
+
+        // then
+        verify(recipeRepository).findByName("New Recipe");
+        verify(recipeRepository).save(any(Recipe.class));
+        assertThat(result).isEqualTo(savedRecipe);
+    }
+
+    @Test
+    void findOrCreateRecipe_WhenRecipeExistsAndHasNoUpdates_ShouldReturnExistingRecipe() {
+        // given
+        Recipe newRecipe = Recipe.builder()
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .build();
+
+        Recipe existingRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .createdAt(Timestamp.now())
+                .build();
+
+        when(recipeRepository.findByName("Existing Recipe")).thenReturn(Optional.of(existingRecipe));
+
+        // when
+        Recipe result = recipeService.findOrCreateRecipe(newRecipe);
+
+        // then
+        verify(recipeRepository).findByName("Existing Recipe");
+        verify(recipeRepository, never()).update(anyString(), any(Recipe.class));
+        assertThat(result).isEqualTo(existingRecipe);
+    }
+
+    @Test
+    void findOrCreateRecipe_WhenRecipeExistsAndHasLongerInstructions_ShouldUpdateAndReturnUpdatedRecipe() {
+        // given
+        Recipe newRecipe = Recipe.builder()
+                .name("Existing Recipe")
+                .instructions("More detailed and longer instructions with step by step guide")
+                .build();
+
+        Recipe existingRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .createdAt(Timestamp.now())
+                .build();
+
+        Recipe updatedRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("More detailed and longer instructions with step by step guide")
+                .createdAt(existingRecipe.getCreatedAt())
+                .build();
+
+        when(recipeRepository.findByName("Existing Recipe")).thenReturn(Optional.of(existingRecipe));
+        when(recipeRepository.update(eq("existing-id"), any(Recipe.class))).thenReturn(updatedRecipe);
+
+        // when
+        Recipe result = recipeService.findOrCreateRecipe(newRecipe);
+
+        // then
+        verify(recipeRepository).findByName("Existing Recipe");
+        verify(recipeRepository).update(eq("existing-id"), any(Recipe.class));
+        assertThat(result).isEqualTo(updatedRecipe);
+    }
+
+    @Test
+    void findOrCreateRecipe_WhenExistingHasNoNutritionalValuesButNewHas_ShouldUpdate() {
+        // given
+        NutritionalValues nutritionalValues = new NutritionalValues();
+        nutritionalValues.setCalories(250);
+        nutritionalValues.setProtein(10);
+        nutritionalValues.setCarbs(30);
+        nutritionalValues.setFat(5);
+
+        Recipe newRecipe = Recipe.builder()
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .nutritionalValues(nutritionalValues)
+                .build();
+
+        Recipe existingRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .createdAt(Timestamp.now())
+                .build();
+
+        Recipe updatedRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .nutritionalValues(nutritionalValues)
+                .createdAt(existingRecipe.getCreatedAt())
+                .build();
+
+        when(recipeRepository.findByName("Existing Recipe")).thenReturn(Optional.of(existingRecipe));
+        when(recipeRepository.update(eq("existing-id"), any(Recipe.class))).thenReturn(updatedRecipe);
+
+        // when
+        Recipe result = recipeService.findOrCreateRecipe(newRecipe);
+
+        // then
+        verify(recipeRepository).update(eq("existing-id"), any(Recipe.class));
+        assertThat(result.getNutritionalValues()).isEqualTo(nutritionalValues);
+    }
+
+    @Test
+    void findOrCreateRecipe_WhenNewRecipeHasAdditionalPhotos_ShouldUpdateWithCombinedPhotos() {
+        // given
+        Recipe newRecipe = Recipe.builder()
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .photos(Arrays.asList("new-photo.jpg", "another-photo.jpg"))
+                .build();
+
+        Recipe existingRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .photos(Arrays.asList("existing-photo.jpg"))
+                .createdAt(Timestamp.now())
+                .build();
+
+        Recipe updatedRecipe = Recipe.builder()
+                .id("existing-id")
+                .name("Existing Recipe")
+                .instructions("Basic instructions")
+                .photos(Arrays.asList("existing-photo.jpg", "new-photo.jpg", "another-photo.jpg"))
+                .createdAt(existingRecipe.getCreatedAt())
+                .build();
+
+        when(recipeRepository.findByName("Existing Recipe")).thenReturn(Optional.of(existingRecipe));
+        when(recipeRepository.update(eq("existing-id"), any(Recipe.class))).thenReturn(updatedRecipe);
+
+        // when
+        Recipe result = recipeService.findOrCreateRecipe(newRecipe);
+
+        // then
+        verify(recipeRepository).update(eq("existing-id"), recipeCaptor.capture());
+        Recipe capturedRecipe = recipeCaptor.getValue();
+
+        assertThat(capturedRecipe.getPhotos())
+                .containsExactlyInAnyOrder("existing-photo.jpg", "new-photo.jpg", "another-photo.jpg");
+        assertThat(result).isEqualTo(updatedRecipe);
+    }
+
+    @Test
+    void findOrCreateRecipe_WhenNameIsEmpty_ShouldCreateNewRecipe() {
+        // given
+        Recipe recipeWithoutName = Recipe.builder()
+                .instructions("Some instructions")
+                .build();
+
+        Recipe savedRecipe = Recipe.builder()
+                .id("new-id")
+                .instructions("Some instructions")
+                .createdAt(Timestamp.now())
+                .build();
+
+        when(recipeRepository.save(any(Recipe.class))).thenReturn(savedRecipe);
+
+        // when
+        Recipe result = recipeService.findOrCreateRecipe(recipeWithoutName);
+
+        // then
+        verify(recipeRepository, never()).findByName(anyString());
+        verify(recipeRepository).save(any(Recipe.class));
+        assertThat(result).isEqualTo(savedRecipe);
+    }
+
+    @Test
+    void uploadImage_ShouldUploadAndUpdateRecipe() throws BadRequestException, IOException {
+        // given
+        Recipe recipe = createTestRecipe();
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(recipe));
+
+        MockMultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+
+        Blob blob = mock(Blob.class);
+        when(storage.create(any(BlobInfo.class), any(byte[].class))).thenReturn(blob);
+
+        // Mockujemy generowanie UUID, aby test był deterministyczny
+        try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
+            UUID mockUuid = UUID.fromString("12345678-1234-1234-1234-123456789012");
+            mockedUuid.when(UUID::randomUUID).thenReturn(mockUuid);
+
+            // when
+            String imageUrl = recipeService.uploadImage(TEST_RECIPE_ID, imageFile);
+
+            // then
+            verify(storage).create(blobInfoCaptor.capture(), byteArrayCaptor.capture());
+            verify(recipeRepository).update(eq(TEST_RECIPE_ID), recipeCaptor.capture());
+
+            BlobInfo capturedBlobInfo = blobInfoCaptor.getValue();
+            byte[] capturedBytes = byteArrayCaptor.getValue();
+            Recipe capturedRecipe = recipeCaptor.getValue();
+
+            assertThat(capturedBlobInfo.getBlobId().getBucket()).isEqualTo("test-bucket");
+            assertThat(capturedBlobInfo.getBlobId().getName())
+                    .isEqualTo("recipes/test-recipe-id/images/12345678-1234-1234-1234-123456789012.jpg");
+            assertThat(capturedBlobInfo.getContentType()).isEqualTo("image/jpeg");
+
+            assertThat(capturedBytes).isEqualTo("test image content".getBytes());
+
+            assertThat(capturedRecipe.getPhotos()).hasSize(3);
+            assertThat(capturedRecipe.getPhotos())
+                    .contains("photo1.jpg", "photo2.jpg")
+                    .contains("https://storage.googleapis.com/test-bucket/recipes/test-recipe-id/images/12345678-1234-1234-1234-123456789012.jpg");
+
+            assertThat(imageUrl).isEqualTo("https://storage.googleapis.com/test-bucket/recipes/test-recipe-id/images/12345678-1234-1234-1234-123456789012.jpg");
+        }
+    }
+
+    @Test
+    void uploadImage_WhenRecipeNotFound_ShouldThrowNotFoundException() {
+        // given
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.empty());
+
+        MultipartFile imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+
+        // when/then
+        assertThatThrownBy(() -> recipeService.uploadImage(TEST_RECIPE_ID, imageFile))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("Recipe not found");
+    }
+
+    @Test
+    void deleteImage_ShouldRemoveImageAndUpdateRecipe() throws BadRequestException {
+        // given
+        Recipe recipe = Recipe.builder()
+                .id(TEST_RECIPE_ID)
+                .name("Test Recipe")
+                .photos(Arrays.asList("photo1.jpg", "https://storage.googleapis.com/test-bucket/recipes/test-recipe-id/images/test-image.jpg"))
+                .build();
+
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(recipe));
+
+        String imageUrl = "https://storage.googleapis.com/test-bucket/recipes/test-recipe-id/images/test-image.jpg";
+
+        // when
+        recipeService.deleteImage(TEST_RECIPE_ID, imageUrl);
+
+        // then
+        verify(storage).delete(any(BlobId.class));
+        verify(recipeRepository).update(eq(TEST_RECIPE_ID), recipeCaptor.capture());
+
+        Recipe capturedRecipe = recipeCaptor.getValue();
+        assertThat(capturedRecipe.getPhotos()).hasSize(1);
+        assertThat(capturedRecipe.getPhotos()).containsExactly("photo1.jpg");
+    }
+
+    @Test
+    void deleteImage_WhenImageNotInRecipe_ShouldThrowBadRequestException() {
+        // given
+        Recipe recipe = Recipe.builder()
+                .id(TEST_RECIPE_ID)
+                .name("Test Recipe")
+                .photos(Arrays.asList("photo1.jpg", "photo2.jpg"))
+                .build();
+
+        when(recipeRepository.findById(TEST_RECIPE_ID)).thenReturn(Optional.of(recipe));
+
+        String imageUrl = "https://storage.googleapis.com/test-bucket/non-existent-image.jpg";
+
+        // when/then
+        assertThatThrownBy(() -> recipeService.deleteImage(TEST_RECIPE_ID, imageUrl))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Podany obraz nie istnieje dla tego przepisu");
+    }
+
+    @Test
+    void searchRecipes_ShouldReturnMatchingRecipes() {
+        // given
+        String query = "pasta";
+        List<Recipe> expectedRecipes = Arrays.asList(createTestRecipe(), createTestRecipe("test-recipe-id-2"));
+
+        when(recipeRepository.search(query)).thenReturn(expectedRecipes);
+
+        // when
+        List<Recipe> result = recipeService.searchRecipes(query);
+
+        // then
+        assertThat(result).isEqualTo(expectedRecipes);
+        verify(recipeRepository).search(query);
+    }
+
+    @Test
+    void uploadBase64Image_ShouldUploadAndReturnUrl() throws BadRequestException {
+        // given
+        String base64Image = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAMC";
+
+        Blob blob = mock(Blob.class);
+        when(storage.create(any(BlobInfo.class), any(byte[].class))).thenReturn(blob);
+
+        // Mockujemy generowanie UUID, aby test był deterministyczny
+        try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
+            UUID mockUuid = UUID.fromString("12345678-1234-1234-1234-123456789012");
+            mockedUuid.when(UUID::randomUUID).thenReturn(mockUuid);
+
+            // when
+            String imageUrl = recipeService.uploadBase64Image(base64Image);
+
+            // then
+            verify(storage).create(blobInfoCaptor.capture(), any(byte[].class));
+
+            BlobInfo capturedBlobInfo = blobInfoCaptor.getValue();
+
+            assertThat(capturedBlobInfo.getBlobId().getBucket()).isEqualTo("test-bucket");
+            assertThat(capturedBlobInfo.getBlobId().getName())
+                    .isEqualTo("temp-recipes/images/12345678-1234-1234-1234-123456789012.jpg");
+            assertThat(capturedBlobInfo.getContentType()).isEqualTo("image/jpeg");
+
+            assertThat(imageUrl).isEqualTo("https://storage.googleapis.com/test-bucket/temp-recipes/images/12345678-1234-1234-1234-123456789012.jpg");
+        }
+    }
+
+    @Test
+    void uploadBase64Image_WithInvalidData_ShouldThrowBadRequestException() {
+        // given
+        String invalidBase64 = "invalid-data";
+
+        // when/then
+        assertThatThrownBy(() -> recipeService.uploadBase64Image(invalidBase64))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Nieprawidłowe dane obrazu");
+    }
+
+    @Test
+    void refreshRecipesCache_ShouldNotThrowException() {
+        // when/then - just make sure it doesn't throw exceptions
+        recipeService.refreshRecipesCache();
     }
 
     private Recipe createTestRecipe() {

@@ -1,7 +1,7 @@
 import React from 'react';
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription} from "../../ui/dialog";
 import RecipeImageUpload from "../../recipes/RecipeImageUpload";
-import DietImageUpload from "../../diet/upload/DietImageUpload";
+import DietImageUpload from "../../diet/upload/preview/DietImageUpload";
 
 interface ImageUploadDialogProps {
     isOpen: boolean;

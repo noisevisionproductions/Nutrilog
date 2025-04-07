@@ -4,13 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.cloud.Timestamp;
-import com.noisevisionsoftware.nutrilog.utils.deserializer.TimestampDeserializer;
-import com.noisevisionsoftware.nutrilog.utils.deserializer.TimestampSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 @Configuration
 public class JacksonConfig {
@@ -23,8 +19,6 @@ public class JacksonConfig {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(Timestamp.class, new TimestampDeserializer());
-        module.addSerializer(Timestamp.class, new TimestampSerializer());
         objectMapper.registerModule(module);
         objectMapper.registerModule(new JavaTimeModule());
 

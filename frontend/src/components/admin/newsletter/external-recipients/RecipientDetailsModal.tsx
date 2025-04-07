@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {ExternalRecipient} from "../../../../types/send-grid";
 import {toast} from "../../../../utils/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle} from "../../../ui/dialog";
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from "../../../ui/dialog";
 import {Edit2, Save, X} from "lucide-react";
 import {ExternalRecipientService} from "../../../../services/newsletter/ExternalRecipientService";
 import {formatPostgresTimestamp} from "../../../../utils/dateFormatters";
@@ -86,6 +86,9 @@ const RecipientDetailsModal: React.FC<RecipientDetailsModalProps> = ({
                             </button>
                         )}
                     </DialogTitle>
+                    <DialogDescription>
+                        Szczegółowe informacje odbiorcy
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4 space-y-5">

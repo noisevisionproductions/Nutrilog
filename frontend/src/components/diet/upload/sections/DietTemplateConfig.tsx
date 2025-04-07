@@ -1,8 +1,9 @@
 import React from "react";
-import {getMealTypeLabel} from "../../../utils/diet/mealTypeUtils";
-import {DietTemplate, MealType} from "../../../types";
-import {stringToTimestamp, toISODate} from "../../../utils/dateFormatters";
-import { Calendar, Clock } from "react-feather";
+import {getMealTypeLabel} from "../../../../utils/diet/mealTypeUtils";
+import {DietTemplate, MealType} from "../../../../types";
+import {stringToTimestamp, toISODate} from "../../../../utils/dateFormatters";
+import {Calendar, Clock} from "react-feather";
+import {ClipboardList} from "lucide-react";
 
 interface DietTemplateConfigProps {
     template: DietTemplate;
@@ -55,10 +56,13 @@ const DietTemplateConfig: React.FC<DietTemplateConfigProps> = ({
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-lg space-y-8">
-            <h3 className="text-2xl font-semibold mb-6 text-gray-800">
-                Konfiguracja szablonu diety
-            </h3>
+        <div className="bg-white p-6 rounded-lg shadow-md space-y-8">
+            <div className="flex items-center gap-3 mb-4">
+                <ClipboardList className="h-5 w-5 text-primary"/>
+                <h3 className="font-medium text-lg">
+                    Konfiguracja szablonu diety
+                </h3>
+            </div>
 
             {/* Meals per day selection */}
             <div ref={refs?.mealsPerDayRef} className="space-y-4">
@@ -88,7 +92,7 @@ const DietTemplateConfig: React.FC<DietTemplateConfigProps> = ({
             <div ref={refs?.dateConfigRef} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-green-50 to-blue-50 p-6 rounded-xl shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
-                        <Calendar className="w-5 h-5 text-green-600" />
+                        <Calendar className="w-5 h-5 text-green-600"/>
                         <label htmlFor="startDate" className="text-sm font-medium text-gray-700">
                             Data rozpoczęcia diety
                         </label>
@@ -107,7 +111,7 @@ const DietTemplateConfig: React.FC<DietTemplateConfigProps> = ({
 
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-xl shadow-sm">
                     <div className="flex items-center gap-2 mb-4">
-                        <Clock className="w-5 h-5 text-yellow-600" />
+                        <Clock className="w-5 h-5 text-yellow-600"/>
                         <label htmlFor="duration" className="text-sm font-medium text-gray-700">
                             Długość diety (dni)
                         </label>
@@ -123,7 +127,7 @@ const DietTemplateConfig: React.FC<DietTemplateConfigProps> = ({
                             duration: Number(e.target.value)
                         })}
                         className="w-full px-4 py-2 rounded-lg border-2 border-yellow-100 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 outline-none transition-all"
-                        name="mealsPerDay" // Dodany atrybut name dla lepszego wybierania elementu
+                        name="mealsPerDay"
                     />
                 </div>
             </div>
@@ -132,8 +136,9 @@ const DietTemplateConfig: React.FC<DietTemplateConfigProps> = ({
             <div ref={refs?.mealsConfigRef} className="space-y-6">
                 <h4 className="text-xl font-semibold text-gray-800">Konfiguracja posiłków</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Array.from({ length: template.mealsPerDay }).map((_, index) => (
-                        <div key={index} className="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl shadow-sm transform transition-all hover:scale-[1.02]">
+                    {Array.from({length: template.mealsPerDay}).map((_, index) => (
+                        <div key={index}
+                             className="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-xl shadow-sm transform transition-all hover:scale-[1.02]">
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">

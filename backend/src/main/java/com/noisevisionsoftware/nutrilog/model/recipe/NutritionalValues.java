@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class NutritionalValues {
-    private double calories;
-    private double protein;
-    private double fat;
-    private double carbs;
+    private Double calories;
+    private Double protein;
+    private Double fat;
+    private Double carbs;
 }
 
