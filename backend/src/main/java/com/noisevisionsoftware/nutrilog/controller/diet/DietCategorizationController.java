@@ -93,11 +93,14 @@ public class DietCategorizationController {
             }
 
             if (request.getNewProduct().getOriginal() == null || request.getNewProduct().getOriginal().isEmpty()) {
-                request.getNewProduct().setOriginal(request.getOldProduct().getOriginal());
+                if (request.getOldProduct().getOriginal() != null) {
+                    request.getNewProduct().setOriginal(request.getOldProduct().getOriginal());
+                } else {
+                    request.getNewProduct().setOriginal(request.getNewProduct().getName());
+                }
             }
 
             ParsedProduct updatedProduct = firestoreCategoryDataManager.updateProduct(
-                    request.getOldProduct(),
                     request.getNewProduct()
             );
 

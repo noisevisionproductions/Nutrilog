@@ -27,7 +27,10 @@ public class FirestoreCategoryDataManager {
 
             List<QueryDocumentSnapshot> documents = future.get().getDocuments();
             for (QueryDocumentSnapshot document : documents) {
-                result.put(document.getId(), document.toObject(ProductCategoryData.class));
+                ProductCategoryData data = document.toObject(ProductCategoryData.class);
+
+                String normalizedKey = normalizeProductName(data.getProductName());
+                result.put(normalizedKey, data);
             }
 
             return result;
@@ -44,9 +47,23 @@ public class FirestoreCategoryDataManager {
             final int MAX_BATCH_SIZE = 500;
 
             for (Map.Entry<String, ProductCategoryData> entry : data.entrySet()) {
-                String docId = createDocumentId(entry.getKey());
-                DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(docId);
-                batch.set(docRef, entry.getValue());
+                String normalizedName = entry.getKey();
+                ProductCategoryData productData = entry.getValue();
+
+                // Check if document already exists
+                String existingDocId = findExistingDocumentId(normalizedName);
+
+                DocumentReference docRef;
+                if (existingDocId != null) {
+                    // Update current document
+                    docRef = firestore.collection(COLLECTION_NAME).document(existingDocId);
+                } else {
+                    // Create new document with determined ID
+                    String docId = createDeterministicDocumentId(normalizedName);
+                    docRef = firestore.collection(COLLECTION_NAME).document(docId);
+                }
+
+                batch.set(docRef, productData, SetOptions.merge());
                 batchSize++;
 
                 if (batchSize >= MAX_BATCH_SIZE) {
@@ -66,39 +83,107 @@ public class FirestoreCategoryDataManager {
         }
     }
 
-    public ParsedProduct updateProduct(ParsedProduct oldProduct, ParsedProduct newProduct) {
+    public ParsedProduct updateProduct(ParsedProduct newProduct) {
         try {
-            String oldNormalizedName = normalizeProductName(oldProduct.getName());
-            String newNormalizedName = normalizeProductName(newProduct.getName());
+            String normalizedName = normalizeProductName(newProduct.getName());
+            String existingDocId = findExistingDocumentId(normalizedName);
 
-            QuerySnapshot existingDocs = firestore.collection(COLLECTION_NAME)
-                    .whereEqualTo("productName", oldNormalizedName)
-                    .get()
-                    .get();
-
-            if (!existingDocs.isEmpty()) {
-                DocumentSnapshot doc = existingDocs.getDocuments().getFirst();
-                DocumentReference docRef = doc.getReference();
-
-                List<String> variations = getVariationsFromDocument(doc);
-
-                if (!variations.contains(newProduct.getOriginal().toLowerCase())) {
-                    variations.add(newProduct.getOriginal().toLowerCase());
-                }
-
-                Map<String, Object> updates = new HashMap<>();
-                updates.put("productName", newNormalizedName);
-                updates.put("variations", variations);
-                updates.put("updatedAt", Timestamp.now());
-
-                docRef.update(updates).get();
+            DocumentReference docRef;
+            if (existingDocId != null) {
+                docRef = firestore.collection(COLLECTION_NAME).document(existingDocId);
+            } else {
+                String docId = createDeterministicDocumentId(normalizedName);
+                docRef = firestore.collection(COLLECTION_NAME).document(docId);
             }
+
+            DocumentSnapshot doc = docRef.get().get();
+            List<String> variations = new ArrayList<>();
+
+            if (doc.exists()) {
+                variations = getVariationsFromDocument(doc);
+            }
+
+            String newVariation = newProduct.getOriginal().toLowerCase().trim();
+            if (!variations.contains(newVariation)) {
+                variations.add(newVariation);
+            }
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("productName", normalizedName);
+            updates.put("variations", variations);
+            updates.put("updatedAt", Timestamp.now());
+
+            if (!doc.exists()) {
+                updates.put("createdAt", Timestamp.now());
+                updates.put("usageCount", 1);
+                updates.put("categoryId", newProduct.getCategoryId());
+            }
+
+            docRef.set(updates, SetOptions.merge()).get();
 
             return newProduct;
         } catch (Exception e) {
             log.error("Błąd podczas aktualizacji produktu: {}", e.getMessage());
             throw new RuntimeException("Nie udało się zaktualizować produktu", e);
         }
+    }
+
+    /*
+     * Finds ID of existing document for given normalized product name
+     * */
+    private String findExistingDocumentId(String normalizedName) {
+        try {
+            // Search based on productName
+            QuerySnapshot querySnapshot = firestore.collection(COLLECTION_NAME)
+                    .whereEqualTo("productName", normalizedName)
+                    .limit(1)
+                    .get()
+                    .get();
+
+            if (!querySnapshot.isEmpty()) {
+                return querySnapshot.getDocuments().getFirst().getId();
+            }
+
+            String deterministicId = createDeterministicDocumentId(normalizedName);
+            DocumentSnapshot doc = firestore.collection(COLLECTION_NAME)
+                    .document(deterministicId)
+                    .get()
+                    .get();
+
+            if (doc.exists()) {
+                return deterministicId;
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.error("Error finding existing document for: {}", normalizedName, e);
+            return null;
+        }
+    }
+
+    /*
+     * Creates deterministic document ID based on normalized name
+     * */
+    private String createDeterministicDocumentId(String normalizedName) {
+        if (normalizedName == null || normalizedName.trim().isEmpty()) {
+            return "unnamed_product_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+
+        String cleanId = normalizedName
+                .replaceAll("[^a-z0-9ąćęłńóśźż]", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_|_$", "")
+                .trim();
+
+        if (cleanId.isEmpty()) {
+            return "product_" + UUID.randomUUID().toString().substring(0, 8);
+        }
+
+        if (cleanId.length() > 30) {
+            cleanId = cleanId.substring(0, 30);
+        }
+
+        return cleanId;
     }
 
     private List<String> getVariationsFromDocument(DocumentSnapshot doc) {
@@ -120,49 +205,8 @@ public class FirestoreCategoryDataManager {
         return variations;
     }
 
-    private String createDocumentId(String productName) {
-        if (productName == null || productName.trim().isEmpty()) {
-            return "unnamed_product_" + UUID.randomUUID().toString().substring(0, 8);
-        }
-
-        // Czyścimy jednostkę z kropek i innych specjalnych znaków
-        String cleaned = productName.toLowerCase()
-                .replaceAll("\\.", "")
-                .trim();
-
-        if (cleaned.isEmpty()) {
-            return "unnamed_product_" + UUID.randomUUID().toString().substring(0, 8);
-        }
-
-        if (cleaned.length() > 40) {
-            String prefix = cleaned.substring(0, 20)
-                    .replaceAll("[^a-z0-9ąćęłńóśźż]", "_");
-
-            // Zabezpieczenie przed pustym prefix
-            if (prefix.isEmpty() || prefix.matches("_+")) {
-                prefix = "product";
-            }
-
-            return prefix + "_" + UUID.randomUUID().toString().substring(0, 8);
-        }
-
-        String docId = cleaned.replaceAll("[^a-z0-9ąćęłńóśźż]", "_")
-                .replaceAll("_+", "_")
-                .trim();
-
-        // Zabezpieczenie przed pustym ID
-        if (docId.isEmpty()) {
-            return "product_" + UUID.randomUUID().toString().substring(0, 8);
-        }
-
-        return docId;
-    }
-
     /**
-     * Normalizuje nazwę produktu usuwając jednostki miary, liczby i znaki specjalne.
-     *
-     * @param name Nazwa produktu do znormalizowania
-     * @return Znormalizowana nazwa produktu
+     * Normalizuje nazwę produktu - ta sama logika co w ProductCategorizationService
      */
     private String normalizeProductName(String name) {
         if (name == null) {
@@ -171,17 +215,9 @@ public class FirestoreCategoryDataManager {
 
         return name.toLowerCase()
                 .replaceAll("\\d+(?:[.,]\\d+)?\\s*(?:g|kg|ml|l|szt|sztuk|sztuki|bochenek|opakowanie|opak|porcja|porcji)\\b", "")
-
-                // Usuń same liczby
                 .replaceAll("\\d+", "")
-
-                // Zostaw tylko litery (w tym polskie), cyfry i spacje
                 .replaceAll("[^a-ząćęłńóśźż\\s]", " ")
-
-                // Zamień wielokrotne spacje na pojedynczą
                 .replaceAll("\\s+", " ")
-
-                // Usuń spacje z początku i końca
                 .trim();
     }
 }
