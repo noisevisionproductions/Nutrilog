@@ -1,69 +1,52 @@
-import React, {createContext, useContext, useEffect} from "react";
-import {useLocation, useNavigate} from "react-router-dom";
+import React, {createContext, ReactNode, useContext} from "react";
+import {useLocation} from "react-router-dom";
 
 interface RouteRestorationContextType {
     clearSavedRoute: () => void;
+    saveCurrentRoute: () => void;
+    getSavedRoute: () => string | null;
 }
-
-const LAST_ROUTE_KEY = 'nutrilog_last_route';
 
 const RouteRestorationContext = createContext<RouteRestorationContextType>({
     clearSavedRoute: () => {
-    }
+    },
+    saveCurrentRoute: () => {
+    },
+    getSavedRoute: () => null
 });
 
 export const useRouteRestoration = () => useContext(RouteRestorationContext);
 
 interface RouteRestorationProviderProps {
-    children: React.ReactNode;
-    disabled?: boolean;
+    children: ReactNode;
 }
 
-export const RouteRestorationProvider: React.FC<RouteRestorationProviderProps> = ({
-                                                                                      children,
-                                                                                      disabled = false
-                                                                                  }) => {
+export const RouteRestorationProvider: React.FC<RouteRestorationProviderProps> = ({children}) => {
     const location = useLocation();
-    const navigate = useNavigate();
+    const ROUTE_STORAGE_KEY = 'dietitianPanel_lastRoute';
 
-    useEffect(() => {
-        if (!disabled && location.pathname !== '/') {
-            // Nie zapisujemy ścieżek logowania i błędów
-            if (!['/login', '/unauthorized', '/error'].includes(location.pathname)) {
-                localStorage.setItem(LAST_ROUTE_KEY, JSON.stringify({
-                    pathname: location.pathname,
-                    search: location.search,
-                    hash: location.hash
-                }));
-            }
+    const clearSavedRoute = () => {
+        localStorage.removeItem(ROUTE_STORAGE_KEY);
+    };
+
+    const saveCurrentRoute = () => {
+        if (location.pathname.startsWith('/dashboard')) {
+            localStorage.setItem(ROUTE_STORAGE_KEY, location.pathname);
         }
-    }, [location, disabled]);
+    };
 
-    useEffect(() => {
-        if (!disabled && location.pathname === '/') {
-            const savedRoute = localStorage.getItem(LAST_ROUTE_KEY);
+    const getSavedRoute = (): string | null => {
+        return localStorage.getItem(ROUTE_STORAGE_KEY);
+    };
 
-            if (savedRoute) {
-                try {
-                    const {pathname, search, hash} = JSON.parse(savedRoute);
-
-                    // Sprawdzamy, czy zapisana ścieżka nie jest stroną logowania
-                    if (pathname !== '/login' && pathname !== '/unauthorized' && pathname !== '/error') {
-                        navigate(pathname + search + hash, {replace: true});
-                    }
-                } catch (error) {
-                    // Jeśli wystąpi błąd, usuwamy uszkodzony zapis
-                    localStorage.removeItem(LAST_ROUTE_KEY);
-                }
-            }
-        }
-    }, [navigate, location.pathname, disabled]);
-
-    // Metoda do czyszczenia zapisanej ścieżki (przydatna przy wylogowaniu)
-    const clearSavedRoute = () => localStorage.removeItem(LAST_ROUTE_KEY);
+    const value = {
+        clearSavedRoute,
+        saveCurrentRoute,
+        getSavedRoute
+    };
 
     return (
-        <RouteRestorationContext.Provider value={{clearSavedRoute}}>
+        <RouteRestorationContext.Provider value={value}>
             {children}
         </RouteRestorationContext.Provider>
     );

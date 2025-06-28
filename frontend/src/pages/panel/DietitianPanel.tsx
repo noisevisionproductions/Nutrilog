@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {MainNav} from "../../types/navigation";
+import React, {useEffect} from 'react';
+import {Route, Routes} from "react-router-dom";
 import ExcelUpload from "../../components/navigation/dietitian/creation/excel/ExcelUpload";
 import UsersManagement from "../../components/navigation/dietitian/creation/excel/UsersManagement";
 import DietManagement from "../../components/diet/DietManagement";
@@ -11,23 +11,11 @@ import usePageTitle from "../../hooks/usePageTitle";
 import DietitianDashboard from "../../components/navigation/dietitian/creation/excel/DietitianDashboard";
 import DietitianSidebar from "../../components/navigation/DietitianSidebar";
 import DietCreationContainer from "../../components/navigation/dietitian/creation/DietCreationContainer";
-
-
+import {useDietitianNavigation} from "../../hooks/useDietitianNavigation";
+import {MainNav} from "../../types/navigation";
 
 const DietitianPanel: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<MainNav>('dietitianDashboard');
-
-    useEffect(() => {
-        const handleTabChange = (event: CustomEvent) => {
-            setActiveTab(event.detail as MainNav);
-        };
-
-        window.addEventListener('panel-tab-change', handleTabChange as EventListener);
-
-        return () => {
-            window.removeEventListener('panel-tab-change', handleTabChange as EventListener);
-        };
-    }, []);
+    const {currentTab, navigateToTab} = useDietitianNavigation();
 
     const titleMap: Record<MainNav, string> = {
         dietitianDashboard: 'Pulpit',
@@ -42,36 +30,45 @@ const DietitianPanel: React.FC = () => {
         recipes: 'Przepisy'
     };
 
-    usePageTitle(titleMap[activeTab], 'Panel Dietetyka');
+    usePageTitle(titleMap[currentTab], 'Panel Dietetyka');
 
-    const renderContent = () => {
-        switch (activeTab) {
-            case 'dietitianDashboard':
-                return <DietitianDashboard/>;
-            case 'dietCreation':
-                return <DietCreationContainer onTabChange={setActiveTab}/>;
-            case 'upload':
-                return <ExcelUpload onTabChange={setActiveTab}/>;
-            case 'diets':
-                return <DietManagement/>;
-            case 'users':
-                return <UsersManagement/>;
-            case 'stats':
-                return <StatsPanel/>;
-            case 'guide':
-                return <DietGuide/>;
-            case 'changelog':
-                return <Changelog/>;
-            case 'recipes':
-                return <RecipesPage/>;
-            default:
-                return <DietitianDashboard/>;
-        }
-    };
+    useEffect(() => {
+        const handleTabChangeEvent = (event: CustomEvent) => {
+            const tab = event.detail as MainNav;
+            navigateToTab(tab);
+        };
+
+        window.addEventListener('panel-tab-change', handleTabChangeEvent as EventListener);
+
+        return () => {
+            window.removeEventListener('panel-tab-change', handleTabChangeEvent as EventListener);
+        };
+    }, [navigateToTab]);
 
     return (
-        <DietitianSidebar activeTab={activeTab} onTabChange={setActiveTab}>
-            {renderContent()}
+        <DietitianSidebar activeTab={currentTab} onTabChange={navigateToTab}>
+            <Routes>
+                <Route path="" element={<DietitianDashboard/>}/>
+
+                {/* Zagnieżdżone rout dla tworzenia diety */}
+                <Route
+                    path="diet-creation/*"
+                    element={<DietCreationContainer onTabChange={navigateToTab}/>}
+                />
+
+                {/* Stara ścieżka upload-dla kompatybilności */}
+                <Route path="upload" element={<ExcelUpload onTabChange={navigateToTab}/>}/>
+
+                <Route path="diets" element={<DietManagement/>}/>
+                <Route path="users" element={<UsersManagement/>}/>
+                <Route path="stats" element={<StatsPanel/>}/>
+                <Route path="guide" element={<DietGuide/>}/>
+                <Route path="changelog" element={<Changelog/>}/>
+                <Route path="recipes" element={<RecipesPage/>}/>
+
+                {/* Fallback */}
+                <Route path="*" element={<DietitianDashboard/>}/>
+            </Routes>
         </DietitianSidebar>
     );
 };

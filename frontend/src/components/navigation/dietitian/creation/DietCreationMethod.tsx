@@ -21,7 +21,7 @@ const DietCreationMethod: React.FC<DietCreationMethodProps> = ({onMethodSelect})
                 'Obsługa złożonych planów żywieniowych',
                 'Walidacja wartości odżywczych'
             ],
-            recommended: true
+            new: false
         },
         {
             id: 'manual' as DietCreationMethodType,
@@ -34,7 +34,7 @@ const DietCreationMethod: React.FC<DietCreationMethodProps> = ({onMethodSelect})
                 'Dostosowanie do indywidualnych potrzeb',
                 'Podgląd na żywo podczas tworzenia'
             ],
-            recommended: false
+            new: true
         }
     ];
 
@@ -59,15 +59,15 @@ const DietCreationMethod: React.FC<DietCreationMethodProps> = ({onMethodSelect})
                             className={`
                                 relative bg-white border-2 rounded-xl p-6 cursor-pointer transition-all duration-200
                                 hover:shadow-lg hover:border-primary-light group
-                                ${method.recommended ? 'border-primary-light bg-primary-light/5' : 'border-gray-200'}
+                                ${method.new ? 'border-primary-light bg-primary-light/5' : 'border-gray-200'}
                             `}
                             onClick={() => handleMethodClick(method.id)}
                         >
-                            {method.recommended && (
+                            {method.new && (
                                 <div className="absolute -top-3 left-6">
                                     <span
                                         className="bg-secondary text-white text-xs font-semibold px-3 py-1 rounded-full">
-                                        Polecane
+                                        Nowość
                                     </span>
                                 </div>
                             )}
@@ -75,21 +75,21 @@ const DietCreationMethod: React.FC<DietCreationMethodProps> = ({onMethodSelect})
                             <div className="flex items-start space-x-4">
                                 <div className={`
                                     p-3 rounded-lg transition-colors
-                                    ${method.recommended
+                                    ${method.new
                                     ? 'bg-primary-light/20 group-hover:bg-primary-light/30'
                                     : 'bg-gray-100 group-hover:bg-gray-200'
                                 }
                                 `}>
                                     <Icon className={`
                                         h-8 w-8 transition-colors
-                                        ${method.recommended ? 'text-primary' : 'text-gray-600'}
+                                        ${method.new ? 'text-primary' : 'text-gray-600'}
                                     `}/>
                                 </div>
 
                                 <div className="flex-1 min-w-0">
                                     <h3 className={`
                                         text-xl font-semibold mb-2 transition-colors
-                                        ${method.recommended
+                                        ${method.new
                                         ? 'text-primary group-hover:text-primary-dark'
                                         : 'text-gray-900 group-hover:text-primary'
                                     }
@@ -110,7 +110,7 @@ const DietCreationMethod: React.FC<DietCreationMethodProps> = ({onMethodSelect})
                                                 <li key={index} className="flex items-center text-sm text-gray-600">
                                                     <div className={`
                                                         w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0
-                                                        ${method.recommended ? 'bg-primary' : 'bg-gray-400'}
+                                                        ${method.new ? 'bg-primary' : 'bg-gray-400'}
                                                     `}/>
                                                     {benefit}
                                                 </li>
@@ -121,7 +121,7 @@ const DietCreationMethod: React.FC<DietCreationMethodProps> = ({onMethodSelect})
                                     <div className="mt-6 pt-4 border-t border-gray-100">
                                         <span className={`
                                             inline-flex items-center text-sm font-medium transition-colors
-                                            ${method.recommended
+                                            ${method.new
                                             ? 'text-primary group-hover:text-primary-dark'
                                             : 'text-gray-700 group-hover:text-primary'
                                         }

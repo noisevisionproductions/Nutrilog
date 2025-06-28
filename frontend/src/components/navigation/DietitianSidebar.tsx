@@ -1,19 +1,19 @@
 import React, {useState} from "react";
 import {MainNav} from "../../types/navigation";
 import {
-    LayoutDashboard,
+    BookOpen,
     ChevronLeft,
     ChevronRight,
     ClipboardList,
     FileSpreadsheet,
     HelpCircle,
     Home,
+    LayoutDashboard,
     LogOut,
-    Upload,
-    Users,
+    PlusCircle,
     Shield,
-    BookOpen,
-    UtensilsCrossed  // Zmieniona ikona
+    Users,
+    UtensilsCrossed
 } from "lucide-react";
 import {cn} from "../../utils/cs";
 import {useAuth} from "../../contexts/AuthContext";
@@ -79,8 +79,8 @@ interface SidebarProps {
 
 const navigationItems = [
     {id: 'dietitianDashboard', label: 'Pulpit', icon: LayoutDashboard},
-    {id: 'upload', label: 'Dodawanie Diety', icon: Upload},
-    {id: 'diets', label: 'Diety', icon: FileSpreadsheet},
+    {id: 'dietCreation', label: 'Tworzenie diety', icon: PlusCircle},
+    {id: 'diets', label: 'Zarządzanie diet', icon: FileSpreadsheet},
     {id: 'recipes', label: 'Przepisy', icon: BookOpen},
     {id: 'users', label: 'Użytkownicy', icon: Users},
     {id: 'stats', label: 'Statystyki', icon: ChartBarIcon},

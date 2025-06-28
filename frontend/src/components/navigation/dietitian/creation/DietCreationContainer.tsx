@@ -1,22 +1,28 @@
-import React, {useState} from 'react';
+import React from 'react';
+import {Route, Routes} from "react-router-dom";
 import DietCreationMethod, {DietCreationMethodType} from './DietCreationMethod';
 import ExcelUpload from "./excel/ExcelUpload";
 import {MainNav} from "../../../../types/navigation";
 import {ArrowLeft} from 'lucide-react';
+import {useDietitianNavigation} from "../../../../hooks/useDietitianNavigation";
 
 interface DietCreationContainerProps {
     onTabChange: (tab: MainNav) => void;
 }
 
 const DietCreationContainer: React.FC<DietCreationContainerProps> = ({onTabChange}) => {
-    const [selectedMethod, setSelectedMethod] = useState<DietCreationMethodType | null>(null);
+    const {navigateToSubPath} = useDietitianNavigation();
 
     const handleMethodSelect = (method: DietCreationMethodType) => {
-        setSelectedMethod(method);
+        if (method === 'excel') {
+            navigateToSubPath('diet-creation/excel');
+        } else if (method === 'manual') {
+            navigateToSubPath('diet-creation/manual');
+        }
     };
 
     const handleBackToSelection = () => {
-        setSelectedMethod(null);
+        navigateToSubPath('diet-creation');
     };
 
     const renderManualCreation = () => {
@@ -51,7 +57,7 @@ const DietCreationContainer: React.FC<DietCreationContainerProps> = ({onTabChang
                         </p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => setSelectedMethod('excel')}
+                                onClick={() => navigateToSubPath('diet-creation/excel')}
                                 className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark transition-colors"
                             >
                                 Przejdź do importu Excel
@@ -69,33 +75,46 @@ const DietCreationContainer: React.FC<DietCreationContainerProps> = ({onTabChang
         );
     };
 
-    // Jeśli nie wybrano metody, pokaż wybór
-    if (!selectedMethod) {
-        return <DietCreationMethod onMethodSelect={handleMethodSelect}/>;
-    }
+    return (
+        <Routes>
+            {/* Główna strona wyboru metody */}
+            <Route
+                path=""
+                element={<DietCreationMethod onMethodSelect={handleMethodSelect}/>}
+            />
 
-    // Renderuj odpowiedni komponent w zależności od wybranej metody
-    switch (selectedMethod) {
-        case 'excel':
-            return (
-                <div>
-                    <div className="flex items-center space-x-4 mb-6">
-                        <button
-                            onClick={handleBackToSelection}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                        >
-                            <ArrowLeft className="h-4 w-4 mr-2"/>
-                            Powrót do wyboru metody
-                        </button>
+            {/* Excel upload */}
+            <Route
+                path="excel"
+                element={
+                    <div>
+                        <div className="flex items-center space-x-4 mb-6">
+                            <button
+                                onClick={handleBackToSelection}
+                                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                            >
+                                <ArrowLeft className="h-4 w-4 mr-2"/>
+                                Powrót do wyboru metody
+                            </button>
+                        </div>
+                        <ExcelUpload onTabChange={onTabChange}/>
                     </div>
-                    <ExcelUpload onTabChange={onTabChange}/>
-                </div>
-            );
-        case 'manual':
-            return renderManualCreation();
-        default:
-            return <DietCreationMethod onMethodSelect={handleMethodSelect}/>;
-    }
+                }
+            />
+
+            {/* Manual creation */}
+            <Route
+                path="manual"
+                element={renderManualCreation()}
+            />
+
+            {/* Fallback */}
+            <Route
+                path="*"
+                element={<DietCreationMethod onMethodSelect={handleMethodSelect}/>}
+            />
+        </Routes>
+    );
 };
 
 export default DietCreationContainer;

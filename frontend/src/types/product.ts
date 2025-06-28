@@ -7,6 +7,7 @@ export interface ParsedProduct {
     categoryId?: string;
     id?: string;
 }
+
 export interface ProductUnit {
     value: string;
     label: string;
