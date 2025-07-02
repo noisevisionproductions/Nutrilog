@@ -1,6 +1,6 @@
 package com.noisevisionsoftware.nutrilog.utils.excelParser.model;
 
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

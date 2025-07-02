@@ -6,7 +6,7 @@ import com.noisevisionsoftware.nutrilog.dto.response.DietPreviewResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.ErrorResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.ValidationResponse;
 import com.noisevisionsoftware.nutrilog.exception.DietValidationException;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedDay;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedMeal;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.ParsedProduct;

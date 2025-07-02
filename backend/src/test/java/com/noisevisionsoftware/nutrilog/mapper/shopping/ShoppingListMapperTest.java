@@ -8,7 +8,7 @@ import com.noisevisionsoftware.nutrilog.dto.request.shopping.UpdateShoppingListR
 import com.noisevisionsoftware.nutrilog.dto.response.shopping.CategorizedShoppingListItemResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.shopping.ShoppingListRecipeReferenceResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.shopping.ShoppingListResponse;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.model.shopping.CategorizedShoppingListItem;
 import com.noisevisionsoftware.nutrilog.model.shopping.ShoppingList;
 import com.noisevisionsoftware.nutrilog.model.shopping.ShoppingListRecipeReference;

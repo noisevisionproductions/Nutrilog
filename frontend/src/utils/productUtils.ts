@@ -32,7 +32,6 @@ export const createSafeProduct = (productText: any): ParsedProduct => {
 
     const trimmedText = text.trim();
 
-    // Reszta logiki parsowania jak wcześniej...
     // Próba znalezienia ilości i jednostki
     const quantityUnitMatch = trimmedText.match(/(\d+(?:[.,]\d+)?)\s*([a-zA-Zóąśłżźćńę]{1,4})\b/i);
 

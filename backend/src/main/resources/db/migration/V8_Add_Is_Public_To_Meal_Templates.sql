@@ -1,0 +1,2 @@
+ALTER TABLE meal_templates
+ADD COLUMN is_public BOOLEAN NOT NULL DEFAULT FALSE;

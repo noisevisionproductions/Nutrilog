@@ -1,7 +1,7 @@
 package com.noisevisionsoftware.nutrilog.model.recipe;
 
 import com.google.cloud.Timestamp;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import lombok.Builder;
 import lombok.Data;
 

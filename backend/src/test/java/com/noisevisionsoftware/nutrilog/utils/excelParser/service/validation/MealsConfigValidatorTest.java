@@ -1,6 +1,6 @@
 package com.noisevisionsoftware.nutrilog.utils.excelParser.service.validation;
 
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.validation.ValidationResult;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.model.validation.ValidationSeverity;
 import org.junit.jupiter.api.BeforeEach;

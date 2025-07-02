@@ -1,7 +1,6 @@
 package com.noisevisionsoftware.nutrilog.dto.request.diet;
 
-import com.google.cloud.Timestamp;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

@@ -9,7 +9,7 @@ import com.noisevisionsoftware.nutrilog.dto.response.diet.DayMealResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.diet.DayResponse;
 import com.noisevisionsoftware.nutrilog.dto.response.diet.DietResponse;
 import com.noisevisionsoftware.nutrilog.model.diet.*;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

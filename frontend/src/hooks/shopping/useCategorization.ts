@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { ParsedProduct } from "../../types/product";
-import { ProductParsingService } from "../../services/ProductParsingService";
-import { createSafeProduct } from "../../utils/productUtils";
+import {useState, useEffect, useMemo} from "react";
+import {ParsedProduct} from "../../types/product";
+import {ProductParsingService} from "../../services/ProductParsingService";
+import {createSafeProduct} from "../../utils/productUtils";
 import {DietUploadService} from "../../services/diet/DietUploadService";
 import {toast} from "../../utils/toast";
 
@@ -9,27 +9,46 @@ export const useCategorization = (shoppingList: string[]) => {
     const [categorizedProducts, setCategorizedProducts] = useState<Record<string, ParsedProduct[]>>({});
     const [uncategorizedProducts, setUncategorizedProducts] = useState<ParsedProduct[]>([]);
 
+    const memoizedShoppingList = useMemo(() => {
+        if (!Array.isArray(shoppingList)) {
+            return [];
+        }
+        return [...shoppingList];
+    }, [JSON.stringify(shoppingList)]);
+
     useEffect(() => {
-        if (!shoppingList || !Array.isArray(shoppingList)) {
-            console.warn('shoppingList nie jest tablicą:', shoppingList);
+        if (memoizedShoppingList.length === 0) {
             setUncategorizedProducts([]);
+            setCategorizedProducts({});
             return;
         }
 
-        const parsedProducts = shoppingList
-            .map(product => {
+        const parsedProducts = memoizedShoppingList
+            .map((product, index) => {
                 try {
                     const parseResult = ProductParsingService.parseProduct(product);
-                    return parseResult.success ? parseResult.product : createSafeProduct(product);
+                    let parsedProduct: ParsedProduct;
+
+                    if (parseResult.success && parseResult.product) {
+                        parsedProduct = parseResult.product;
+                    } else {
+                        parsedProduct = createSafeProduct(product);
+                    }
+
+                    if (!parsedProduct.id) {
+                        parsedProduct.id = `product-${index}-${Date.now()}`;
+                    }
+
+                    return parsedProduct;
                 } catch (error) {
                     console.error('Błąd podczas przetwarzania produktu:', product, error);
-                    return createSafeProduct('unknown');
+                    return createSafeProduct(product || 'unknown');
                 }
             })
             .filter((product): product is ParsedProduct => product !== undefined && product !== null);
 
         setUncategorizedProducts(parsedProducts);
-    }, [shoppingList]);
+    }, [memoizedShoppingList]);
 
     // Funkcja pomocnicza do identyfikacji produktów
     const getProductIdentifier = (product: ParsedProduct) => {
@@ -45,7 +64,7 @@ export const useCategorization = (shoppingList: string[]) => {
         );
 
         setCategorizedProducts(prev => {
-            const updatedProduct = { ...product, categoryId };
+            const updatedProduct = {...product, categoryId};
 
             return {
                 ...prev,
@@ -60,7 +79,7 @@ export const useCategorization = (shoppingList: string[]) => {
 
         if (product.categoryId) {
             setCategorizedProducts(prev => {
-                const newProducts = { ...prev };
+                const newProducts = {...prev};
 
                 if (newProducts[product.categoryId!]) {
                     newProducts[product.categoryId!] = newProducts[product.categoryId!].filter(
@@ -78,7 +97,7 @@ export const useCategorization = (shoppingList: string[]) => {
 
         setUncategorizedProducts(prev => [
             ...prev,
-            { ...product, categoryId: undefined }
+            {...product, categoryId: undefined}
         ]);
     };
 
@@ -89,7 +108,7 @@ export const useCategorization = (shoppingList: string[]) => {
 
             if (categoryId) {
                 setCategorizedProducts(prev => {
-                    const newProducts = { ...prev };
+                    const newProducts = {...prev};
 
                     if (newProducts[categoryId]) {
                         newProducts[categoryId] = newProducts[categoryId].map(p =>

@@ -1,4 +1,4 @@
-package com.noisevisionsoftware.nutrilog.dto.response.diet;
+package com.noisevisionsoftware.nutrilog.dto.response.diet.manual;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

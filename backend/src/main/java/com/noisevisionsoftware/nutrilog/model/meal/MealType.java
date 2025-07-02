@@ -1,4 +1,4 @@
-package com.noisevisionsoftware.nutrilog.model.diet;
+package com.noisevisionsoftware.nutrilog.model.meal;
 
 import lombok.Getter;
 

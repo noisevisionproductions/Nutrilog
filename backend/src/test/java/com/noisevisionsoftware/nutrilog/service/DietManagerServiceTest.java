@@ -9,7 +9,7 @@ import com.google.cloud.firestore.WriteResult;
 import com.noisevisionsoftware.nutrilog.mapper.diet.FirestoreDietMapper;
 import com.noisevisionsoftware.nutrilog.model.diet.Diet;
 import com.noisevisionsoftware.nutrilog.model.diet.DietFileInfo;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
 import com.noisevisionsoftware.nutrilog.model.recipe.RecipeReference;

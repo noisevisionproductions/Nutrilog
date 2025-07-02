@@ -3,7 +3,7 @@ package com.noisevisionsoftware.nutrilog.repository.impl;
 import com.google.cloud.Timestamp;
 import com.noisevisionsoftware.nutrilog.mapper.recipe.RecipeJpaConverter;
 import com.noisevisionsoftware.nutrilog.mapper.recipe.RecipeReferenceJpaConverter;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.model.recipe.Recipe;
 import com.noisevisionsoftware.nutrilog.model.recipe.RecipeReference;
 import com.noisevisionsoftware.nutrilog.model.recipe.jpa.RecipeEntity;

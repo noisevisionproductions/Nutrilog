@@ -2,7 +2,7 @@ package com.noisevisionsoftware.nutrilog.mapper.shopping;
 
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.model.shopping.CategorizedShoppingListItem;
 import com.noisevisionsoftware.nutrilog.model.shopping.ShoppingList;
 import com.noisevisionsoftware.nutrilog.model.shopping.ShoppingListRecipeReference;

@@ -3,7 +3,7 @@ package com.noisevisionsoftware.nutrilog.utils.excelParser.service;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import com.noisevisionsoftware.nutrilog.model.recipe.NutritionalValues;
 import com.noisevisionsoftware.nutrilog.service.category.ProductCategorizationService;
 import com.noisevisionsoftware.nutrilog.utils.excelParser.config.ExcelParserConfig;

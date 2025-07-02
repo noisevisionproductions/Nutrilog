@@ -1,6 +1,6 @@
 package com.noisevisionsoftware.nutrilog.dto.request.diet;
 
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

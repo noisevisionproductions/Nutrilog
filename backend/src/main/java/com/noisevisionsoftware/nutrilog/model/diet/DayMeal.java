@@ -1,5 +1,6 @@
 package com.noisevisionsoftware.nutrilog.model.diet;
 
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import lombok.Builder;
 import lombok.Data;
 

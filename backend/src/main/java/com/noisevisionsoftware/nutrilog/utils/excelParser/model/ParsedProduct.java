@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class ParsedProduct {
     private String id;
     private String name;
-    private double quantity;
+    private Double quantity;
     private String unit;
     private String original;
     private boolean hasCustomUnit;

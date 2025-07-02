@@ -13,7 +13,14 @@ public class QuantityInfo {
         this.success = success;
     }
 
+    public QuantityInfo(Double quantity, String potentialUnit) {
+        this.success = true;
+        this.quantity = quantity;
+        this.potentialUnit = potentialUnit;
+    }
+
     public QuantityInfo(Double quantity, String potentialUnit, String remainingText) {
+        this.success = true;
         this.quantity = quantity;
         this.potentialUnit = potentialUnit;
         this.remainingText = remainingText;

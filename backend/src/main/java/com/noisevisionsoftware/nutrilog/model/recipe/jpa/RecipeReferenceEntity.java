@@ -1,6 +1,6 @@
 package com.noisevisionsoftware.nutrilog.model.recipe.jpa;
 
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

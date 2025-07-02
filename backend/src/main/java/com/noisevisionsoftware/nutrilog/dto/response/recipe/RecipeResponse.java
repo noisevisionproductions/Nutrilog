@@ -1,13 +1,17 @@
 package com.noisevisionsoftware.nutrilog.dto.response.recipe;
 
 import com.google.cloud.Timestamp;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class RecipeResponse {
     private String id;
     private String originalId;

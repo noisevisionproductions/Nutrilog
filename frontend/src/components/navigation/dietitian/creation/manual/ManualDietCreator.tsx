@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from "react";
+import React, {useCallback, useMemo, useRef, useState} from "react";
 import {MainNav} from "../../../../../types/navigation";
 import {DayData, ManualDietData, MealType, ParsedDietData, ParsedMeal} from "../../../../../types";
 import {ParsedProduct} from "../../../../../types/product";
@@ -38,7 +38,7 @@ const ManualDietCreator: React.FC<ManualDietCreatorProps> = ({
     const [parsedPreviewData, setParsedPreviewData] = useState<ParsedDietData | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const [shoppingListForCategorization, setShoppingListForCategorization] = useState<string[]>([]);
+    const shoppingListRef = useRef<string[]>([]);
 
     const updateDietData = useCallback((updates: Partial<ManualDietData>) => {
         setDietData(prev => ({...prev, ...updates}));
@@ -58,17 +58,25 @@ const ManualDietCreator: React.FC<ManualDietCreatorProps> = ({
             });
         });
 
+        const itemsString = JSON.stringify(items);
+        const currentString = JSON.stringify(shoppingListRef.current);
+
+        if (itemsString !== currentString) {
+            shoppingListRef.current = items;
+        }
+
         return items;
     }, [dietData.days]);
 
-    const shouldUseCategorization = currentStep === 'categorization';
+    const categorizationShoppingList = currentStep === 'categorization' ? shoppingListRef.current : [];
+
     const {
         categorizedProducts,
         uncategorizedProducts,
         handleProductDrop,
         handleProductRemove,
         handleProductEdit
-    } = useCategorization(shouldUseCategorization ? shoppingListForCategorization : []);
+    } = useCategorization(categorizationShoppingList);
 
     const updateMeal = useCallback((dayIndex: number, mealIndex: number, meal: ParsedMeal) => {
         setDietData(prev => {
@@ -146,14 +154,14 @@ const ManualDietCreator: React.FC<ManualDietCreatorProps> = ({
         return {
             days: dietData.days,
             categorizedProducts: simplifiedCategorizedProducts,
-            shoppingList: shoppingListForCategorization,
+            shoppingList: shoppingListRef.current,
             mealTimes: dietData.mealTimes,
             mealsPerDay: dietData.mealsPerDay,
             startDate: Timestamp.fromDate(new Date(dietData.startDate)),
             duration: dietData.duration,
             mealTypes: dietData.mealTypes
         };
-    }, [dietData, categorizedProducts, shoppingListForCategorization]);
+    }, [dietData, categorizedProducts]);
 
     const handleNext = useCallback(async () => {
         if (currentStep === 'configuration') {
@@ -190,7 +198,6 @@ const ManualDietCreator: React.FC<ManualDietCreatorProps> = ({
                 return;
             }
 
-            setShoppingListForCategorization(currentShoppingListItems);
             setCurrentStep('categorization');
         }
     }, [currentStep, dietData, selectedUser, initializeDays, currentShoppingListItems]);
@@ -202,14 +209,14 @@ const ManualDietCreator: React.FC<ManualDietCreatorProps> = ({
         } else if (currentStep === 'categorization') {
             setCurrentStep('planning');
         } else if (currentStep === 'preview') {
-            if (shoppingListForCategorization.length > 0) {
+            if (shoppingListRef.current.length > 0) {
                 setCurrentStep('categorization');
             } else {
                 setCurrentStep('planning');
             }
             setParsedPreviewData(null);
         }
-    }, [currentStep, shoppingListForCategorization.length]);
+    }, [currentStep]);
 
     const handleCategorizationComplete = async () => {
         if (uncategorizedProducts.length > 0) {
@@ -263,13 +270,13 @@ const ManualDietCreator: React.FC<ManualDietCreatorProps> = ({
     }, [dietData, isProcessing, onTabChange]);
 
     const handlePreviewCancel = useCallback(() => {
-        if (shoppingListForCategorization.length > 0) {
+        if (shoppingListRef.current.length > 0) {
             setCurrentStep('categorization');
         } else {
             setCurrentStep('planning');
         }
         setParsedPreviewData(null);
-    }, [shoppingListForCategorization.length]);
+    }, []);
 
     const getStepTitle = () => {
         switch (currentStep) {

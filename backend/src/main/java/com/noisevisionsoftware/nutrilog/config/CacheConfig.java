@@ -6,7 +6,6 @@ import com.noisevisionsoftware.nutrilog.model.user.UserRole;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCache;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,6 +49,15 @@ public class CacheConfig {
         caches.add(new CaffeineCache("recipesPageCache", pageResultsCaffeine().build()));
         caches.add(new CaffeineCache("recipesSearchCache", searchResultsCaffeine().build()));
 
+        // Cache dla składników
+        caches.add(new CaffeineCache("ingredientsSearchCache", ingredientsSearchCaffeine().build()));
+        caches.add(new CaffeineCache("ingredientsByBarcodeCache", defaultCaffeine.build()));
+
+        // Cache dla szablonów posiłków
+        caches.add(new CaffeineCache("mealTemplatesCache", defaultCaffeine.build()));
+        caches.add(new CaffeineCache("mealSearchCache", defaultCaffeine.build()));
+        caches.add(new CaffeineCache("mealSuggestionCache", searchResultsCaffeine().build()));
+
         cacheManager.setCaches(caches);
         return cacheManager;
     }
@@ -84,6 +92,14 @@ public class CacheConfig {
                 .initialCapacity(20)
                 .maximumSize(50)                      // Bardzo ograniczone, bo wyniki wyszukiwania są specyficzne
                 .expireAfterWrite(5, TimeUnit.MINUTES) // Bardzo krótki czas życia
+                .recordStats();
+    }
+
+    private Caffeine<Object, Object> ingredientsSearchCaffeine() {
+        return Caffeine.newBuilder()
+                .initialCapacity(50)
+                .maximumSize(500)
+                .expireAfterWrite(30, TimeUnit.MINUTES)
                 .recordStats();
     }
 

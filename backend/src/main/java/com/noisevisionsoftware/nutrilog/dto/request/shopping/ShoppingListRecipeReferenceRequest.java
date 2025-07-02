@@ -1,7 +1,7 @@
 package com.noisevisionsoftware.nutrilog.dto.request.shopping;
 
 import com.google.firebase.database.annotations.NotNull;
-import com.noisevisionsoftware.nutrilog.model.diet.MealType;
+import com.noisevisionsoftware.nutrilog.model.meal.MealType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
