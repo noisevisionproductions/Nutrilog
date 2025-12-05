@@ -14,10 +14,9 @@ const SSProtectedRoute: React.FC<ProtectedRouteProps> = ({
                                                              children,
                                                              requiredRole = 'user'
                                                          }) => {
-    const {isAuthenticated, supabaseUser, loading} = useAuth(); // Add loading state
+    const {isAuthenticated, supabaseUser, loading} = useAuth();
     const {currentApplication} = useApplication();
 
-    // Only protect routes for Scandal Shuffle
     if (currentApplication !== ApplicationType.SCANDAL_SHUFFLE) {
         return <>{children}</>;
     }
@@ -34,7 +33,6 @@ const SSProtectedRoute: React.FC<ProtectedRouteProps> = ({
         return <Navigate to="/login"/>;
     }
 
-    // Check role if required
     if (requiredRole !== 'user') {
         const userRole = supabaseUser.role;
         if (requiredRole === 'admin' && userRole !== 'admin' && userRole !== 'owner') {

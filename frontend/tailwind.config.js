@@ -51,7 +51,6 @@ export default {
                     },
                 },
             },
-            // Dodajemy focus ring i border colors dla nutrition
             ringColor: {
                 'nutrition-protein': 'var(--color-nutrition-protein-focus)',
                 'nutrition-carbs': 'var(--color-nutrition-carbs-focus)',

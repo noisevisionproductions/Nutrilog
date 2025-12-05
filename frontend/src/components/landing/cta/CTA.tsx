@@ -1,17 +1,15 @@
 import Container from "../../shared/ui/landing/Container";
 import {motion} from "framer-motion";
 import NewsletterForm from "../forms/NewsletterForm";
-import CountdownTimer from "../../shared/common/CountdownTimer";
-import {useMemo} from "react";
 
 const CTA = () => {
 
-    const targetDate = useMemo(() => {
+  /*  const targetDate = useMemo(() => {
         const today = new Date();
         const futureDate = new Date(today);
         futureDate.setDate(today.getDate() + 40);
         return futureDate.toISOString();
-    }, []);
+    }, []);*/
 
     return (
         <section id="cta-section" className="relative py-24 bg-primary">
@@ -39,7 +37,7 @@ const CTA = () => {
                             Możesz zrezygnować w każdej chwili.
                         </p>
                     </div>
-
+{/*
                     <div className="mt-12 grid sm:grid-cols-3 gap-8">
                         <div className="text-white">
                             <div className="text-3xl font-bold mb-2">50</div>
@@ -56,7 +54,7 @@ const CTA = () => {
                             <div className="text-3xl font-bold mb-2">6 mies.</div>
                             <p className="text-white/80">Bezpłatnego dostępu</p>
                         </div>
-                    </div>
+                    </div>*/}
                 </motion.div>
             </Container>
         </section>

@@ -132,7 +132,7 @@ export class ScenarioApiService {
     static async updateStatus(id: string, status: ScenarioStatus): Promise<Scenario> {
         const {data, error} = await supabase
             .from('scenarios')
-            .update({ status, updated_at: new Date().toISOString() })
+            .update({status, updated_at: new Date().toISOString()})
             .eq('id', id)
             .select()
             .single();

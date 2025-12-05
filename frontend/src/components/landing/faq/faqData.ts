@@ -39,10 +39,5 @@ export const faqItems: FAQItem[] = [
         id: 7,
         question: "Czym NutriLog wyróżnia się na tle konkurencji?",
         answer: "NutriLog wyróżnia się wykorzystaniem najnowocześniejszych technologii zarówno w panelu dietetyka, jak i aplikacji dla klientów. Cały system jest zoptymalizowany pod kątem wydajności, co zapewnia płynne działanie bez zawieszania się czy crashów, nawet przy dużym obciążeniu. Dzięki starannie zaprojektowanej architekturze i rygorystycznym testom, oferujemy niezawodne narzędzie, które pozwala dietetykom skupić się na pracy z klientami, a nie na problemach technicznych."
-    },
-    {
-        id: 8,
-        question: "Dlaczego start platformy tak późno?",
-        answer: "NutriLog jest w zaawansowanej fazie rozwoju. Skupiamy się na jakości i konsultacjach z ekspertami, aby stworzyć naprawdę użyteczne narzędzie dla dietetyków. Naszym celem jest stworzenie funkcjonalnej, skalowalnej platformy, która rzeczywiście rozwiązuje problemy branży. Zapraszamy do udziału w procesie rozwoju poprzez ankiety z newslettera lub bezpośredni kontakt z nami."
     }
 ];

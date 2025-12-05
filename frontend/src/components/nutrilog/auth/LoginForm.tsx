@@ -1,16 +1,13 @@
-// src/components/shared/auth/LoginForm.tsx
-
 import React, {useState} from "react";
 import {useAuth} from "../../../contexts/AuthContext";
 import {useNavigate} from "react-router-dom";
 import {EnvelopeIcon, LockClosedIcon} from "@heroicons/react/24/outline";
 import InputField from "../../shared/ui/InputField";
-import {APPLICATION_CONFIGS, ApplicationType} from "../../../types/application";
+import {ApplicationType} from "../../../types/application";
 
 const LoginForm = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [selectedApp, setSelectedApp] = useState<ApplicationType>(ApplicationType.NUTRILOG);
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -23,14 +20,9 @@ const LoginForm = () => {
         setError(null);
 
         try {
-            await loginWithApplication(email, password, selectedApp);
+            await loginWithApplication(email, password, ApplicationType.NUTRILOG);
 
-            // Navigate based on selected application
-            const targetRoute = selectedApp === ApplicationType.NUTRILOG
-                ? '/dashboard'
-                : '/scandal-shuffle/dashboard';
-
-            navigate(targetRoute);
+            navigate('/dashboard');
         } catch (error) {
             console.error('Login failed:', error);
             setError("Nieprawidłowy email lub hasło");
@@ -46,32 +38,6 @@ const LoginForm = () => {
                     {error}
                 </div>
             )}
-
-            {/* Application Selection */}
-            <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Wybierz aplikację
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                    {Object.values(APPLICATION_CONFIGS).map((config) => (
-                        <button
-                            key={config.type}
-                            type="button"
-                            onClick={() => setSelectedApp(config.type)}
-                            className={`p-3 rounded-lg border-2 transition-all text-center ${
-                                selectedApp === config.type
-                                    ? 'border-primary bg-primary/5 text-primary'
-                                    : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                        >
-                            <div className="font-medium text-sm">{config.name}</div>
-                            <div className="text-xs text-gray-500 mt-1">
-                                {config.authMethod === 'firebase' ? 'Firebase' : 'Supabase'}
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
 
             <InputField
                 id="email"
@@ -111,7 +77,7 @@ const LoginForm = () => {
                        Logowanie...
                    </span>
                 ) : (
-                    `Zaloguj się do ${APPLICATION_CONFIGS[selectedApp].name}`
+                    `Zaloguj się do NutriLog`
                 )}
             </button>
         </form>
