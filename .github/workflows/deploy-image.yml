@@ -55,6 +55,6 @@ jobs:
             
             cd /root
 
-            docker compose pull
+            docker-compose pull
             
-            docker compose up -d
+            docker-compose up -d
