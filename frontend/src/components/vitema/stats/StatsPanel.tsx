@@ -54,7 +54,7 @@ const StatsPanel: React.FC = () => {
                     icon={<Users size={20} />}
                     trend={{
                         value: stats.userGrowthRate,
-                        isPositive: stats.userGrowthRate > 0,
+                        isPositive: stats.userGrowthRate > 1,
                         label: "mies."
                     }}
                     color="blue"
@@ -113,7 +113,7 @@ const StatsPanel: React.FC = () => {
                     description="Liczba nowych diet tworzonych w każdym miesiącu. Przełącz między widokiem miesięcznym a skumulowanym."
                     footer={
                         <div className="flex justify-between items-center">
-                            <span className="text-xs text-slate-500">Źródło: dane z systemu Vitema</span>
+                            <span className="text-xs text-slate-500">Źródło: dane z bazy</span>
                             <button
                                 onClick={() => setShowCumulative(!showCumulative)}
                                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"

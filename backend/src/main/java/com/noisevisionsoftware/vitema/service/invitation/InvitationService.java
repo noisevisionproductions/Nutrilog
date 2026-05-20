@@ -46,7 +46,7 @@ public class InvitationService {
         if (trainerId == null) {
             throw new UnauthorizedInvitationException("Nie można zidentyfikować użytkownika");
         }
-
+        
         // Check if trainer has permissions
         User trainer = userService.getUserById(trainerId);
         if (!hasInvitationPermission(trainer.getRole())) {
@@ -185,7 +185,7 @@ public class InvitationService {
      * Sets the client's trainerId to null and marks the invitation as ENDED.
      *
      * @param clientId the ID of the client to remove
-     * @throws NotFoundException if client not found
+     * @throws NotFoundException               if client not found
      * @throws UnauthorizedInvitationException if the executing user is not the trainer of this client
      */
     public void removeClient(String clientId) {
@@ -196,7 +196,7 @@ public class InvitationService {
 
         // Get the client
         User client = userService.getUserById(clientId);
-        
+
         // Verify that the current user is the trainer of this client
         if (client.getTrainerId() == null) {
             throw new NotFoundException("Klient nie ma przypisanego trenera");

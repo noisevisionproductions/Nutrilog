@@ -79,7 +79,6 @@ public class ProductCategorizationService {
             ProductCategoryData data = categoryData.get(productKey);
             data.setUsageCount(data.getUsageCount() + 1);
 
-            // ZMIANA TUTAJ: Tworzenie nowej modyfikowalnej listy
             List<String> newVariations = new ArrayList<>(data.getVariations());
             if (!newVariations.contains(originalName)) {
                 newVariations.add(originalName);

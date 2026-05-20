@@ -90,14 +90,14 @@ public class NewsletterController {
                         "message", "Zostałeś wypisany z newslettera."
                 ));
             } else {
-        return ResponseEntity.badRequest().body(Map.of(
-                "message", "Podany adres email nie jest zapisany do newslettera."
-        ));
-    }
-} catch (Exception e) {
-        return ResponseEntity.internalServerError().body(Map.of(
-        "message", "Wystąpił błąd podczas wypisywania z newslettera."
-));
+                return ResponseEntity.badRequest().body(Map.of(
+                        "message", "Podany adres email nie jest zapisany do newslettera."
+                ));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "message", "Wystąpił błąd podczas wypisywania z newslettera."
+            ));
         }
     }
 
