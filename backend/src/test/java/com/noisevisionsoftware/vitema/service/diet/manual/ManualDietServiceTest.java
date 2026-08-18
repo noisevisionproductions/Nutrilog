@@ -11,7 +11,6 @@ import com.noisevisionsoftware.vitema.dto.response.diet.manual.MealTemplateRespo
 import com.noisevisionsoftware.vitema.model.meal.MealTemplate;
 import com.noisevisionsoftware.vitema.model.recipe.Recipe;
 import com.noisevisionsoftware.vitema.service.RecipeService;
-import com.noisevisionsoftware.vitema.service.diet.DietManagerService;
 import com.noisevisionsoftware.vitema.service.product.ProductService;
 import com.noisevisionsoftware.vitema.utils.MealTemplateConverter;
 import com.noisevisionsoftware.vitema.utils.excelParser.model.ParsedProduct;
@@ -45,8 +44,6 @@ import static org.mockito.Mockito.*;
 @MockitoSettings(strictness = Strictness.LENIENT)
 class ManualDietServiceTest {
 
-    @Mock
-    private DietManagerService dietManagerService;
 
     @Mock
     private RecipeService recipeService;

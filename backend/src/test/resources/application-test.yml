@@ -15,6 +15,9 @@ spring:
         smtp:
           auth: false
 
+  flyway:
+    enabled: false
+
 app:
   frontend:
     url: https://test-vitema.pl
