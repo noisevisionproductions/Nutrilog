@@ -9,13 +9,11 @@ import com.noisevisionsoftware.vitema.repository.InvitationRepository;
 import com.noisevisionsoftware.vitema.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +44,7 @@ public class InvitationService {
         if (trainerId == null) {
             throw new UnauthorizedInvitationException("Nie można zidentyfikować użytkownika");
         }
-        
+
         // Check if trainer has permissions
         User trainer = userService.getUserById(trainerId);
         if (!hasInvitationPermission(trainer.getRole())) {
@@ -312,53 +310,6 @@ public class InvitationService {
         // Delete the invitation
         invitationRepository.delete(invitationId);
         log.info("Invitation deleted: id={}, code={}, deletedBy={}", invitationId, invitation.getCode(), currentUserId);
-    }
-
-    /**
-     * Automatically expires old invitations.
-     * This method runs daily at 2:00 AM and updates all pending invitations
-     * that have passed their expiration date to EXPIRED status.
-     * <p>
-     * Scheduled using cron expression: "0 0 2 * * ?" (second minute hour day month weekday)
-     */
-    @Scheduled(cron = "0 0 2 * * ?")
-    public void expireOldInvitations() {
-        log.info("Starting automatic expiration of old invitations");
-
-        try {
-            long currentTime = Instant.now().toEpochMilli();
-
-            // Find all expired pending invitations
-            List<Invitation> expiredInvitations = invitationRepository.findExpiredPendingInvitations(currentTime);
-
-            if (expiredInvitations.isEmpty()) {
-                log.info("No expired invitations found");
-                return;
-            }
-
-            // Update each expired invitation to EXPIRED status
-            int successCount = 0;
-            int failureCount = 0;
-
-            for (Invitation invitation : expiredInvitations) {
-                try {
-                    invitation.setStatus(InvitationStatus.EXPIRED);
-                    invitationRepository.update(invitation.getId(), invitation);
-                    successCount++;
-                    log.debug("Expired invitation: id={}, code={}, clientEmail={}",
-                            invitation.getId(), invitation.getCode(), invitation.getClientEmail());
-                } catch (Exception e) {
-                    failureCount++;
-                    log.error("Failed to expire invitation: id={}, code={}",
-                            invitation.getId(), invitation.getCode(), e);
-                }
-            }
-
-            log.info("Expired {} invitations successfully (failures: {})", successCount, failureCount);
-
-        } catch (Exception e) {
-            log.error("Error during automatic invitation expiration", e);
-        }
     }
 
     /**
